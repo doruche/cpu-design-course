@@ -1,0 +1,10 @@
+[submodule "cdp-tests"]
+	path = cdp-tests
+	url = https://gitee.com/hitsz-cslab/cdp-tests.git
+	branch = miniRV
+	ignore = untracked
+[submodule "materials/instruction-site"]
+	path = materials/instruction-site
+	url = https://git.cs-lab.top/cslab/cpu-design.git
+	branch = main
+	ignore = untracked
