@@ -1,0 +1,7 @@
+# Copy this file to local.mk and adjust paths after Vivado 2023.2 is installed.
+# local.mk is ignored by Git.
+
+# Use WSL paths here. scripts/vivado.sh converts them to Windows paths.
+VIVADO_BIN := /mnt/c/Xilinx/Vivado/2023.2/bin/vivado.bat
+VIVADO_STAGE_ROOT := /mnt/c/cpu-design-vivado
+VIVADO_JOBS := 8

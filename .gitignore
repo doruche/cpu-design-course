@@ -32,6 +32,7 @@
 **/*.fst
 **/*.bit
 **/*.ltx
+/projects/*/artifacts/
 
 # The checked-in IP source is its XCI configuration. Vivado regenerates the
 # remaining files with the matching tool version.
