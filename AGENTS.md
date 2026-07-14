@@ -46,8 +46,9 @@ the course contract; do not copy their prose into local documentation.
 
 ## Design And Verification Gates
 
-- Complete the relevant design table and editable datapath diagram before RTL
-  implementation for an instruction group.
+- Complete the relevant rows in `design/single_cycle/datapath.csv` and
+  `design/single_cycle/control_signals.csv`, including the cumulative
+  `complete` datapath row, before RTL implementation for an instruction group.
 - Implement Lab 1 group A before group B. Validate multiplier and divider as
   standalone modules before CPU integration.
 - For normal RTL changes run `make lint` and a targeted `make trace TEST=...`.

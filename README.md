@@ -53,7 +53,7 @@ make help
 │   ├── instruction-site/   # 固定版本的官方指导书 submodule
 │   ├── lab1/               # 本地下载物，Git 忽略
 │   └── MANIFEST.md         # 下载物哈希和依赖版本
-├── design/                 # 数据通路、控制表和可编辑设计图
+├── design/                 # 持续维护的数据通路表和控制信号表 CSV
 ├── programs/               # 板上程序源码；COE 由源码生成
 ├── artifacts/              # 精选的正式 Vivado 报告
 ├── docs/                   # 本项目工作流，不复制指导书

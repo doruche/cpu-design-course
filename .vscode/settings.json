@@ -1,0 +1,12 @@
+{
+    "verilog.ctags.enabled": true,
+    "verilog.ctags.path": "/usr/bin/ctags",
+    "verilog.linting.linter": "verilator",
+    "verilog.linting.path": "/usr/local/bin",
+    "verilog.linting.verilator.includePath": [
+        "projects/single_cycle/src/rtl"
+    ],
+    "verilog.linting.verilator.arguments": "--Wall -DRUN_TRACE=1 config/verilator-single_cycle.vlt",
+    "verilog.linting.verilator.runAtFileLocation": false,
+    "verilog.linting.verilator.useWSL": false
+}

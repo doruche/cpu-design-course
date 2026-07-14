@@ -28,6 +28,7 @@ continue receiving Lab 2 SoC work.
 | Single-cycle HDL | `projects/single_cycle/src/rtl/` | Trace build, submission export, Windows staging |
 | Pipeline HDL | `projects/pipeline/src/rtl/` | Trace build, submission export, Windows staging |
 | Board configuration | Product `.xpr`, XCI, XDC, COE, Tcl | Windows staging |
+| Single-cycle design | `design/single_cycle/*.csv` | Milestone-only presentation diagram |
 | Course behavior | `materials/instruction-site/` submodule | Local links and short decision notes |
 | Golden verification | `cdp-tests/` submodule | Generated executable and waveforms |
 | Board program | `programs/<name>/` source | ELF, BIN, disassembly, COE |
@@ -35,12 +36,11 @@ continue receiving Lab 2 SoC work.
 Copies are allowed only as generated outputs. A failure discovered in a derived
 directory must be fixed in its canonical owner and regenerated.
 
-The editable overview diagram is
-[`cpu-design-workflow.drawio`](cpu-design-workflow.drawio).
-
 ## Fast WSL Loop
 
-1. Update the design table or diagram when the datapath/control contract changes.
+1. Update both single-cycle CSV tables when the datapath/control contract
+   changes. Complete the relevant instruction rows and cumulative `complete`
+   datapath row before editing RTL.
 2. Edit canonical RTL.
 3. Run `make lint`.
 4. Run a targeted Trace case with `make trace TEST=<case>`.
