@@ -18,7 +18,7 @@ module Controller (
     output wire         rf_we,
     output wire [ 1:0]  rf_wsel
 );
-
+    // demo
     wire ADDI  = (opcode == 7'b0010011) && (funct3 == 3'b000);
     wire ORI   = (opcode == 7'b0010011) && (funct3 == 3'b110);
     wire SLLI  = (opcode == 7'b0010011) && (funct3 == 3'b001) && (funct7 == 7'b0000000);
@@ -28,16 +28,19 @@ module Controller (
     wire LUI   = (opcode == 7'b0110111);
     wire JAL   = (opcode == 7'b1101111);
  
+    // group A
+    wire ADD   = (opcode == 7'b0110011) && (funct3 == 3'b000) && (funct7 == 7'b0000000);
+
     // npc_op
     wire NPC_OP_BRA = BEQ | BNE;
     wire NPC_OP_JMP = JAL;
     wire NPC_OP_PC4 = !NPC_OP_BRA & !NPC_OP_JMP;
     
     // rf_we
-    wire RF_OP_WE = ADDI | ORI | SLLI | LW | LUI | JAL;
+    wire RF_OP_WE = ADDI | ORI | SLLI | LW | LUI | JAL | ADD;
     
     // rf_wsel
-    wire WB_OP_ALU = ADDI | ORI | SLLI;
+    wire WB_OP_ALU = ADDI | ORI | SLLI | ADD;
     wire WB_OP_RAM = LW;
     wire WB_OP_PC4 = JAL;
     wire WB_OP_EXT = LUI;
@@ -49,18 +52,18 @@ module Controller (
     wire EXT_OP_J = JAL;
     
     // alu_op
-    wire ALU_OP_ADD   = ADDI | LW;
+    wire ALU_OP_ADD   = ADDI | LW | ADD;
     wire ALU_OP_OR    = ORI;
     wire ALU_OP_SLL   = SLLI;
     wire ALU_OP_EQ    = BEQ;
     wire ALU_OP_NE    = BNE;
     
     // alua_sel
-    wire ALU_A_SEL_RS1 = ADDI | ORI | SLLI | LW | BEQ | BNE | JAL;
+    wire ALU_A_SEL_RS1 = ADDI | ORI | SLLI | LW | BEQ | BNE | JAL | ADD;
     wire ALU_A_SEL_PC  = 1'b0;
                         
     // alub_sel
-    wire ALU_B_SEL_RS2 = BEQ | BNE;
+    wire ALU_B_SEL_RS2 = BEQ | BNE | ADD;
     wire ALU_B_SEL_EXT = ADDI | ORI | SLLI | LW | JAL;
         
     // ram_r_op

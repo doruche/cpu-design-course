@@ -81,5 +81,10 @@ tcl_win=$(wslpath -w "$stage_dir/scripts/build.tcl")
 project_win=$(wslpath -w "$stage_dir/miniRV.xpr")
 jobs=${VIVADO_JOBS:-8}
 
-cmd.exe /d /s /c "\"$vivado_win\" -mode batch -source \"$tcl_win\" -tclargs $action \"$project_win\" $jobs"
+(
+    cd "$stage_dir"
+    cmd.exe /d /s /c call "$vivado_win" \
+        -mode batch -source "$tcl_win" \
+        -tclargs "$action" "$project_win" "$jobs"
+)
 printf 'Vivado %s completed; reports remain in %s/artifacts\n' "$action" "$stage_dir"

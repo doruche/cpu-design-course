@@ -40,7 +40,8 @@ directory must be fixed in its canonical owner and regenerated.
 
 1. Update both single-cycle CSV tables when the datapath/control contract
    changes. Complete the relevant instruction rows and cumulative `complete`
-   datapath row before editing RTL.
+   datapath row under the rules in [`design/README.md`](../design/README.md)
+   before editing RTL.
 2. Edit canonical RTL.
 3. Run `make lint`.
 4. Run a targeted Trace case with `make trace TEST=<case>`.

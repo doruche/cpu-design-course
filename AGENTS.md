@@ -49,6 +49,8 @@ the course contract; do not copy their prose into local documentation.
 - Complete the relevant rows in `design/single_cycle/datapath.csv` and
   `design/single_cycle/control_signals.csv`, including the cumulative
   `complete` datapath row, before RTL implementation for an instruction group.
+- Preserve the official `demo` CSV rows. Apply the notation and don't-care
+  rules in `design/README.md` to every new or changed non-`demo` row.
 - Implement Lab 1 group A before group B. Validate multiplier and divider as
   standalone modules before CPU integration.
 - For normal RTL changes run `make lint` and a targeted `make trace TEST=...`.
