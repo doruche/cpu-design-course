@@ -48,6 +48,11 @@ module Controller (
     wire SH    = (opcode == 7'b0100011) && (funct3 == 3'b001);
     wire JALR  = (opcode == 7'b1100111) && (funct3 == 3'b000);
 
+    // group B
+    wire MUL   = (opcode == 7'b0110011) && (funct3 == 3'b000) && (funct7 == 7'b0000001);
+    wire MULH  = (opcode == 7'b0110011) && (funct3 == 3'b001) && (funct7 == 7'b0000001);
+    wire MULHU = (opcode == 7'b0110011) && (funct3 == 3'b011) && (funct7 == 7'b0000001);
+
     // npc_op
     wire NPC_OP_BRA = BEQ | BNE;
     wire NPC_OP_JALR = JALR;
@@ -58,12 +63,12 @@ module Controller (
     wire RF_OP_WE =
         ADDI | ORI | SLLI | LW | LUI | JAL | SLL | SRL | SRLI |
         SRA | SRAI | ADD | SUB | AUIPC | XOR | XORI | LB | LBU |
-        LH | LHU | JALR;
+        LH | LHU | JALR | MUL | MULH | MULHU;
     
     // rf_wsel
     wire WB_OP_ALU =
         ADDI | ORI | SLLI | SLL | SRL | SRLI | SRA |
-        SRAI | ADD | SUB | AUIPC | XOR | XORI;
+        SRAI | ADD | SUB | AUIPC | XOR | XORI | MUL | MULH | MULHU;
     wire WB_OP_RAM = LW | LB | LBU | LH | LHU;
     wire WB_OP_PC4 = JAL | JALR;
     wire WB_OP_EXT = LUI;
@@ -89,16 +94,21 @@ module Controller (
     wire ALU_OP_SRA   = SRA | SRAI;
     wire ALU_OP_EQ    = BEQ;
     wire ALU_OP_NE    = BNE;
+    wire ALU_OP_MUL   = MUL;
+    wire ALU_OP_MULH  = MULH;
+    wire ALU_OP_MULHU = MULHU;
     
     // alua_sel
     wire ALU_A_SEL_RS1 =
         ADDI | ORI | SLLI | SLL | SRL | SRLI | SRA | SRAI |
         LW | BEQ | BNE | JAL | ADD | SUB | XOR | XORI | LB |
-        LBU | LH | LHU | SW | SB | SH | JALR;
+        LBU | LH | LHU | SW | SB | SH | JALR | MUL | MULH | MULHU;
     wire ALU_A_SEL_PC  = AUIPC;
                         
     // alub_sel
-    wire ALU_B_SEL_RS2 = BEQ | BNE | SLL | SRL | SRA | ADD | SUB | XOR;
+    wire ALU_B_SEL_RS2 =
+        BEQ | BNE | SLL | SRL | SRA | ADD | SUB | XOR |
+        MUL | MULH | MULHU;
     wire ALU_B_SEL_EXT =
         ADDI | ORI | SLLI | SRLI | SRAI | XORI | AUIPC | LW |
         JAL | LB | LBU | LH | LHU | SW | SB | SH | JALR;
@@ -141,7 +151,10 @@ module Controller (
                   | {5{ALU_OP_SRA  }} & `ALU_SRA
                   | {5{ALU_OP_EQ   }} & `ALU_EQ
                   | {5{ALU_OP_NE   }} & `ALU_NE
-                  | {5{ALU_OP_SUB  }} & `ALU_SUB;
+                  | {5{ALU_OP_SUB  }} & `ALU_SUB
+                  | {5{ALU_OP_MUL  }} & `ALU_MUL
+                  | {5{ALU_OP_MULH }} & `ALU_MULH
+                  | {5{ALU_OP_MULHU}} & `ALU_MULHU;
 
     assign alua_sel = ALU_A_SEL_PC & `ALU_A_PC | ALU_A_SEL_RS1 & `ALU_A_RS1;
 
@@ -157,7 +170,7 @@ module Controller (
                     | {4{RAM_W_H}} & `RAM_WE_H
                     | {4{RAM_W_W}} & `RAM_WE_W;
 
-    assign is_mul = 1'b0;
+    assign is_mul = MUL | MULH | MULHU;
     assign is_div = 1'b0;
 
 endmodule
