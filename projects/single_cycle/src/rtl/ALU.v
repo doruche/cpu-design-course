@@ -19,10 +19,22 @@ module ALU (
     wire [31:0] mulu_res;
     wire        mul_busy, mulu_busy;
     wire        div_flag, divu_flag;
-    wire [31:0] div_quo , divu_quo ;    // quotient
-    wire [31:0] div_rem , divu_rem ;    // remainder
+    wire [32:0] div_quo_sm, divu_quo_sm;
+    wire [32:0] div_rem_sm, divu_rem_sm;
+    wire [31:0] div_quo, divu_quo;
+    wire [31:0] div_rem, divu_rem;
     wire        div_busy, divu_busy;
+    wire [31:0] div_a_mag, div_b_mag;
     reg  [ 4:0] op_r;
+    reg  [31:0] dividend_r;
+    reg         div_by_zero_r;
+
+    assign div_a_mag = a[31] ? ~a + 32'h1 : a;
+    assign div_b_mag = b[31] ? ~b + 32'h1 : b;
+    assign div_quo = div_quo_sm[32] ? ~div_quo_sm[31:0] + 32'h1 : div_quo_sm[31:0];
+    assign div_rem = div_rem_sm[32] ? ~div_rem_sm[31:0] + 32'h1 : div_rem_sm[31:0];
+    assign divu_quo = divu_quo_sm[32] ? ~divu_quo_sm[31:0] + 32'h1 : divu_quo_sm[31:0];
+    assign divu_rem = divu_rem_sm[32] ? ~divu_rem_sm[31:0] + 32'h1 : divu_rem_sm[31:0];
 
     always @(*) begin
         case (op_r != 5'h0 ? op_r : op)
@@ -39,6 +51,10 @@ module ALU (
             `ALU_MUL  : c = mul_res[31:0];
             `ALU_MULH : c = mul_res[63:32];
             `ALU_MULHU: c = mulu_res;
+            `ALU_DIV  : c = div_by_zero_r ? 32'hffff_ffff : div_quo;
+            `ALU_DIVU : c = div_by_zero_r ? 32'hffff_ffff : divu_quo;
+            `ALU_REM  : c = div_by_zero_r ? dividend_r : div_rem;
+            `ALU_REMU : c = div_by_zero_r ? dividend_r : divu_rem;
             default   : c = 32'h0;
         endcase
     end
@@ -57,15 +73,26 @@ module ALU (
 
     assign mul_flag  = (op == `ALU_MUL) | (op == `ALU_MULH);
     assign mulu_flag = (op == `ALU_MULHU);
-    assign div_flag  = 1'b0;
-    assign divu_flag = 1'b0;
-    assign busy      = mul_busy | mulu_busy;
+    assign div_flag  = (op == `ALU_DIV) | (op == `ALU_REM);
+    assign divu_flag = (op == `ALU_DIVU) | (op == `ALU_REMU);
+    assign busy      = mul_busy | mulu_busy | div_busy | divu_busy;
 
-    always @(posedge clk) begin
-        if (mul_flag | mulu_flag | div_flag | divu_flag)
-            op_r <= op;
-        else if (!busy)
-            op_r <= 5'h0;
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            op_r          <= 5'h0;
+            dividend_r    <= 32'h0;
+            div_by_zero_r <= 1'b0;
+        end else begin
+            if (mul_flag | mulu_flag | div_flag | divu_flag)
+                op_r <= op;
+            else if (!busy)
+                op_r <= 5'h0;
+
+            if (div_flag | divu_flag) begin
+                dividend_r    <= a;
+                div_by_zero_r <= b == 32'h0;
+            end
+        end
     end
 
     multiplier #(32) U_mul (
@@ -92,25 +119,29 @@ module ALU (
         .busy   (mulu_busy)
     );
 
-    divider #(32) U_div (
+    divider #(
+        .WIDTH  (33)
+    ) U_div (
         .clk    (clk),
         .rst    (rst),
-        .x      (a[31] ? {1'b1, ~a[30:0] + 31'h1} : a),
-        .y      (b[31] ? {1'b1, ~b[30:0] + 31'h1} : b),
+        .x      ({a[31], div_a_mag}),
+        .y      ({b[31], div_b_mag}),
         .start  (div_flag),
-        .z      (div_quo),
-        .r      (div_rem),
+        .z      (div_quo_sm),
+        .r      (div_rem_sm),
         .busy   (div_busy)
     );
 
-    divider #(33) U_divu (
+    divider #(
+        .WIDTH  (33)
+    ) U_divu (
         .clk    (clk),
         .rst    (rst),
         .x      ({1'b0, a}),
         .y      ({1'b0, b}),
         .start  (divu_flag),
-        .z      (divu_quo),
-        .r      (divu_rem),
+        .z      (divu_quo_sm),
+        .r      (divu_rem_sm),
         .busy   (divu_busy)
     );
 

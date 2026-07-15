@@ -11,7 +11,8 @@ TRACE_DIR := $(ROOT)/cdp-tests
 RTL_SOURCES := $(sort $(wildcard $(RTL_DIR)/*.v))
 TRACE_VSRC := $(TRACE_DIR)/vsrc/bram_axi.v $(TRACE_DIR)/vsrc/ram.v $(RTL_SOURCES)
 TRACE_SIM_OPTS := --trace -Wno-lint -Wno-style -Wno-TIMESCALEMOD -I$(RTL_DIR)
-TRACE_TESTS := $(sort $(basename $(notdir $(wildcard $(TRACE_DIR)/bin/*.bin))))
+# start.bin is the board/MMIO demo rather than an instruction difftest case.
+TRACE_TESTS := $(filter-out start,$(sort $(basename $(notdir $(wildcard $(TRACE_DIR)/bin/*.bin)))))
 DEMO_TESTS := addi ori slli lw beq bne jal
 LINT_WAIVER := $(ROOT)/config/verilator-$(PRODUCT).vlt
 
@@ -59,7 +60,7 @@ trace: ## Run one Trace case, for example: make trace TEST=addi.
 trace-demo: trace-build ## Run the green official-template baseline suite (seven cases).
 	@$(ROOT)/scripts/run-trace-suite.sh '$(TRACE_DIR)' $(DEMO_TESTS)
 
-trace-all: trace-build ## Run every miniRV Trace case in the pinned framework.
+trace-all: trace-build ## Run every miniRV instruction Trace case in the pinned framework.
 	@$(ROOT)/scripts/run-trace-suite.sh '$(TRACE_DIR)' $(TRACE_TESTS)
 
 trace-clean: ## Remove Trace executable, temporary memory image, and waveforms.
