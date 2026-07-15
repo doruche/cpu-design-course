@@ -28,11 +28,14 @@ module ALU (
         case (op_r != 5'h0 ? op_r : op)
             `ALU_ADD  : c = a + b;
             `ALU_SUB  : c = a - b;
+            `ALU_AND  : c = a & b;
             `ALU_OR   : c = a | b;
             `ALU_XOR  : c = a ^ b;
             `ALU_SLL  : c = a << b[4:0];
             `ALU_SRL  : c = a >> b[4:0];
             `ALU_SRA  : c = $signed(a) >>> b[4:0];
+            `ALU_SLT  : c = {31'h0, $signed(a) < $signed(b)};
+            `ALU_SLTU : c = {31'h0, a < b};
             `ALU_MUL  : c = mul_res[31:0];
             `ALU_MULH : c = mul_res[63:32];
             `ALU_MULHU: c = mulu_res;
