@@ -16,6 +16,7 @@ module MREQ (
 );
 
     wire [1:0] offset = ram_addr[1:0];
+    wire [4:0] data_shift = {offset, 3'b000};
 
     assign da_addr = ram_addr;
 
@@ -26,17 +27,19 @@ module MREQ (
         da_wdata = ram_wdata;
 
         case (ram_wop)
-            `RAM_WE_B: begin                            // sb
-                // TODO: 根据字节偏移量offset，分别使用ram_wop、ram_wdata产生da_wen、da_wdata
-                
+            `RAM_WE_B: begin
+                da_wen   = 4'h1 << offset;
+                da_wdata = ram_wdata << data_shift;
             end
-            `RAM_WE_H: begin                            // sh
-                // TODO: 根据16位半节偏移量offset[1]，分别使用ram_wop、ram_wdata产生da_wen、da_wdata
-                
+            `RAM_WE_H: begin
+                if (offset[0] == 1'b0) begin
+                    da_wen   = 4'h3 << offset;
+                    da_wdata = ram_wdata << data_shift;
+                end
             end
-            `RAM_WE_W:                                  // sw
+            `RAM_WE_W:
                 if (offset == 2'h0) begin
-                    da_wen   = ram_wop;
+                    da_wen   = 4'hF;
                 end
         endcase
     end
@@ -45,10 +48,10 @@ module MREQ (
     always @(*) begin
         if (ram_rop != `RAM_EXT_N) begin
             case (ram_rop)
-                // TODO: 根据访存指令类型，判断偏移量offset是否满足对齐条件（字节对齐、半字对齐），
-                //       只有在对齐时才能访存
-                
-                default    : da_ren = (offset == 2'h0) ? 4'hF : 4'h0;                       // lw
+                `RAM_EXT_B, `RAM_EXT_BU: da_ren = 4'hF;
+                `RAM_EXT_H, `RAM_EXT_HU: da_ren = (offset[0] == 1'b0) ? 4'hF : 4'h0;
+                `RAM_EXT_W:              da_ren = (offset == 2'h0) ? 4'hF : 4'h0;
+                default:                 da_ren = 4'h0;
             endcase
         end else
             da_ren = 4'h0;
