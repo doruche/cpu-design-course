@@ -45,9 +45,13 @@ module ALU (
 
     always @(*) begin
         case (op)
-            `ALU_EQ : br = a == b;
-            `ALU_NE : br = a != b;
-            default : br = 1'b0;
+            `ALU_EQ  : br = a == b;
+            `ALU_NE  : br = a != b;
+            `ALU_SLT : br = $signed(a) < $signed(b);
+            `ALU_SLTU: br = a < b;
+            `ALU_GE  : br = $signed(a) >= $signed(b);
+            `ALU_GEU : br = a >= b;
+            default  : br = 1'b0;
         endcase
     end
 
