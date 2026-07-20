@@ -6,13 +6,16 @@
 
 ## 当前状态
 
-- Lab 1 官方 `miniRV_basic_ego1` 工程已经导入并打基线 tag：
-  `upstream-lab1-template`。
+- Lab 1 完整单周期 CPU 已完成；2026-07-20 复核时 `make lint` 和全部 45 项
+  Trace（包括修复后的 `start`）均通过。
+- Lab 1 官方 `miniRV_basic_ego1` 工程的导入基线 tag 为
+  `upstream-lab1-template`；完整 Lab 1 状态由 `lab1-complete` tag 保存。
 - `projects/single_cycle/src/rtl/` 是当前唯一 HDL 真相源。
 - Trace 框架和指导书以固定 commit 的 Git submodule 引入。
-- 官方模板已使用本机 Verilator 通过七项绿色 Trace 基线套件；`lw` 用例同时
-  覆盖模板实现的 `lui`。
-- Vivado 2023.2 尚未接入；安装后通过 Windows staging 和 batch Tcl 验证。
+- 指导书已固定到包含 Lab 2-A 和 Lab 2-B 的版本。
+- Vivado 2023.2 的 WSL-to-Windows batch 入口已经配置，Lab 1 综合和实现已在
+  Windows 侧完成。Lab 1 不要求下板，本里程碑未做也不声明板级验证。
+- Lab 2 尚未开始实现，`projects/pipeline/` 也尚未创建。
 
 ## 快速开始
 
@@ -29,10 +32,10 @@ make doctor
 make trace TEST=addi
 ```
 
-运行模板当前的绿色基线套件：
+运行完整 Basic Trace：
 
 ```bash
-make trace-demo
+make trace-all
 ```
 
 查看所有入口：
@@ -52,6 +55,7 @@ make help
 ├── materials/
 │   ├── instruction-site/   # 固定版本的官方指导书 submodule
 │   ├── lab1/               # 本地下载物，Git 忽略
+│   ├── lab2/               # Lab 2 本地材料快照，Git 忽略
 │   └── MANIFEST.md         # 下载物哈希和依赖版本
 ├── design/                 # 持续维护的数据通路表和控制信号表 CSV
 ├── programs/               # 板上程序源码；COE 由源码生成
@@ -72,6 +76,8 @@ make help
 - [板上程序构建约束](programs/README.md)
 - [课程材料清单](materials/MANIFEST.md)
 - [官方课程任务说明](materials/instruction-site/docs/index.md)
+- [官方 Lab 2-A 流水线要求](materials/instruction-site/docs/lab2-A/0-overview.md)
+- [官方 Lab 2-B SoC 要求](materials/instruction-site/docs/lab2-B/0-overview.md)
 - [官方 Trace 说明](materials/instruction-site/docs/trace/trace.md)
 - [官方提交要求](materials/instruction-site/docs/home/submit.md)
 

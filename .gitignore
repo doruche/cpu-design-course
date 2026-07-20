@@ -2,8 +2,10 @@
 /.agents/
 /.codex/
 
-# Course downloads are recorded in materials/MANIFEST.md.
+# Course downloads and local guide-asset snapshots are recorded in
+# materials/MANIFEST.md.
 /materials/lab1/
+/materials/lab2/
 
 # Machine-local configuration and caches
 /local.mk

@@ -11,5 +11,5 @@ Treat them as temporary debt:
 - review every new warning and fix its cause unless there is a documented
   hardware reason for a narrow waiver.
 
-Create a separate product-specific baseline for the future pipeline project;
-do not reuse the single-cycle file blindly.
+Create a separate product-specific baseline when `projects/pipeline/` is
+created; do not reuse the single-cycle file blindly.

@@ -78,6 +78,10 @@ it is not an instruction-group implementation gate. Do not commit an untouched
 copy of the downloaded course spreadsheet; the original is identified by
 `materials/MANIFEST.md`.
 
-Use `design/pipeline/` after Lab 2 is published. Keep design statements aligned
-with live RTL rather than documenting intended behavior that the code no longer
-implements.
+At the start of Lab 2-A, create `design/pipeline/` before editing pipeline RTL.
+The single-cycle CSVs remain the ISA-level behavior contract and should not be
+copied into a second set of instruction rows. Pipeline design artifacts should
+instead record the stage allocation and pipeline-register fields, then the
+stall/flush/forwarding priority and memory/multiply/divide completion rules.
+Keep every design statement aligned with live RTL rather than documenting
+intended behavior that the code no longer implements.
