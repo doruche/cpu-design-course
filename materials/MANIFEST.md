@@ -16,6 +16,9 @@ repository. The course guide states that the materials are restricted to the
 
 | File | SHA-256 |
 | --- | --- |
+| `Lab1-PPT-单周期CPU设计-1（示例代码仿真）.pdf` | `1e5e4d346e7ea64d28fcee856dcf1e5fead53fc7c408f9000c5cf248fd2cb560` |
+| `Lab1-PPT-单周期CPU设计-2（取指、译码）.pdf` | `e834ca4a5809a1b1e9a3d1fa6a18cb7c02e782e17f7a9c3574047ea74f76b52f` |
+| `Lab1-PPT-单周期CPU设计-3（执行、访存、写回）.pdf` | `e88eed3e5875139a3bebfe22e0ea1f198398f1e87a02a536916456424fb5a7ee` |
 | `Theory1-PPT-单周期CPU设计.pdf` | `98fa7170884129dae62549f67347d04a34a59fb057c3b496d43c52c2da4a77f1` |
 | `miniLA_basic_ego1.zip` | `88c0cb3f72b820c080e2881fd6b4de3b4442c395e68420e104aab9257adad8fe` |
 | `miniLA_basic_minisys.zip` | `7d358d6c370f77356bb5744587ac6791493e7a1e8e60f0860113a26808fba387` |
