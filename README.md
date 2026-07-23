@@ -72,6 +72,7 @@ make help
 ## 文档入口
 
 - [项目工作流](docs/workflow.md)
+- [开发任务日志](docs/devlog/README.md)
 - [官方模板验证基线](docs/baseline.md)
 - [设计产物门禁](design/README.md)
 - [正式构建证据](artifacts/README.md)
