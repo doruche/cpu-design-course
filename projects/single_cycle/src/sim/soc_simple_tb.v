@@ -4,17 +4,19 @@
 
 module soc_simple_tb();
 
-    reg         clk  = 1;
-    reg         rstn = 0;
-    reg  [23:0] switch = 24'h123456;
-    wire [23:0] led;
+    reg         fpga_clk  = 1'b1;
+    reg         fpga_rstn = 1'b0;
+    reg  [15:0] switch = 16'h3456;
+    wire [15:0] led;
     wire [ 7:0] dig_en;
     wire [ 7:0] dig_seg;
+    wire [ 7:0] dig_seg1;
     wire        tx;
-    wire        rx = 1;
+    wire        rx = 1'b1;
 
-    initial #590 rstn = 01;
-    always #5 clk = !clk;
+    // fpga_rstn models the active-low reset at the EGO1 FPGA boundary.
+    initial #590 fpga_rstn = 1'b1;
+    always #5 fpga_clk = !fpga_clk;
 
     always @(*) begin
         if (DUT.U_cpu.U_core.ifetch_valid && DUT.U_cpu.U_core.ifetch_inst == 32'h73) begin
@@ -24,12 +26,13 @@ module soc_simple_tb();
     end
 
     miniRV_SoC DUT (
-        .fpga_clk   (clk),
-        .fpga_rst   (rstn),
+        .fpga_clk   (fpga_clk),
+        .fpga_rst   (fpga_rstn),
         .sw         (switch),
         .led        (led),
         .dig_en     (dig_en),
         .dig_seg    (dig_seg),
+        .dig_seg1   (dig_seg1),
         .rx         (rx),
         .tx         (tx)
 

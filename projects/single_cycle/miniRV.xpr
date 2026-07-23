@@ -242,8 +242,6 @@
       </File>
       <File Path="$PPRDIR/src/sim/soc_simple_tb.v">
         <FileInfo>
-          <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
@@ -280,11 +278,6 @@
         <Option Name="PamSignalDriverFile" Val="xil_bypass_driver"/>
         <Option Name="PamPseudoTop" Val="pseudo_tb"/>
         <Option Name="SrcSet" Val="sources_1"/>
-        <Option Name="XSimWcfgFile" Val="$PPRDIR/../axi_lite/top_tb_behav.wcfg"/>
-        <Option Name="XSimWcfgFile" Val="$PPRDIR/../axi_lite/soc_simu_behav.wcfg"/>
-        <Option Name="XSimWcfgFile" Val="$PPRDIR/soc_simu_fpu.wcfg"/>
-        <Option Name="XSimWcfgFile" Val="$PPRDIR/soc_simu_alu.wcfg"/>
-        <Option Name="XSimWcfgFile" Val="$PPRDIR/soc_simu_with_ddr3.wcfg"/>
         <Option Name="XSimWcfgFile" Val="$PPRDIR/soc_simple_tb.wcfg"/>
         <Option Name="xsim.simulate.runtime" Val="10us"/>
         <Option Name="xsim.simulate.log_all_signals" Val="true"/>
