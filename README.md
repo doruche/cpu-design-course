@@ -16,8 +16,8 @@
 - 指导书已固定到包含 Lab 2-A 和 Lab 2-B 的版本。
 - Vivado 2023.2 的 WSL-to-Windows batch 入口已经配置，Lab 1 综合和实现已在
   Windows 侧完成。Lab 1 不要求下板，本里程碑未做也不声明板级验证。
-- Lab 2 双产品基线已经建立；`projects/pipeline/` 当前仍是 `lab1-complete` 的原样
-  副本，尚未开始流水线 RTL 改造。
+- Lab 2 双产品基线已经刷新；`projects/pipeline/` 当前是 2026-07-23 的
+  `projects/single_cycle/` tracked 工程快照，尚未开始流水线 RTL 改造。
 
 ## 快速开始
 
@@ -52,7 +52,7 @@ make help
 .
 ├── projects/
 │   ├── single_cycle/       # 单周期 CPU，Lab 2 继续演化为单周期 SoC
-│   └── pipeline/           # 从 lab1-complete 派生，先做流水线 CPU，再集成 SoC
+│   └── pipeline/           # 从当前单周期基线派生，先做流水线 CPU，再集成 SoC
 ├── cdp-tests/              # 固定版本的 Trace submodule
 ├── materials/
 │   ├── instruction-site/   # 固定版本的官方指导书 submodule

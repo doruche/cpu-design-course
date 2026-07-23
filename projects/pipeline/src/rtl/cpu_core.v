@@ -37,20 +37,19 @@ module cpu_core(
     wire        alua_sel;
     wire        alub_sel;
     wire [ 2:0] ram_rop;
-    reg  [ 2:0] ram_rop_r;
+    reg  [ 2:0] captured_load_op;
     wire [ 3:0] ram_wop;
     wire        is_mul;
     wire        is_div;
-    wire        is_mul_div;
-    reg         mul_div_flag;       // 乘除法运算的标志位信号
+    wire        mul_div_start;
+    reg         mul_div_pending;
 
     // Register File
     wire [31:0] rf_rd1;
     wire [31:0] rf_rd2;
-    wire [31:0] rf_rd3;
     wire        rf_we;
-    wire        rf_we1;
-    reg  [ 4:0] rf_wR_r;
+    wire        commit_rf_we;
+    reg  [ 4:0] captured_rf_waddr;
     wire [ 4:0] rf_wR;
     reg  [31:0] rf_wD;
 
@@ -61,7 +60,7 @@ module cpu_core(
     wire [31:0] alu_a;
     wire [31:0] alu_b;
     wire [31:0] alu_c;
-    reg  [31:0] alu_c_r;
+    reg  [ 1:0] captured_mem_offset;
     wire        br;
     wire        mul_div_busy;
     
@@ -71,12 +70,16 @@ module cpu_core(
     wire [ 3:0] da_wen;
     wire [31:0] da_wdata;
     wire [31:0] ram_ext;
-    wire        is_ld_st;
-    reg         ld_st_flag;
-    wire        ld_st_done;         // 访存完成的标志位信号
+    wire        mem_start;
+    reg         mem_pending;
 
-    wire        inst_finished;      // 指令执行完成的标志位信号
-    reg         inst_finished_r;
+    // Completion and commit events. Pending state owns multi-cycle operations;
+    // response and busy inputs only qualify completion while that state is set.
+    wire        normal_done;
+    wire        mem_done;
+    wire        mul_div_done;
+    wire        inst_done;
+    reg         inst_done_r;
 
     /***************************** IF *****************************/
     reg rst_r;
@@ -84,7 +87,7 @@ module cpu_core(
     always @(posedge cpu_clk) rst_r <= cpu_rst;
 
     // 复位信号发生边沿变化时首次取指; 当前指令执行完毕后取下一条指令
-    assign ifetch_req  = first_req | inst_finished_r;
+    assign ifetch_req  = first_req | inst_done_r;
     assign ifetch_addr = pc;
 
     assign npc_offset = (npc_op == `NPC_JALR) ? alu_c : ext;
@@ -102,7 +105,7 @@ module cpu_core(
         .clk        (cpu_clk),
         .rst        (cpu_rst),
         .npc        (npc),
-        .fetch      (inst_finished),
+        .fetch      (inst_done),
         .pc         (pc)
     );
     
@@ -136,7 +139,7 @@ module cpu_core(
         .rR2        (inst[24:20]),
         .rD1        (rf_rd1),
         .rD2        (rf_rd2),
-        .we         (rf_we1),
+        .we         (commit_rf_we),
         .wR         (rf_wR),
         .wD         (rf_wD)
     );
@@ -147,25 +150,26 @@ module cpu_core(
         .ext        (ext)
     );
     
-    // 遇到访存指令时, 拉高ld_st_flag标志位，表示正在执行访存指令
-    assign is_ld_st = (ram_rop != `RAM_EXT_N) | (ram_wop != `RAM_WE_N);
+    // Memory request state remains owned here until the matching read or write
+    // response completes the single outstanding operation.
+    assign mem_start = (ram_rop != `RAM_EXT_N) | (ram_wop != `RAM_WE_N);
     always @(posedge cpu_clk or posedge cpu_rst) begin
-        if      (cpu_rst)    ld_st_flag <= 1'b0;
-        else if (is_ld_st)   ld_st_flag <= 1'b1;
-        else if (ld_st_done) ld_st_flag <= 1'b0;
+        if      (cpu_rst)  mem_pending <= 1'b0;
+        else if (mem_start) mem_pending <= 1'b1;
+        else if (mem_done)  mem_pending <= 1'b0;
     end
 
-    // 遇到乘除法指令时，拉高mul_div_flag标志位，表示正在执行乘除法指令
-    assign is_mul_div = is_mul | is_div;
+    // Multiply/divide state remains pending until the ALU drops busy.
+    assign mul_div_start = is_mul | is_div;
     always @(posedge cpu_clk or posedge cpu_rst) begin
-        if      (cpu_rst)       mul_div_flag <= 1'b0;
-        else if (is_mul_div)    mul_div_flag <= 1'b1;
-        else if (!mul_div_busy) mul_div_flag <= 1'b0;
+        if      (cpu_rst)      mul_div_pending <= 1'b0;
+        else if (mul_div_start) mul_div_pending <= 1'b1;
+        else if (mul_div_done)  mul_div_pending <= 1'b0;
     end
 
-    // 访存、乘除法指令无法在1个时钟内执行完，故先把指令的目标寄存器缓存起来
+    // Capture values that must survive after ifetch_valid is withdrawn.
     always @(posedge cpu_clk) begin
-        if (is_ld_st | is_mul_div) rf_wR_r <= inst[11:7];
+        if (mem_start | mul_div_start) captured_rf_waddr <= inst[11:7];
     end
 
     /***************************** EX *****************************/
@@ -198,14 +202,14 @@ module cpu_core(
     );
 
     MEXT U_MEM_EXT (
-        .op             (ram_rop_r),
+        .op             (captured_load_op),
         .din            (daccess_rdata),
-        .byte_offs      (alu_c_r[1:0]),
+        .byte_offs      (captured_mem_offset),
         .ext            (ram_ext)
     );
 
-    always @(posedge cpu_clk) if (is_ld_st) alu_c_r   <= alu_c;
-    always @(posedge cpu_clk) if (is_ld_st) ram_rop_r <= ram_rop;
+    always @(posedge cpu_clk) if (mem_start) captured_mem_offset <= alu_c[1:0];
+    always @(posedge cpu_clk) if (mem_start) captured_load_op    <= ram_rop;
 
     // Interface to Bus
     always @(posedge cpu_clk or posedge cpu_rst) begin
@@ -220,31 +224,34 @@ module cpu_core(
         end
     end
 
-    assign ld_st_done = daccess_rvalid | daccess_wresp;
-
     /***************************** WB *****************************/
-    assign rf_we1 = ld_st_flag   & daccess_rvalid |                 // Load指令在读取到数据时写回
-                    mul_div_flag & !mul_div_busy  |                 // 乘除法指令在运算完成时写回
-                    ifetch_valid & rf_we & !is_ld_st & !is_mul_div; // 其他指令在取到指令时写回
+    assign normal_done  = ifetch_valid & !mem_start & !mul_div_start;
+    assign mem_done     = mem_pending & (daccess_rvalid | daccess_wresp);
+    assign mul_div_done = mul_div_pending & !mul_div_busy;
+    assign inst_done    = normal_done | mem_done | mul_div_done;
 
-    assign rf_wR  = ld_st_flag | mul_div_flag ? rf_wR_r : inst[11:7];
+    assign commit_rf_we = normal_done & rf_we |
+                          mem_pending & daccess_rvalid |
+                          mul_div_done;
+
+    assign rf_wR = mem_pending | mul_div_pending
+                 ? captured_rf_waddr : inst[11:7];
 
     always @(*) begin
-        casex ({ld_st_flag, rf_wsel})
-            {1'b0, `WB_ALU}: rf_wD = alu_c;
-            {1'b0, `WB_PC4}: rf_wD = pc4;
-            {1'b0, `WB_EXT}: rf_wD = ext;
-            {1'b1, 2'b??  }: rf_wD = ram_ext;
-            default        : rf_wD = 32'h0;
-        endcase
+        if (mem_pending) begin
+            rf_wD = ram_ext;
+        end else begin
+            case (rf_wsel)
+                `WB_ALU:  rf_wD = alu_c;
+                `WB_PC4:  rf_wD = pc4;
+                `WB_EXT:  rf_wD = ext;
+                default:  rf_wD = 32'h0;
+            endcase
+        end
     end
 
-    assign inst_finished = ld_st_flag   & ld_st_done    |           // 访存指令在读写完毕时执行完成
-                           mul_div_flag & !mul_div_busy |           // 乘除法指令在运算完毕时完成
-                           ifetch_valid & !is_ld_st & !is_mul_div;  // 其他指令单周期完成（即取到指令的同时执行完成）
-
     always @(posedge cpu_clk or posedge cpu_rst) begin
-        inst_finished_r <= cpu_rst ? 1'b0 : inst_finished;
+        inst_done_r <= cpu_rst ? 1'b0 : inst_done;
     end
 
 
@@ -263,7 +270,7 @@ module cpu_core(
     wire [31:0] debug_mem_wdata /* verilator public */ ;    // MEM阶段写访存时的写数据 (若mem_we为0，此项可为任意值)
 
     assign debug_wb_pc    = pc;
-    assign debug_wb_rf_we = rf_we1;
+    assign debug_wb_rf_we = commit_rf_we;
     assign debug_wb_rf_wR = rf_wR;
     assign debug_wb_rf_wD = rf_wD;
 
