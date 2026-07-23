@@ -9,16 +9,6 @@
 
 lint_off -rule DECLFILENAME -file "*cdp-tests/vsrc/ram.v" -match "Filename 'ram' does not match MODULE name: 'IROM'*"
 
-lint_off -rule WIDTHEXPAND -file "*projects/single_cycle/src/rtl/ALU.v" -match "Operator NEQ expects 5 bits on the RHS, but RHS's CONST '4'h0' generates 4 bits.*"
-
-lint_off -rule WIDTHEXPAND -file "*projects/single_cycle/src/rtl/ALU.v" -match "Operator ASSIGNDLY expects 5 bits on the Assign RHS, but Assign RHS's CONST '4'h0' generates 4 bits.*"
-
-lint_off -rule WIDTHEXPAND -file "*projects/single_cycle/src/rtl/ALU.v" -match "Output port connection 'z' expects 66 bits on the pin connection, but pin connection's VARREF 'mulu_res' generates 64 bits.*"
-
-lint_off -rule WIDTHEXPAND -file "*projects/single_cycle/src/rtl/ALU.v" -match "Output port connection 'z' expects 33 bits on the pin connection, but pin connection's VARREF 'divu_quo' generates 32 bits.*"
-
-lint_off -rule WIDTHEXPAND -file "*projects/single_cycle/src/rtl/ALU.v" -match "Output port connection 'r' expects 33 bits on the pin connection, but pin connection's VARREF 'divu_rem' generates 32 bits.*"
-
 lint_off -rule WIDTHTRUNC -file "*projects/single_cycle/src/rtl/Inst_ROM.v" -match "Input port connection 'addra' expects 16 bits on the pin connection, but pin connection's SEL generates 30 bits.*"
 
 lint_off -rule WIDTHTRUNC -file "*projects/single_cycle/src/rtl/Data_RAM.v" -match "Input port connection 'addra' expects 16 bits on the pin connection, but pin connection's SEL generates 30 bits.*"
@@ -40,63 +30,5 @@ lint_off -rule UNDRIVEN -file "*projects/single_cycle/src/rtl/miniRV_SoC.v" -mat
 lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/Data_RAM.v" -match "Bits of signal are not used: 'data_addr'[1:0]*"
 
 lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/Inst_ROM.v" -match "Bits of signal are not used: 'inst_addr'[1:0]*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/cpu_core.v" -match "Signal is not driven, nor used: 'rf_rd3'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/cpu_core.v" -match "Bits of signal are not used: 'alu_c_r'[31:2]*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/ALU.v" -match "Signal is not used: 'mul_res'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/ALU.v" -match "Signal is not used: 'mulu_res'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/ALU.v" -match "Signal is not used: 'mul_busy'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/ALU.v" -match "Signal is not used: 'mulu_busy'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/ALU.v" -match "Signal is not used: 'div_quo'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/ALU.v" -match "Signal is not used: 'divu_quo'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/ALU.v" -match "Signal is not used: 'div_rem'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/ALU.v" -match "Signal is not used: 'divu_rem'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/ALU.v" -match "Signal is not used: 'div_busy'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/ALU.v" -match "Signal is not used: 'divu_busy'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/divider.v" -match "Signal is not used: 'clk'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/divider.v" -match "Signal is not used: 'rst'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/divider.v" -match "Signal is not used: 'x'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/divider.v" -match "Signal is not used: 'y'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/divider.v" -match "Signal is not used: 'start'*"
-
-lint_off -rule UNDRIVEN -file "*projects/single_cycle/src/rtl/divider.v" -match "Signal is not driven: 'z'*"
-
-lint_off -rule UNDRIVEN -file "*projects/single_cycle/src/rtl/divider.v" -match "Signal is not driven: 'r'*"
-
-lint_off -rule UNDRIVEN -file "*projects/single_cycle/src/rtl/divider.v" -match "Signal is not driven: 'busy'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/multiplier.v" -match "Signal is not used: 'clk'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/multiplier.v" -match "Signal is not used: 'rst'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/multiplier.v" -match "Signal is not used: 'x'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/multiplier.v" -match "Signal is not used: 'y'*"
-
-lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/multiplier.v" -match "Signal is not used: 'start'*"
-
-lint_off -rule UNDRIVEN -file "*projects/single_cycle/src/rtl/multiplier.v" -match "Signal is not driven: 'z'*"
-
-lint_off -rule UNDRIVEN -file "*projects/single_cycle/src/rtl/multiplier.v" -match "Signal is not driven: 'busy'*"
-
-lint_off -rule CASEX -file "*projects/single_cycle/src/rtl/cpu_core.v" -match "Suggest casez (with ?'s) in place of casex (with X's)*"
-
-lint_off -rule CASEINCOMPLETE -file "*projects/single_cycle/src/rtl/MREQ.v" -match "Case values incompletely covered (example pattern 0x0)*"
 
 lint_off -rule SYNCASYNCNET -file "*projects/single_cycle/src/rtl/miniRV_SoC.v" -match "Signal flopped as both synchronous and async: 'fpga_rst'*"

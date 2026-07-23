@@ -41,6 +41,10 @@ module MREQ (
                 if (offset == 2'h0) begin
                     da_wen   = 4'hF;
                 end
+            default: begin
+                da_wen   = 4'h0;
+                da_wdata = ram_wdata;
+            end
         endcase
     end
 
