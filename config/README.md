@@ -12,4 +12,6 @@ Treat them as temporary debt:
   hardware reason for a narrow waiver.
 
 Create a separate product-specific baseline when `projects/pipeline/` is
-created; do not reuse the single-cycle file blindly.
+created; do not reuse the single-cycle file blindly. The initial pipeline
+baseline is copied from the Lab 1 template only to make the product buildable;
+new pipeline warnings must be fixed rather than added as waivers.

@@ -10,12 +10,14 @@
   Trace（包括修复后的 `start`）均通过。
 - Lab 1 官方 `miniRV_basic_ego1` 工程的导入基线 tag 为
   `upstream-lab1-template`；完整 Lab 1 状态由 `lab1-complete` tag 保存。
-- `projects/single_cycle/src/rtl/` 是当前唯一 HDL 真相源。
+- `projects/single_cycle/src/rtl/` 和 `projects/pipeline/src/rtl/` 分别是两套产品的
+  HDL 真相源。
 - Trace 框架和指导书以固定 commit 的 Git submodule 引入。
 - 指导书已固定到包含 Lab 2-A 和 Lab 2-B 的版本。
 - Vivado 2023.2 的 WSL-to-Windows batch 入口已经配置，Lab 1 综合和实现已在
   Windows 侧完成。Lab 1 不要求下板，本里程碑未做也不声明板级验证。
-- Lab 2 尚未开始实现，`projects/pipeline/` 也尚未创建。
+- Lab 2 双产品基线已经建立；`projects/pipeline/` 当前仍是 `lab1-complete` 的原样
+  副本，尚未开始流水线 RTL 改造。
 
 ## 快速开始
 
@@ -50,12 +52,12 @@ make help
 .
 ├── projects/
 │   ├── single_cycle/       # 单周期 CPU，Lab 2 继续演化为单周期 SoC
-│   └── pipeline/           # Lab 1 完成后派生，当前尚未创建
+│   └── pipeline/           # 从 lab1-complete 派生，先做流水线 CPU，再集成 SoC
 ├── cdp-tests/              # 固定版本的 Trace submodule
 ├── materials/
 │   ├── instruction-site/   # 固定版本的官方指导书 submodule
-│   ├── lab1/               # 本地下载物，Git 忽略
-│   ├── lab2/               # Lab 2 本地材料快照，Git 忽略
+│   ├── lab1/               # 本地下载物；课件归档在 ppt/，Git 忽略
+│   ├── lab2/               # 本地材料快照；课件归档在 ppt/，Git 忽略
 │   └── MANIFEST.md         # 下载物哈希和依赖版本
 ├── design/                 # 持续维护的数据通路表和控制信号表 CSV
 ├── programs/               # 板上程序源码；COE 由源码生成

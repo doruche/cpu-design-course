@@ -1,0 +1,15 @@
+# Supplied scripts generate these when run directly. Repository builds stage
+# the source under build/, which is already ignored globally.
+**/*.bin
+**/*.coe
+**/*.hex
+**/*.s
+**/startup.h
+**/temp_main.c
+**/link.ld
+
+/0_uart_test/main
+/1_formatIO_test/main
+/2_sort_test/main
+/3_ddr_test/main
+/5_llama2.c/runq_bm

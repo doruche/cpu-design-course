@@ -1,0 +1,5 @@
+event,priority,if_id,id_ex,ex_mem,mem_wb,pc_action,notes
+reset,0,clear,clear,clear,clear,PC_INIT_VAL,Reset creates bubbles in every stage
+flush_on_mispredict,1,clear,clear,hold,hold,redirect,Younger wrong-path instructions must not commit
+data_or_memory_stall,2,hold,insert_bubble,hold,hold,hold,Preserve older work and stop younger fetch/decode
+normal_advance,3,advance,advance,advance,advance,pc_plus_4_or_prediction,Only when no higher-priority event is active

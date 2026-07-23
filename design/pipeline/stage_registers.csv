@@ -1,0 +1,22 @@
+stage_register,field,width,producer,consumer,reset_value,notes
+IF_ID,valid,1,IF,ID,0,Instruction is valid only after a completed fetch
+IF_ID,pc,32,IF,ID,0,Program counter of the fetched instruction
+IF_ID,inst,32,IF,ID,0,Instruction bits
+ID_EX,valid,1,ID,EX,0,Bubble when clear
+ID_EX,pc,32,ID,EX,0,Program counter carried with the instruction
+ID_EX,rs1_value,32,ID,EX,0,Decoded source operand or forwarding input
+ID_EX,rs2_value,32,ID,EX,0,Decoded source operand or forwarding input
+ID_EX,imm,32,ID,EX,0,Decoded immediate
+ID_EX,rd,5,ID,EX,0,Destination register number
+ID_EX,control,implementation-defined,ID,EX,0,Document individual controls before RTL
+EX_MEM,valid,1,EX,MEM,0,Bubble when clear
+EX_MEM,pc,32,EX,MEM,0,Program counter carried with the instruction
+EX_MEM,alu_result,32,EX,MEM,0,ALU or effective-address result
+EX_MEM,store_data,32,EX,MEM,0,Store data after forwarding
+EX_MEM,rd,5,EX,MEM,0,Destination register number
+EX_MEM,control,implementation-defined,EX,MEM,0,Memory and writeback controls
+MEM_WB,valid,1,MEM,WB,0,Bubble when clear
+MEM_WB,pc,32,MEM,WB,0,Program counter carried with the instruction
+MEM_WB,result,32,MEM,WB,0,ALU result or loaded data
+MEM_WB,rd,5,MEM,WB,0,Destination register number
+MEM_WB,control,implementation-defined,MEM,WB,0,Final writeback controls

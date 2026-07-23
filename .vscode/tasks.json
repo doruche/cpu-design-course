@@ -1,0 +1,59 @@
+{
+    "version": "2.0.0",
+    "inputs": [
+        {
+            "id": "rtlProduct",
+            "type": "pickString",
+            "description": "RTL product",
+            "options": [
+                "pipeline",
+                "single_cycle"
+            ],
+            "default": "pipeline"
+        },
+        {
+            "id": "traceTest",
+            "type": "promptString",
+            "description": "Basic Trace test",
+            "default": "addi"
+        }
+    ],
+    "tasks": [
+        {
+            "label": "RTL: lint selected product",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "lint",
+                "PRODUCT=${input:rtlProduct}"
+            ],
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "RTL: trace selected product",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "trace",
+                "PRODUCT=${input:rtlProduct}",
+                "TEST=${input:traceTest}"
+            ],
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "RTL: check both products",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "check-products"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

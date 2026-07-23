@@ -1,0 +1,7 @@
+producer_stage,consumer_stage,dependency,forward_source,stall_required,notes
+EX,MEM,store_data,EX result or MEM result,no,Store data must be forwarded before the memory stage
+EX,EX,ALU operand,EX/MEM result,no,Forward newest available result
+MEM,EX,ALU operand,MEM/WB result,no,Forward writeback result when EX/MEM has no match
+MEM,EX,load result,none,yes,Load-use dependency waits for returned data
+EX,ID,branch operand,EX/MEM or MEM/WB result,implementation-defined,Branch resolution stage determines exact requirement
+EX,EX,multiply/divide result,none,yes,Wait for multi-cycle completion handshake

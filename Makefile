@@ -5,6 +5,7 @@ ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 -include $(ROOT)/local.mk
 
 PRODUCT ?= single_cycle
+PRODUCTS := single_cycle pipeline
 PROJECT_DIR := $(ROOT)/projects/$(PRODUCT)
 RTL_DIR := $(PROJECT_DIR)/src/rtl
 TRACE_DIR := $(ROOT)/cdp-tests
@@ -25,7 +26,7 @@ export VIVADO_JOBS
 
 .PHONY: help doctor status lint trace-build trace trace-demo trace-all \
 	trace-clean vivado-stage vivado-synth vivado-bitstream \
-	export-submission check clean
+	export-submission check check-products clean
 
 help: ## Show available workflow targets.
 	@awk 'BEGIN {FS = ":.*## "; printf "Usage: make <target> [VAR=value]\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -79,6 +80,13 @@ export-submission: ## Build the final course ZIP; requires identity, report, and
 
 check: lint trace-all ## Run the current pre-commit checks.
 	@git diff --check
+
+check-products: ## Run lint and all Basic Trace cases for both Lab 2 products.
+	@for product in $(PRODUCTS); do \
+		printf '\n==> Checking %s\n' "$$product"; \
+		$(MAKE) trace-clean; \
+		$(MAKE) check PRODUCT="$$product"; \
+	 done
 
 clean: trace-clean ## Remove local WSL build outputs.
 	@rm -rf '$(ROOT)/.cache'

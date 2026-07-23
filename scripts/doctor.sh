@@ -34,6 +34,10 @@ printf '\nRepository inputs:\n'
 for path in \
     "$root/projects/single_cycle/miniRV.xpr" \
     "$root/projects/single_cycle/src/rtl/cpu_core.v" \
+    "$root/config/verilator-single_cycle.vlt" \
+    "$root/projects/pipeline/miniRV.xpr" \
+    "$root/projects/pipeline/src/rtl/cpu_core.v" \
+    "$root/config/verilator-pipeline.vlt" \
     "$root/cdp-tests/Makefile" \
     "$root/materials/instruction-site/docs/index.md"; do
     if [[ -e "$path" ]]; then
