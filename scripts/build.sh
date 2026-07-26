@@ -291,7 +291,15 @@ run_unit() {
         cache) unit_cache ;;
         axi-master) unit_axi_master ;;
         peripherals) unit_peripherals ;;
-        *) die "unknown unit suite: $1 (expected cache, axi-master, or peripherals)" ;;
+        c-test-software) "$root/scripts/run-c-test-software.sh" ;;
+        *) die "unknown unit suite: $1 (expected cache, axi-master, peripherals, or c-test-software)" ;;
+    esac
+}
+
+run_program() {
+    case "$1" in
+        c-test-0|c-test-1|c-test-2) "$root/scripts/build-c-test.sh" "$1" ;;
+        *) die "unknown program: $1 (expected c-test-0, c-test-1, or c-test-2)" ;;
     esac
 }
 
@@ -306,8 +314,37 @@ run_integration() {
 run_system() {
     case "$1" in
         soc-smoke) system_soc_smoke ;;
-        *) die "unknown system suite: $1 (expected soc-smoke)" ;;
+        c-test-0|c-test-1|c-test-2) system_c_test "$1" ;;
+        *) die "unknown system suite: $1 (expected soc-smoke or c-test-0..2)" ;;
     esac
+}
+
+system_c_test() {
+    local selector=$1
+    local test_id=${selector##*-}
+    local output="$cache_root/system/$selector"
+    local program="$cache_root/programs/c_test/$selector/$selector.raw.bin"
+    local transcript="$output/transcript.txt"
+    local -a rtl_sources
+    load_config single-soc-cache
+    print_config
+    printf 'system-suite: %s\n' "$selector"
+    printf '  backend: riscv32im-freestanding+iverilog+vvp\n'
+    printf '  artifact-directory: .cache/system/%s\n' "$selector"
+    run_program "$selector"
+    mkdir -p "$output"
+    mapfile -t rtl_sources < <(mapfile_sorted "$single_rtl")
+    iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
+        -DRUN_TRACE=1 -DSIMULATION_CLOCK=1 -DBEHAVIORAL_MEMORY=1 \
+        -DSOC_TOPOLOGY=1 -DENABLE_ICACHE=1 -DENABLE_DCACHE=1 \
+        -DC_TEST_ID="$test_id" -DPATH="$program" -I"$single_rtl" \
+        -s c_test_system_tb -o "$output/c-test-system" \
+        "${rtl_sources[@]}" "$trace_dir/vsrc/bram_axi.v" \
+        "$root/tests/c_test/c_test_system_tb.sv"
+    vvp "$output/c-test-system" "+TRANSCRIPT=$transcript" 2>&1 | \
+        tee "$output/system.log"
+    python3 "$root/scripts/check-c-test-transcript.py" \
+        "$test_id" "$transcript"
 }
 
 system_soc_smoke() {
@@ -356,6 +393,26 @@ run_gate() {
             trace_all_for pipeline-basic
             git -C "$root" diff --check
             ;;
+        single-stage4-auto)
+            just --justfile "$root/Justfile" --fmt --check
+            "$root/scripts/doctor.sh"
+            while IFS= read -r script; do
+                bash -n "$script"
+            done < <(find "$root/scripts" -maxdepth 1 -type f -name '*.sh' | sort)
+            if rg -n 'TODO|20XXXXXXXX|CLOCKS_PER_SEC' \
+                "$root/programs/c_test/0_uart_test/main.c" \
+                "$root/programs/c_test/1_formatIO_test" \
+                "$root/programs/c_test/2_sort_test" \
+                "$root/programs/c_test/runtime"; then
+                die "C_TEST 0..2 still contain a source placeholder or known typo"
+            fi
+            "$root/scripts/run-c-test-software.sh"
+            for program in c-test-0 c-test-1 c-test-2; do
+                run_program "$program"
+                system_c_test "$program"
+            done
+            run_gate closure
+            ;;
         closure)
             just --justfile "$root/Justfile" --fmt --check
             "$root/scripts/doctor.sh"
@@ -379,7 +436,7 @@ run_gate() {
             fi
             git -C "$root" diff --check
             ;;
-        *) die "unknown gate: $1 (expected single-stage2, single-stage3, products-basic, or closure)" ;;
+        *) die "unknown gate: $1 (expected single-stage2, single-stage3, single-stage4-auto, products-basic, or closure)" ;;
     esac
 }
 
@@ -411,10 +468,12 @@ show_status() {
     printf '\nStable configurations:\n'
     list_configs | sed 's/^/  /'
     printf '\nVerification suites:\n'
-    printf '  unit: cache, axi-master, peripherals\n'
+    printf '  unit: cache, axi-master, peripherals, c-test-software\n'
     printf '  integration: fabric-mmio, dcache-mmio\n'
-    printf '  system: soc-smoke\n'
-    printf '  gate: single-stage2, single-stage3, products-basic, closure\n'
+    printf '  system: soc-smoke, c-test-0, c-test-1, c-test-2\n'
+    printf '  gate: single-stage2, single-stage3, single-stage4-auto, products-basic, closure\n'
+    printf '\nBoard programs:\n'
+    printf '  c-test-0, c-test-1, c-test-2\n'
 }
 
 clean_outputs() {
@@ -441,6 +500,10 @@ case "$command" in
     unit)
         [[ $# == 2 ]] || die "usage: $0 unit SUITE"
         run_unit "$2"
+        ;;
+    program)
+        [[ $# == 2 ]] || die "usage: $0 program PROGRAM"
+        run_program "$2"
         ;;
     integration)
         [[ $# == 2 ]] || die "usage: $0 integration SUITE"
@@ -483,6 +546,6 @@ case "$command" in
         clean_outputs
         ;;
     *)
-        die "usage: $0 {status|show-config|lint|unit|integration|trace|trace-all|system|gate|vivado|export-submission|clean} ..."
+        die "usage: $0 {status|show-config|lint|unit|program|integration|trace|trace-all|system|gate|vivado|export-submission|clean} ..."
         ;;
 esac

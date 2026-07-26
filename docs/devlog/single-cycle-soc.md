@@ -6,7 +6,7 @@
 - 建立日期：2026-07-26
 - 基线提交：`87f2f3c`
 - 产品：`projects/single_cycle/`
-- 当前阶段：Stage 3 与构建/验证间章已完成；Stage 4 已定义、实现未开始
+- 当前阶段：Stage 4 S4-1～S4-3 已完成；S4-U 等待用户身份与课程 bitstream 证据
 
 本文记录单周期 SoC 开发的总体方向和阶段顺序。课程要求仍以固定版本的指导书、
 Trace 框架和课程验收说明为准；各阶段的具体接口、实现方案和验证安排在进入该阶段
@@ -72,8 +72,8 @@ Trace 框架和课程验收说明为准；各阶段的具体接口、实现方�
 - 增加经过真实产品 fabric 的 Cache bypass/enabled AXI Trace；
 - 增加由 CPU 执行测试程序、同时经过双 Cache、AXI、系统互连、主存和五类 MMIO 的
   自动化 SoC 系统仿真；
-- 本间章已完成；Stage 4 的软件、镜像、自动化和用户证据边界已在独立任务书中冻结，
-  实现尚未开始。
+- 本间章已完成；Stage 4 的软件、镜像和自动化已按独立任务书推进到 S4-3，用户证据
+  仍由 S4-U 单独收集。
 
 ### Stage 4：C_TEST 软件与自动化联调
 
@@ -107,8 +107,8 @@ Trace 框架和课程验收说明为准；各阶段的具体接口、实现方�
 - Stage 3：已完成，2026-07-26；里程碑 tag `single-cycle-soc-stage3`。
 - 构建/验证间章：Completed，2026-07-26；详见
   [独立任务书](build-cli-and-soc-verification.md)。
-- Stage 4：Defined，2026-07-27；详见[独立任务书](single-cycle-soc-stage4.md)，实现未
-  开始。
+- Stage 4：Awaiting User Board Evidence，2026-07-27；详见
+  [独立任务书](single-cycle-soc-stage4.md)，S4-1～S4-3 已完成，S4-U 未运行。
 - Stage 5：未开始。
 
 ## 阶段记录

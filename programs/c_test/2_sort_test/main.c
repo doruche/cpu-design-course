@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef C_TEST_STUDENT_ID
+#error C_TEST_STUDENT_ID must be supplied by the repository build
+#endif
+
 void swap(int* a, int* b)
 {
     int t = *a;
@@ -38,12 +42,12 @@ unsigned int fast_rand(unsigned int *seed)
     return *seed;
 }
 
-int main()
+#ifndef C_TEST_HOST
+int main(void)
 {
     uart_init();
 
-    // TODO 1: 把下面的 “20XXXXXXXX” 改成你的学号
-    printf("20XXXXXXXX Test #2 - Sorting test:\n");
+    printf(C_TEST_STUDENT_ID " Test #2 - Sorting test:\n");
 
     /****** Phase 0 ******/
     printf("<Phase 0> - Fixed size sorting test:\n");
@@ -59,7 +63,9 @@ int main()
     printf("Sorted array:\n");
     for (int i = 0; i < 8; i++) printf("%d ", arra[i]);
 
-    printf("\nTime consumed: %f ms\n", (float)(end - start) * 1000 / CLKS_PER_SEC);
+    printf("\nTime consumed: ");
+    c_test_print_time_ms(end - start);
+    printf(" ms\n");
 
     /****** Phase 1 ******/
     printf("\n<Phase 1> - Malloc test:\n");
@@ -69,7 +75,12 @@ int main()
     do {
         printf("Enter the size of the array:\n");
         scanf("%d", &size);
-        arra1 = (int*)malloc(size * sizeof(int));
+        if (size <= 0 || size > C_TEST_MAX_ARRAY_ITEMS) {
+            arra1 = 0;
+            printf("invalid size (expected 1..%d)\n", C_TEST_MAX_ARRAY_ITEMS);
+            continue;
+        }
+        arra1 = (int*)malloc((unsigned int)size * sizeof(int));
         if (arra1 == 0)
             printf("malloc failed\nPlease input a smaller number\n");
     } while (arra1 == 0);
@@ -96,10 +107,13 @@ int main()
         if ((i & 0x7) == 7) printf("\n");
     }
 
-    printf("\nTime consumed: %f ms\n", (float)(end - start) * 1000 / CLKS_PER_SEC);
+    printf("\nTime consumed: ");
+    c_test_print_time_ms(end - start);
+    printf(" ms\n");
 
     free(arra1);
 
     printf("\nmalloc released.\n");
     return 0;
 }
+#endif

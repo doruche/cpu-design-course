@@ -19,30 +19,53 @@ All six supplied programs are retained:
 
 | Directory | Purpose | Current status |
 | --- | --- | --- |
-| `0_uart_test/` | UART register and character I/O | Imported; TODOs not completed |
-| `1_formatIO_test/` | `printf`/`scanf` I/O | Imported; TODOs not completed |
-| `2_sort_test/` | Recursion and allocation | Imported; TODOs not completed |
+| `0_uart_test/` | UART register and character I/O | Stage 4 implemented |
+| `1_formatIO_test/` | `printf`/`scanf` I/O | Stage 4 implemented |
+| `2_sort_test/` | Recursion and allocation | Stage 4 implemented |
 | `3_ddr_test/` | DDR read/write test | Imported unchanged; deferred |
 | `4_coremark/` | CoreMark workload | Imported unchanged |
 | `5_llama2.c/` | LLAMA2 inference workload | Imported unchanged; deferred |
 
-## Isolated Builds
+## Repository Builds
 
 Do not run the supplied compile scripts directly in the source directories;
-they create temporary and generated files beside the source. Use this
-directory's wrapper instead:
+they create temporary and generated files beside the source. The only public
+entries are the root Just recipes:
 
 ```bash
-make list
-make build TEST=0_uart_test
-make build TEST=1_formatIO_test USE_DDR=1
-make build TEST=4_coremark
+STUDENT_ID=20XXXXXXXX just program c-test-0
+STUDENT_ID=20XXXXXXXX just program c-test-1
+STUDENT_ID=20XXXXXXXX just program c-test-2
 ```
 
-The wrapper copies the selected source tree to `build/<test>/` and invokes the
-supplied build there. All ELF, BIN, disassembly, COE, temporary linker scripts,
-and other generated files therefore remain under the ignored `build/` tree.
+Replace `20XXXXXXXX` with the real 8-to-12 digit student ID. If `STUDENT_ID` is
+unset, the build uses the explicit `DEVELOPMENT` identity and marks its manifest
+as non-candidate. Such a build is suitable for software and RTL development but
+must not be sent to the course bitstream or recorded as board evidence.
 
-The imported TODO-bearing tests are not expected to build successfully until
-their Lab 2-B implementation gate. Importing a program or staging its build is
-not evidence that it has passed compilation, simulation, or board validation.
+Outputs are isolated under `.cache/programs/c_test/<test>/`:
+
+- `.elf` and `.dump` preserve the audited RV32IM/ILP32 program and disassembly;
+- `.raw.bin` is the headerless behavioral-memory image;
+- `.coe` contains the same payload as 32-bit words;
+- `.uart.bin` adds the course downloader's word-count header;
+- `.manifest` records identity status, source/tool versions, sections, sizes,
+  hashes, memory bounds, and the cross-image word comparison.
+
+The repository-owned freestanding runtime under `runtime/` avoids inheriting
+the host toolchain's floating-point multilib ABI. It owns startup/BSS clearing,
+the bounded heap, C_TEST formatting/parsing, UART polling, and the timer's
+high-low-high snapshot. The retained `Makefile` and supplied `compile*.sh` files
+are provenance/reference inputs, not public build interfaces.
+
+Run deterministic software and CPU-driven RTL checks with:
+
+```bash
+just unit c-test-software
+just system c-test-0
+just system c-test-1
+just system c-test-2
+```
+
+These checks do not replace the user-owned course-bitstream test or validate a
+repository-generated FPGA bitstream.

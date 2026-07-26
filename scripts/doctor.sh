@@ -5,8 +5,9 @@ root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 source "$root/scripts/local-settings.sh"
 load_local_settings "$root/local.env"
 
-required=(git just make verilator g++ python3 iverilog vvp flock rsync unzip xmllint \
-    riscv32-unknown-elf-gcc riscv32-unknown-elf-objcopy riscv32-unknown-elf-objdump)
+required=(git just make cc verilator g++ python3 iverilog vvp flock rsync unzip xmllint \
+    riscv32-unknown-elf-gcc riscv32-unknown-elf-objcopy \
+    riscv32-unknown-elf-objdump riscv32-unknown-elf-readelf)
 optional=(gtkwave riscv64-unknown-elf-gcc cmd.exe powershell.exe wslpath)
 missing=0
 

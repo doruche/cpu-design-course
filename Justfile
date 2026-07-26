@@ -24,6 +24,10 @@ lint config:
 unit suite:
     @./scripts/build.sh unit "{{ suite }}"
 
+# Build and audit one board program.
+program program:
+    @./scripts/build.sh program "{{ program }}"
+
 # Run a named cross-module integration suite.
 integration suite:
     @./scripts/build.sh integration "{{ suite }}"

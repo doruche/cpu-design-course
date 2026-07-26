@@ -6,9 +6,10 @@
 ## Active Tasks
 
 - [单周期 SoC 开发](single-cycle-soc.md) — Active；Stage 0～3 已完成，Stage 3
-  里程碑为 `single-cycle-soc-stage3`，构建/验证间章已完成，Stage 4 已定义、实现未开始。
-- [单周期 SoC Stage 4：C_TEST 软件与自动化联调](single-cycle-soc-stage4.md) — Defined，
-  2026-07-27；合同与停止边界已冻结，C_TEST、构建、RTL 和板测实现均未开始。
+  里程碑为 `single-cycle-soc-stage3`，构建/验证间章与 Stage 4 S4-1～S4-3 已完成。
+- [单周期 SoC Stage 4：C_TEST 软件与自动化联调](single-cycle-soc-stage4.md) —
+  Awaiting User Board Evidence，2026-07-27；S4-1～S4-3 已实现，S4-U 等待真实学号和
+  课程 bitstream 板测。
 
 ## Completed Tasks
 

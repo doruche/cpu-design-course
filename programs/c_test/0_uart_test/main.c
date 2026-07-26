@@ -3,9 +3,24 @@
 #define DLED_BASE 0xFFFF2000
 #define UART_BASE 0xFFFF3000
 
-volatile unsigned int *peri_sw     = (volatile unsigned int*) SW_BASE;
-volatile unsigned int *peri_led    = (volatile unsigned int*) LED_BASE;
-volatile unsigned int *peri_digled = (volatile unsigned int*) DLED_BASE;
+#ifndef C_TEST_STUDENT_ID
+#error C_TEST_STUDENT_ID must be supplied by the repository build
+#endif
+
+#ifdef C_TEST_HOST
+extern unsigned int c_test_mmio_read(unsigned int address);
+extern void c_test_mmio_write(unsigned int address, unsigned int value);
+#else
+static unsigned int c_test_mmio_read(unsigned int address)
+{
+    return *(volatile unsigned int *)address;
+}
+
+static void c_test_mmio_write(unsigned int address, unsigned int value)
+{
+    *(volatile unsigned int *)address = value;
+}
+#endif
 
 /*  | offset | registers        |       | stat_reg | description             |      | ctrl_reg | description      |
     |--------+------------------+       |----------+-------------------------|      |----------+------------------|
@@ -15,39 +30,35 @@ volatile unsigned int *peri_digled = (volatile unsigned int*) DLED_BASE;
     |  0x0C  | control register |       | bit0     | 1: rx fifo is not empty |
 */
 
-volatile unsigned int *uart_rx_fifo  = (volatile unsigned int*) UART_BASE;
-volatile unsigned int *uart_tx_fifo  = (volatile unsigned int*)(UART_BASE + 0x4);
-volatile unsigned int *uart_stat_reg = (volatile unsigned int*)(UART_BASE + 0x8);
-volatile unsigned int *uart_ctrl_reg = (volatile unsigned int*)(UART_BASE + 0xC);
-
-void uart_init()
+void uart_init(void)
 {
-    // TODO 1: 清空 RX FIFO 和 TX FIFO
+    c_test_mmio_write(UART_BASE + 0xC, 0x3);
 }
 
 void uart_putc(char c)
 {
-    while (/* TODO 2 */);               // 如果 TX FIFO 已满，则等待已有字符发送完毕
-    *uart_tx_fifo = (unsigned int)c;    // 写入新的字符到TX FIFO
+    while (c_test_mmio_read(UART_BASE + 0x8) & (1u << 3)) {
+    }
+    c_test_mmio_write(UART_BASE + 0x4, (unsigned char)c);
 }
 
 char uart_getc(void)
 {
-    while (/* TODO 3 */);               // 如果 RX FIFO 为空, 则等待接收上位机的字符
-    return *uart_rx_fifo;               // 从RX FIFO读取一个字符
+    while (!(c_test_mmio_read(UART_BASE + 0x8) & (1u << 0))) {
+    }
+    return (char)c_test_mmio_read(UART_BASE);
 }
 
 void print_str(char* str)
 {
-    // TODO 4: 调用 uart_putc 函数实现字符串打印
+    while (*str) uart_putc(*str++);
 }
 
 int main()
 {
     uart_init();
 
-    // TODO 5: 把下面的 “20XXXXXXXX” 改成你的学号
-    print_str("20XXXXXXXX Test #0 - UART simple test:\n\r");
+    print_str(C_TEST_STUDENT_ID " Test #0 - UART simple test:\n\r");
     print_str("<Phase 0> - Output test:\n\r");
     print_str("Hello World!\n\r");
 
@@ -63,11 +74,11 @@ int main()
         print_str("\n\r");
 
         // 在数码管和LED显示字符的ASCII码
-        *peri_led = ch;
-        *peri_digled = ch;
+        c_test_mmio_write(LED_BASE, (unsigned char)ch);
+        c_test_mmio_write(DLED_BASE, (unsigned char)ch);
 
         // 拨码开关为0时结束测试
-        if (*peri_sw == 0)
+        if (c_test_mmio_read(SW_BASE) == 0)
         {
             print_str("Test ended.");
             break;

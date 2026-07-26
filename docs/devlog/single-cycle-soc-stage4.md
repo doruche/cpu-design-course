@@ -2,15 +2,16 @@
 
 ## 状态
 
-- 状态：Defined（2026-07-27；实现未开始）
+- 状态：Awaiting User Board Evidence（2026-07-27；S4-1～S4-3 已完成）
 - 父任务：[单周期 SoC 开发](single-cycle-soc.md)
 - 基线提交：`bb7e97d`
 - 产品配置：`single-soc-cache`
 - 课程程序：`programs/c_test/0_uart_test`、`1_formatIO_test`、`2_sort_test`
 - 物理软件 oracle：课程提供的 miniRV + EGO1 SoC bitstream
 
-本文只解析和冻结 Stage 4。C_TEST 源码、构建入口、系统 testbench、产品 RTL、XCI、
-COE 和 Vivado 工程均未在本检查点修改；未运行 C_TEST 构建、仿真或实际板测。
+S4-0 先冻结 Stage 4 合同；随后 S4-1～S4-3 已完成 C_TEST 源码、程序构建/镜像审计、
+软件定向测试和 CPU-driven System suite。实现没有修改产品 RTL、设计 CSV、XCI、COE
+绑定、Vivado 工程或两个 submodule；课程 bitstream 与实际板测仍未运行。
 
 ## 重新划界
 
@@ -175,6 +176,9 @@ just gate    single-stage4-auto
 默认写集：`Justfile`、`scripts/`、`tests/`、`programs/c_test/README.md` 和必要的测试
 fixture。此检查点不修改 C_TEST TODO 或产品 RTL。
 
+状态：Completed（2026-07-27）。红灯基线先复现三程序编译失败；随后公开 `program`
+入口、freestanding RV32IM runtime、ELF/镜像/manifest 审计与软件 host suite 已接入。
+
 ### S4-2：完成 C_TEST 0～2
 
 - 在失败测试存在后完成 UART、`printf`/`scanf`、timer 和身份内容；
@@ -184,6 +188,10 @@ fixture。此检查点不修改 C_TEST TODO 或产品 RTL。
 
 默认写集：`programs/c_test/0_uart_test/`、`1_formatIO_test/`、`2_sort_test/` 及 S4-1
 测试。若需要改变 CPU ISA 或 MMIO 当前合同，立即停止并重新定界。
+
+状态：Completed（2026-07-27）。十五处 TODO 与已知空指针、时钟宏、timer 顺序缺陷均
+已关闭；同时补上有界 `%s`、整数/heap 边界和不依赖宿主浮点 multilib 的六位小数输出。
+身份改成显式 `STUDENT_ID` 构建输入；未提供时只允许 `DEVELOPMENT` 非候选 manifest。
 
 ### S4-3：CPU-driven C_TEST System
 
@@ -197,7 +205,15 @@ fixture。此检查点不修改 C_TEST TODO 或产品 RTL。
 默认写集：`tests/`、`scripts/`、`Justfile` 和必要的 simulation-only adapter。产品 RTL
 默认只读；若失败指向硬件，先保存最小失败用例并请求重新定界。
 
+状态：Completed（2026-07-27）。三个 suite 均从 reset PC 经 CPU、双 Cache、AXI、
+product fabric、256 KiB simulation-only behavioral memory 和 MMIO 运行；输入与输出只经
+顶层 8N1 `rx`/`tx`。transcript oracle、Cache refill、普通 memory、uncached MMIO 及
+测试特定 LED/数码管/switch/timer 断言均通过。
+
 ### S4-U：课程 bitstream 用户验证
+
+状态：Awaiting User Identity And Board Evidence。真实学号、课程 bitstream 烧录和三套
+实际交互记录尚未提供；当前生成物均明确标记为非候选开发产物。
 
 agent 负责准备并记录：
 
