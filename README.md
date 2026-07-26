@@ -18,10 +18,10 @@
   Windows 侧完成。Lab 1 不要求下板，本里程碑未做也不声明板级验证。
 - Lab 2 双产品基线已经刷新；`projects/pipeline/` 当前是 2026-07-23 的
   `projects/single_cycle/` tracked 工程快照，尚未开始流水线 RTL 改造。
-- 单周期 SoC Stage 0～3 已完成：默认产品路径已经接入 ICache/DCache、状态机式
-  AXI master、主存/MMIO 系统互连、AXI BRAM 共享主存，以及开关、LED、数码管、
-  UART 和计时器；历史 ROM/RAM 路径仍由独立 Basic Trace profile 保留。Stage 4
-  C_TEST 与板级联调尚未开始。
+- 单周期 SoC Stage 0～3 已完成，里程碑 tag 为 `single-cycle-soc-stage3`。默认产品
+  路径已经接入 Cache、AXI 主存/MMIO 互连和五类外设；Stage 3 的完整链路、错误事务、
+  子字访问和外设边界均有仓库测试。Stage 4 C_TEST 与板级联调尚未开始，历史 ROM/RAM
+  路径仍由独立 Basic Trace profile 保留。
 
 ## 快速开始
 
