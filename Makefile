@@ -31,6 +31,8 @@ CACHE_TEST_DIR := $(ROOT)/tests/cache
 CACHE_TEST_BUILD_DIR := $(ROOT)/.cache/cache-tests
 AXI_TEST_DIR := $(ROOT)/tests/axi
 AXI_TEST_BUILD_DIR := $(ROOT)/.cache/axi-tests
+SOC_STAGE3_TEST_DIR := $(ROOT)/tests/soc_stage3
+SOC_STAGE3_TEST_BUILD_DIR := $(ROOT)/.cache/soc-stage3-tests
 
 export CCACHE_DIR
 export VIVADO_BIN
@@ -38,9 +40,10 @@ export VIVADO_STAGE_ROOT
 export VIVADO_JOBS
 
 .PHONY: help doctor status lint cache-lint cache-test axi-lint axi-test \
+	soc-stage3-lint soc-stage3-unit-test \
 	trace-profile trace-build trace trace-demo trace-all \
 	trace-basic trace-basic-all trace-axi trace-axi-all trace-axi-cache \
-	trace-axi-cache-all soc-stage2-test \
+	trace-axi-cache-all soc-stage2-test soc-stage3-test \
 	trace-clean vivado-stage vivado-synth vivado-bitstream \
 	export-submission check check-products clean
 
@@ -118,6 +121,26 @@ axi-test: axi-lint ## Test AXI arbitration, bursts, backpressure, and write chan
 		'$(SINGLE_CYCLE_RTL_DIR)/axi_master.v' '$(AXI_TEST_DIR)/axi_master_tb.sv'
 	@vvp '$(AXI_TEST_BUILD_DIR)/axi-cache'
 
+soc-stage3-lint: ## Lint the Stage 3 interconnect and five MMIO peripherals.
+	@verilator --lint-only --Wall --top-module soc_interconnect \
+		$(SINGLE_CYCLE_RTL_DIR)/soc_interconnect.v
+	@verilator --lint-only --Wall --top-module soc_peripherals \
+		-I$(SINGLE_CYCLE_RTL_DIR) \
+		$(SINGLE_CYCLE_RTL_DIR)/soc_peripherals.v \
+		$(SINGLE_CYCLE_RTL_DIR)/seven_segment.v \
+		$(SINGLE_CYCLE_RTL_DIR)/uart_peripheral.v
+
+soc-stage3-unit-test: soc-stage3-lint ## Test AXI routing and all Stage 3 MMIO devices.
+	@mkdir -p '$(SOC_STAGE3_TEST_BUILD_DIR)'
+	@iverilog -g2012 -Wall -I'$(SINGLE_CYCLE_RTL_DIR)' -s soc_stage3_tb \
+		-o '$(SOC_STAGE3_TEST_BUILD_DIR)/soc-stage3' \
+		'$(SINGLE_CYCLE_RTL_DIR)/soc_interconnect.v' \
+		'$(SINGLE_CYCLE_RTL_DIR)/soc_peripherals.v' \
+		'$(SINGLE_CYCLE_RTL_DIR)/seven_segment.v' \
+		'$(SINGLE_CYCLE_RTL_DIR)/uart_peripheral.v' \
+		'$(SOC_STAGE3_TEST_DIR)/soc_stage3_tb.sv'
+	@vvp '$(SOC_STAGE3_TEST_BUILD_DIR)/soc-stage3'
+
 trace-profile:
 	@test '$(TRACE_PROFILE)' = basic -o '$(TRACE_PROFILE)' = axi || \
 		{ echo 'TRACE_PROFILE must be basic or axi' >&2; exit 2; }
@@ -175,6 +198,9 @@ soc-stage2-test: ## Run the complete automated single-cycle SoC Stage 2 gate.
 	@$(MAKE) trace-basic-all PRODUCT=single_cycle
 	@$(MAKE) trace-axi-all
 	@$(MAKE) trace-axi-cache-all
+
+soc-stage3-test: soc-stage3-unit-test ## Run the complete automated single-cycle SoC Stage 3 gate.
+	@$(MAKE) soc-stage2-test
 
 trace-clean: ## Remove Trace executable, temporary memory image, and waveforms.
 	@$(MAKE) -C '$(TRACE_DIR)' clean

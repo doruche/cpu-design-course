@@ -88,6 +88,20 @@ module miniRV_SoC(
     );
 
 `ifdef RUN_TRACE
+
+    // The fixed Trace top-level exposes the board ports but does not model the
+    // physical peripherals. Keep deterministic inactive outputs in either
+    // Trace memory profile.
+    assign led = 16'h0;
+    assign dig_en = 8'h0;
+    assign dig_seg = 8'h0;
+    assign dig_seg1 = 8'h0;
+    assign tx = 1'b1;
+
+    /* verilator lint_off UNUSEDSIGNAL */
+    wire unused_trace_inputs = &{1'b0, sw, rx};
+    /* verilator lint_on UNUSEDSIGNAL */
+
 `ifdef BASIC_TRACE
 
     // The historical Basic Trace profile uses Inst_ROM/Data_RAM inside
@@ -161,6 +175,130 @@ module miniRV_SoC(
 `endif
 `else
 
+    wire [31:0] mem_awaddr;
+    wire [ 7:0] mem_awlen;
+    wire [ 2:0] mem_awsize;
+    wire [ 1:0] mem_awburst;
+    wire        mem_awvalid;
+    wire        mem_awready;
+    wire [31:0] mem_wdata;
+    wire [ 3:0] mem_wstrb;
+    wire        mem_wlast;
+    wire        mem_wvalid;
+    wire        mem_wready;
+    wire [ 1:0] mem_bresp;
+    wire        mem_bvalid;
+    wire        mem_bready;
+    wire [31:0] mem_araddr;
+    wire [ 7:0] mem_arlen;
+    wire [ 2:0] mem_arsize;
+    wire [ 1:0] mem_arburst;
+    wire        mem_arvalid;
+    wire        mem_arready;
+    wire [31:0] mem_rdata;
+    wire [ 1:0] mem_rresp;
+    wire        mem_rlast;
+    wire        mem_rvalid;
+    wire        mem_rready;
+
+    wire        mmio_rd_en;
+    wire [31:0] mmio_rd_addr;
+    wire [31:0] mmio_rd_data;
+    wire        mmio_rd_error;
+    wire        mmio_wr_en;
+    wire [31:0] mmio_wr_addr;
+    wire [31:0] mmio_wr_data;
+    wire [ 3:0] mmio_wr_strb;
+    wire        mmio_wr_error;
+
+    soc_interconnect U_interconnect (
+        .aclk           (sys_clk),
+        .areset         (sys_rst),
+        .s_axi_awaddr   (cpu_awaddr),
+        .s_axi_awlen    (cpu_awlen),
+        .s_axi_awsize   (cpu_awsize),
+        .s_axi_awburst  (cpu_awburst),
+        .s_axi_awvalid  (cpu_awvalid),
+        .s_axi_awready  (cpu_awready),
+        .s_axi_wdata    (cpu_wdata),
+        .s_axi_wstrb    (cpu_wstrb),
+        .s_axi_wlast    (cpu_wlast),
+        .s_axi_wvalid   (cpu_wvalid),
+        .s_axi_wready   (cpu_wready),
+        .s_axi_bresp    (cpu_bresp),
+        .s_axi_bvalid   (cpu_bvalid),
+        .s_axi_bready   (cpu_bready),
+        .s_axi_araddr   (cpu_araddr),
+        .s_axi_arlen    (cpu_arlen),
+        .s_axi_arsize   (cpu_arsize),
+        .s_axi_arburst  (cpu_arburst),
+        .s_axi_arvalid  (cpu_arvalid),
+        .s_axi_arready  (cpu_arready),
+        .s_axi_rdata    (cpu_rdata),
+        .s_axi_rresp    (cpu_rresp),
+        .s_axi_rlast    (cpu_rlast),
+        .s_axi_rvalid   (cpu_rvalid),
+        .s_axi_rready   (cpu_rready),
+        .m_axi_awaddr   (mem_awaddr),
+        .m_axi_awlen    (mem_awlen),
+        .m_axi_awsize   (mem_awsize),
+        .m_axi_awburst  (mem_awburst),
+        .m_axi_awvalid  (mem_awvalid),
+        .m_axi_awready  (mem_awready),
+        .m_axi_wdata    (mem_wdata),
+        .m_axi_wstrb    (mem_wstrb),
+        .m_axi_wlast    (mem_wlast),
+        .m_axi_wvalid   (mem_wvalid),
+        .m_axi_wready   (mem_wready),
+        .m_axi_bresp    (mem_bresp),
+        .m_axi_bvalid   (mem_bvalid),
+        .m_axi_bready   (mem_bready),
+        .m_axi_araddr   (mem_araddr),
+        .m_axi_arlen    (mem_arlen),
+        .m_axi_arsize   (mem_arsize),
+        .m_axi_arburst  (mem_arburst),
+        .m_axi_arvalid  (mem_arvalid),
+        .m_axi_arready  (mem_arready),
+        .m_axi_rdata    (mem_rdata),
+        .m_axi_rresp    (mem_rresp),
+        .m_axi_rlast    (mem_rlast),
+        .m_axi_rvalid   (mem_rvalid),
+        .m_axi_rready   (mem_rready),
+        .mmio_rd_en     (mmio_rd_en),
+        .mmio_rd_addr   (mmio_rd_addr),
+        .mmio_rd_data   (mmio_rd_data),
+        .mmio_rd_error  (mmio_rd_error),
+        .mmio_wr_en     (mmio_wr_en),
+        .mmio_wr_addr   (mmio_wr_addr),
+        .mmio_wr_data   (mmio_wr_data),
+        .mmio_wr_strb   (mmio_wr_strb),
+        .mmio_wr_error  (mmio_wr_error)
+    );
+
+    soc_peripherals U_peripherals (
+        .clk            (sys_clk),
+        .rst            (sys_rst),
+        .mmio_rd_en     (mmio_rd_en),
+        .mmio_rd_addr   (mmio_rd_addr),
+        .mmio_rd_data   (mmio_rd_data),
+        .mmio_rd_error  (mmio_rd_error),
+        .mmio_wr_en     (mmio_wr_en),
+        .mmio_wr_addr   (mmio_wr_addr),
+        .mmio_wr_data   (mmio_wr_data),
+        .mmio_wr_strb   (mmio_wr_strb),
+        .mmio_wr_error  (mmio_wr_error),
+        .sw             (sw),
+        .led            (led),
+        .dig_en         (dig_en),
+        .dig_seg        (dig_seg),
+        .rx             (rx),
+        .tx             (tx)
+    );
+
+    // EGO1 has two segment buses for its two groups of four digits. The
+    // course contract permits both groups to share the same segment pattern.
+    assign dig_seg1 = dig_seg;
+
     // Vivado supplies the canonical Block Memory Generator AXI4 IP. Optional
     // AXI lock/cache/protection ports are disabled in that IP configuration.
     wire [3:0] unused_bram_bid;
@@ -170,34 +308,34 @@ module miniRV_SoC(
         .s_aclk         (sys_clk),
         .s_aresetn      (!sys_rst),
         .s_axi_awid     (4'h6),
-        .s_axi_awaddr   (cpu_awaddr),
-        .s_axi_awlen    (cpu_awlen),
-        .s_axi_awsize   (cpu_awsize),
-        .s_axi_awburst  (cpu_awburst),
-        .s_axi_awready  (cpu_awready),
-        .s_axi_awvalid  (cpu_awvalid),
-        .s_axi_wdata    (cpu_wdata),
-        .s_axi_wstrb    (cpu_wstrb),
-        .s_axi_wvalid   (cpu_wvalid),
-        .s_axi_wlast    (cpu_wlast),
-        .s_axi_wready   (cpu_wready),
+        .s_axi_awaddr   (mem_awaddr),
+        .s_axi_awlen    (mem_awlen),
+        .s_axi_awsize   (mem_awsize),
+        .s_axi_awburst  (mem_awburst),
+        .s_axi_awready  (mem_awready),
+        .s_axi_awvalid  (mem_awvalid),
+        .s_axi_wdata    (mem_wdata),
+        .s_axi_wstrb    (mem_wstrb),
+        .s_axi_wvalid   (mem_wvalid),
+        .s_axi_wlast    (mem_wlast),
+        .s_axi_wready   (mem_wready),
         .s_axi_bid      (unused_bram_bid),
-        .s_axi_bready   (cpu_bready),
-        .s_axi_bresp    (cpu_bresp),
-        .s_axi_bvalid   (cpu_bvalid),
+        .s_axi_bready   (mem_bready),
+        .s_axi_bresp    (mem_bresp),
+        .s_axi_bvalid   (mem_bvalid),
         .s_axi_arid     (4'h6),
-        .s_axi_araddr   (cpu_araddr),
-        .s_axi_arlen    (cpu_arlen),
-        .s_axi_arsize   (cpu_arsize),
-        .s_axi_arburst  (cpu_arburst),
-        .s_axi_arready  (cpu_arready),
-        .s_axi_arvalid  (cpu_arvalid),
+        .s_axi_araddr   (mem_araddr),
+        .s_axi_arlen    (mem_arlen),
+        .s_axi_arsize   (mem_arsize),
+        .s_axi_arburst  (mem_arburst),
+        .s_axi_arready  (mem_arready),
+        .s_axi_arvalid  (mem_arvalid),
         .s_axi_rid      (unused_bram_rid),
-        .s_axi_rdata    (cpu_rdata),
-        .s_axi_rvalid   (cpu_rvalid),
-        .s_axi_rlast    (cpu_rlast),
-        .s_axi_rready   (cpu_rready),
-        .s_axi_rresp    (cpu_rresp)
+        .s_axi_rdata    (mem_rdata),
+        .s_axi_rvalid   (mem_rvalid),
+        .s_axi_rlast    (mem_rlast),
+        .s_axi_rready   (mem_rready),
+        .s_axi_rresp    (mem_rresp)
     );
 
 `endif

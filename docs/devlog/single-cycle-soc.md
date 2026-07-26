@@ -6,7 +6,7 @@
 - 建立日期：2026-07-26
 - 基线提交：`87f2f3c`
 - 产品：`projects/single_cycle/`
-- 当前阶段：Stage 2 已完成；Stage 3 未开始
+- 当前阶段：Stage 3 已完成；Stage 4 未开始
 
 本文记录单周期 SoC 开发的总体方向和阶段顺序。课程要求仍以固定版本的指导书、
 Trace 框架和课程验收说明为准；各阶段的具体接口、实现方案和验证安排在进入该阶段
@@ -89,7 +89,8 @@ Trace 框架和课程验收说明为准；各阶段的具体接口、实现方�
 - Stage 0：已完成，2026-07-26。
 - Stage 1：已完成，2026-07-26。
 - Stage 2：已完成，2026-07-26。
-- Stage 3～Stage 5：未开始。
+- Stage 3：已完成，2026-07-26。
+- Stage 4～Stage 5：未开始。
 
 ## 阶段记录
 
@@ -203,3 +204,60 @@ Stage 3 外设行为；综合后正时序裕量不能替代实现后时序和实
 Stage 3 handoff：当前 `axi_master` 只连接一个 AXI BRAM 从设备，Cache 已保留
 `0xFFFF_xxxx` uncached 访问方向。下一阶段需要在不破坏当前三种 Trace profile 的
 前提下加入系统互连、主存路由和五类内存映射外设；本阶段完成不自动启动 Stage 3。
+
+### Stage 3：I/O 与 SoC 互连
+
+状态：Completed（2026-07-26）
+
+本阶段对照指导书把范围确定为系统地址路由、五类外设 RTL 和 EGO1 顶层连接；
+不包含 C_TEST TODO、程序镜像切换、implementation、bitstream 或实际下板。外设接入
+没有改变 ISA 数据通路、控制器或 Trace public 接口，因此本阶段没有修改单周期 CPU
+的两份设计 CSV。
+
+本阶段完成了以下工作：
+
+- 新增可综合的 `soc_interconnect`，承担指导书中总线桥的角色。它将最高 64 KiB
+  `0xFFFF_0000～0xFFFF_FFFF` 路由到单拍 MMIO，其余地址继续转发到 AXI BRAM；
+  主存读突发保持 AXI 元数据和逐拍响应，写地址与写数据通道继续独立握手。
+- 沿用 DCache 已验证的 `0xFFFF_xxxx` uncached 路径：外设读不分配 Cache，保持原始
+  地址并只请求/接收一个 32 位数据拍；外设写按 CPU 产生的字节 strobe 直达总线。
+- 新增 `soc_peripherals`，统一实现课程地址表与设备选择：开关
+  `0xFFFF_0000`、LED `0xFFFF_1000`、数码管 `0xFFFF_2000`、UART
+  `0xFFFF_3000～0xFFFF_300C`、计时器 `0xFFFF_4000/0xFFFF_4008`。不存在的端口和
+  非法访问返回 AXI DECERR，而不是误落到主存。
+- LED 和数码管输出寄存器支持 AXI 字节写掩码。八位数码管按 32 位十六进制值动态
+  扫描，并按 EGO1 的位选/段选高电平有效约定驱动；两组四位数码管共享段码。
+- UART 使用 50 MHz 时钟、115200 baud、8N1 串行格式和各 16 字节的 RX/TX FIFO。
+  四个寄存器的地址及状态/控制位兼容课程 C_TEST 所使用的 AXI UARTLite 约定：
+  RX FIFO、TX FIFO、状态寄存器、清空 FIFO 的控制寄存器。FIFO payload 写入与异步
+  复位状态分离，Vivado 最终将两组 FIFO 推断为 16×8 分布式 RAM。
+- 计时器是复位后自动递增的 64 位计数器，低、高 32 位分别从偏移 `0x000`、`0x008`
+  读取。开关、LED、数码管、UART RX/TX 已连接既有 EGO1 顶层端口与 XDC 引脚。
+- Trace profile 继续按指导书要求在 `RUN_TRACE` 下直连行为级 AXI BRAM，不引入
+  Vivado IP 或物理外设模型；非 Trace 产品才连接系统互连和外设。新增
+  `make soc-stage3-lint`、`make soc-stage3-unit-test` 和汇总门禁
+  `make soc-stage3-test`。
+
+本阶段验证记录：
+
+- `make soc-stage3-unit-test`：通过。定向覆盖主存/MMIO 路由、AR/R 与独立 AW/W/B
+  背压、非法 MMIO 的 DECERR、开关读、LED/数码管读写与字节掩码、64 位计时器、
+  UART 状态/控制、TX 串行帧和 RX FIFO 收取/弹出。
+- `make soc-stage3-test`：通过；其中 Stage 2 的 Cache 与 AXI master 模块测试、三种
+  lint profile 均继续通过，历史 Basic、AXI Cache 旁路、AXI Cache 启用三轮完整
+  Trace 各 45 项通过、0 项失败。
+- `xmllint --noout projects/single_cycle/miniRV.xpr` 和 `git diff --check`：通过；四个
+  新 RTL 文件已加入 canonical Vivado Design Sources。
+- Vivado 2023.2 综合完成，最终产品层次包含 ICache/DCache、`axi_master`、
+  `soc_interconnect`、五类外设和 AXI BRAM，0 error、0 critical warning。50 MHz CPU
+  时钟下综合后 overall WNS 为 1.344 ns、TNS 为 0；资源为 3726 Slice LUT、
+  1746 Slice Register、12.5 Block RAM Tile、0 DSP。
+
+本阶段没有运行 Vivado implementation、bitstream 生成、C_TEST 或板级测试。综合后
+正时序裕量不等于实现后时序收敛，UART 串行 RTL 仿真也不能替代 EGO1 与上位机的
+实际通信观察。
+
+Stage 4 handoff：硬件已经提供 C_TEST 0～2 所需的完整地址与 UARTLite 寄存器语义。
+下一阶段需要先完成三套程序中的 UART/TODO 和身份文本，隔离构建并检查 COE，再更新
+BRAM 初始化镜像、生成 bitstream，由用户依次观察 UART、开关、LED、数码管和计时
+结果；Stage 3 完成不自动启动 Stage 4。
