@@ -18,6 +18,8 @@
   Windows 侧完成。Lab 1 不要求下板，本里程碑未做也不声明板级验证。
 - Lab 2 双产品基线已经刷新；`projects/pipeline/` 当前是 2026-07-23 的
   `projects/single_cycle/` tracked 工程快照，尚未开始流水线 RTL 改造。
+- 单周期 SoC Stage 0～1 已完成：ICache/DCache 已整理为 canonical RTL，并有独立的
+  旁路/启用测试；它们尚未接入 `cpu_top`，AXI 主存路径仍未开始。
 
 ## 快速开始
 

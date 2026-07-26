@@ -59,6 +59,9 @@ itself:
 | `bin2coe.py` | `99bad5a69fe42450a9df163028a864cf5ffc2378bad9b3907c6dfcb119dd6254` | UTF-8 runnable copy of the guide converter | Derived from `bin2coe-guide.py` |
 | `c_test_rv_stu.tar.gz` | `1b685c2334d2fac3d1f188ab1c420b670af3b37a3e3bb7748efe7ebc51612686` | miniRV I/O, DDR, CoreMark, and LLAMA2 test programs | `docs/lab2-B/assets/c_test_rv_stu.tar.gz` |
 | `lab2_IOtest_miniRV_ego1.bit` | `fcbbfe3815c278050f4fdf51585da8863c90a53bf55818aa3879b3c2b26130ac` | User-owned EGO1 validation of completed C_TEST programs | `docs/lab2-B/assets/lab2_IOtest_miniRV_ego1.bit` |
+| `ICache.v` | `6be3a4a4fb56d76bb0462092e9efced1d0afd2820f275bb338bce6e4113248f8` | Prior-course ICache source snapshot used as the Stage 1 implementation input | User-provided Computer Organization Lab 3 source |
+| `DCache.v` | `9fbc8bd0c2522a6271d01338e7e0dee0d4385067209923e3399867566028ae4e` | Prior-course DCache source snapshot used as the Stage 1 implementation input | User-provided Computer Organization Lab 3 source |
+| `acceptance-check.png` | `1c58fcd274c1ae29b1ab128fac5e3daadebff03ddd49eb10c80ee000b3d18158` | Local snapshot of the 2026 course inspection and grading summary | User-provided course slide screenshot |
 
 These copies are convenience inputs, not a second course-contract source. When
 the guide pin changes, compare them with the listed source files and refresh
@@ -80,7 +83,9 @@ The guide requires both Lab 2 streams to start by copying the completed Lab 1
 project, and the 2026-07-23 download-center listing does not include a separate
 Lab 2 Vivado template or final report template. The ICache/DCache source
 required by Lab 2-B is prior student work from Computer Organization Lab 3,
-not an attachment supplied by this guide.
+not an attachment supplied by this guide. The user-provided snapshots above
+remain immutable material inputs; maintained UTF-8 product RTL is derived into
+`projects/single_cycle/src/rtl/` and is not expected to remain byte-identical.
 
 ## Pinned Repositories
 

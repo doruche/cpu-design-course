@@ -172,7 +172,8 @@ Vivado 工程；最终 ZIP 不得超过 100 MB。报告还要给出单周期和�
   pipeline 仍是 `lab1-complete` 的原样副本，尚未进入流水线 RTL 实现。
 - 当前根构建已能分别验证两套产品的 Basic Trace。AXI SoC 接入后仍需依据实际
   编译拓扑增加 AXI 验证入口，不能把当前 Basic Trace 结果当作 AXI Trace 证据。
-- 仓库中还没有 ICache/DCache 源码，需要在 B 线开始前确认来源和接口兼容性。
+- 用户已在 `materials/lab2/` 中补充先前课程实验的 ICache/DCache 源码快照；维护版
+  已进入单周期产品 RTL 并完成独立旁路/启用测试，尚待 Stage 2 接入 CPU 与 AXI。
 - 本地 `materials/lab2/c_test_rv_stu.tar.gz` 已按 Manifest 哈希验证；六套程序均已
   导入 `programs/c_test/`。测试 0～2 的 TODO 尚未实现，测试 3 和测试 5 仅保留
   原始基线，等待 Minisys/DDR 扩展门禁。

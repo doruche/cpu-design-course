@@ -129,11 +129,11 @@ bounded sequential gates:
    timing violation; the single-cycle SoC minimum is 25 MHz.
 
 The guide assumes reusable ICache and DCache modules from the earlier Computer
-Organization Lab 3. Those sources are not included in this repository or in
-the Lab 2 guide assets, so their provenance and interface compatibility must be
-resolved before the single-cycle SoC cache gate. The existing Lab 1 EGO1
-project is the starting template for both streams; no separate Lab 2 Vivado
-template is required by the guide.
+Organization Lab 3; they are not included in the Lab 2 guide assets. The local
+source snapshots and their provenance are recorded under `materials/`, while
+the maintained product versions live under `projects/single_cycle/src/rtl/`.
+The existing Lab 1 EGO1 project is the starting template for both streams; no
+separate Lab 2 Vivado template is required by the guide.
 
 Before the pipeline product is created, extend the root build configuration
 with a `pipeline` lint baseline. Before AXI integration, split Basic and AXI
