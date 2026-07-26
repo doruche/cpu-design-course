@@ -40,7 +40,8 @@ export VIVADO_STAGE_ROOT
 export VIVADO_JOBS
 
 .PHONY: help doctor status lint cache-lint cache-test axi-lint axi-test \
-	soc-stage3-lint soc-stage3-unit-test \
+	soc-stage3-lint soc-stage3-unit-test soc-stage3-peripheral-test \
+	soc-stage3-full-test \
 	trace-profile trace-build trace trace-demo trace-all \
 	trace-basic trace-basic-all trace-axi trace-axi-all trace-axi-cache \
 	trace-axi-cache-all soc-stage2-test soc-stage3-test \
@@ -141,6 +142,42 @@ soc-stage3-unit-test: soc-stage3-lint ## Test AXI routing and all Stage 3 MMIO d
 		'$(SOC_STAGE3_TEST_DIR)/soc_stage3_tb.sv'
 	@vvp '$(SOC_STAGE3_TEST_BUILD_DIR)/soc-stage3'
 
+soc-stage3-peripheral-test: soc-stage3-lint ## Test UART, display scan, and timer edge cases.
+	@mkdir -p '$(SOC_STAGE3_TEST_BUILD_DIR)'
+	@iverilog -g2012 -Wall -I'$(SINGLE_CYCLE_RTL_DIR)' -s uart_peripheral_tb \
+		-o '$(SOC_STAGE3_TEST_BUILD_DIR)/uart-peripheral' \
+		'$(SINGLE_CYCLE_RTL_DIR)/uart_peripheral.v' \
+		'$(SOC_STAGE3_TEST_DIR)/uart_peripheral_tb.sv'
+	@vvp '$(SOC_STAGE3_TEST_BUILD_DIR)/uart-peripheral'
+	@iverilog -g2012 -Wall -I'$(SINGLE_CYCLE_RTL_DIR)' -s seven_segment_tb \
+		-o '$(SOC_STAGE3_TEST_BUILD_DIR)/seven-segment' \
+		'$(SINGLE_CYCLE_RTL_DIR)/seven_segment.v' \
+		'$(SOC_STAGE3_TEST_DIR)/seven_segment_tb.sv'
+	@vvp '$(SOC_STAGE3_TEST_BUILD_DIR)/seven-segment'
+	@iverilog -g2012 -Wall -I'$(SINGLE_CYCLE_RTL_DIR)' -s timer_peripheral_tb \
+		-o '$(SOC_STAGE3_TEST_BUILD_DIR)/timer-peripheral' \
+		'$(SINGLE_CYCLE_RTL_DIR)/soc_peripherals.v' \
+		'$(SINGLE_CYCLE_RTL_DIR)/seven_segment.v' \
+		'$(SINGLE_CYCLE_RTL_DIR)/uart_peripheral.v' \
+		'$(SOC_STAGE3_TEST_DIR)/timer_peripheral_tb.sv'
+	@vvp '$(SOC_STAGE3_TEST_BUILD_DIR)/timer-peripheral'
+
+soc-stage3-full-test: soc-stage3-lint ## Test the enabled-DCache-to-peripheral product chain.
+	@mkdir -p '$(SOC_STAGE3_TEST_BUILD_DIR)'
+	@iverilog -g2012 -Wall -DRUN_TRACE=1 -DENABLE_DCACHE=1 \
+		-DPATH='$(TRACE_DIR)/bin/addi.bin' \
+		-I'$(SINGLE_CYCLE_RTL_DIR)' -s soc_stage3_full_tb \
+		-o '$(SOC_STAGE3_TEST_BUILD_DIR)/soc-stage3-full' \
+		'$(SINGLE_CYCLE_RTL_DIR)/DCache.v' \
+		'$(SINGLE_CYCLE_RTL_DIR)/axi_master.v' \
+		'$(SINGLE_CYCLE_RTL_DIR)/soc_interconnect.v' \
+		'$(SINGLE_CYCLE_RTL_DIR)/soc_peripherals.v' \
+		'$(SINGLE_CYCLE_RTL_DIR)/seven_segment.v' \
+		'$(SINGLE_CYCLE_RTL_DIR)/uart_peripheral.v' \
+		'$(TRACE_DIR)/vsrc/bram_axi.v' \
+		'$(SOC_STAGE3_TEST_DIR)/soc_stage3_full_tb.sv'
+	@vvp '$(SOC_STAGE3_TEST_BUILD_DIR)/soc-stage3-full'
+
 trace-profile:
 	@test '$(TRACE_PROFILE)' = basic -o '$(TRACE_PROFILE)' = axi || \
 		{ echo 'TRACE_PROFILE must be basic or axi' >&2; exit 2; }
@@ -199,7 +236,8 @@ soc-stage2-test: ## Run the complete automated single-cycle SoC Stage 2 gate.
 	@$(MAKE) trace-axi-all
 	@$(MAKE) trace-axi-cache-all
 
-soc-stage3-test: soc-stage3-unit-test ## Run the complete automated single-cycle SoC Stage 3 gate.
+soc-stage3-test: soc-stage3-unit-test soc-stage3-peripheral-test \
+	soc-stage3-full-test ## Run the automated single-cycle SoC Stage 3 gate.
 	@$(MAKE) soc-stage2-test
 
 trace-clean: ## Remove Trace executable, temporary memory image, and waveforms.

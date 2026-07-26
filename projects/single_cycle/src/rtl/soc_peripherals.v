@@ -13,7 +13,11 @@ module soc_peripherals #(
     output reg  [31:0]  mmio_rd_data,
     output reg          mmio_rd_error,
     input  wire         mmio_wr_en,
+    // Low address bits select byte lanes in the interconnect. Device decode
+    // intentionally treats every byte within one 32-bit port as that port.
+    /* verilator lint_off UNUSEDSIGNAL */
     input  wire [31:0]  mmio_wr_addr,
+    /* verilator lint_on UNUSEDSIGNAL */
     input  wire [31:0]  mmio_wr_data,
     input  wire [ 3:0]  mmio_wr_strb,
     output reg          mmio_wr_error,
@@ -59,11 +63,13 @@ module soc_peripherals #(
             timer <= 64'h0;
         end else begin
             timer <= timer + 1'b1;
-            if (mmio_wr_en && mmio_wr_addr == `PERI_ADDR_LED) begin
+            if (mmio_wr_en &&
+                {mmio_wr_addr[31:2], 2'b00} == `PERI_ADDR_LED) begin
                 led_value <= merge_bytes(led_value, mmio_wr_data,
                                          mmio_wr_strb);
             end
-            if (mmio_wr_en && mmio_wr_addr == `PERI_ADDR_DIGLED) begin
+            if (mmio_wr_en &&
+                {mmio_wr_addr[31:2], 2'b00} == `PERI_ADDR_DIGLED) begin
                 digled_value <= merge_bytes(digled_value, mmio_wr_data,
                                             mmio_wr_strb);
             end
@@ -75,21 +81,21 @@ module soc_peripherals #(
         mmio_rd_error = 1'b0;
         case (mmio_rd_addr[31:12])
             20'hffff0: begin
-                if (mmio_rd_addr[11:0] == 12'h000) begin
+                if ({mmio_rd_addr[11:2], 2'b00} == 12'h000) begin
                     mmio_rd_data = {16'h0, sw};
                 end else begin
                     mmio_rd_error = 1'b1;
                 end
             end
             20'hffff1: begin
-                if (mmio_rd_addr[11:0] == 12'h000) begin
+                if ({mmio_rd_addr[11:2], 2'b00} == 12'h000) begin
                     mmio_rd_data = led_value;
                 end else begin
                     mmio_rd_error = 1'b1;
                 end
             end
             20'hffff2: begin
-                if (mmio_rd_addr[11:0] == 12'h000) begin
+                if ({mmio_rd_addr[11:2], 2'b00} == 12'h000) begin
                     mmio_rd_data = digled_value;
                 end else begin
                     mmio_rd_error = 1'b1;
@@ -101,8 +107,10 @@ module soc_peripherals #(
             end
             20'hffff4: begin
                 case (mmio_rd_addr[11:0])
-                    12'h000: mmio_rd_data = timer[31:0];
-                    12'h008: mmio_rd_data = timer[63:32];
+                    12'h000, 12'h001, 12'h002, 12'h003:
+                        mmio_rd_data = timer[31:0];
+                    12'h008, 12'h009, 12'h00a, 12'h00b:
+                        mmio_rd_data = timer[63:32];
                     default: mmio_rd_error = 1'b1;
                 endcase
             end
@@ -113,9 +121,9 @@ module soc_peripherals #(
     always @(*) begin
         case (mmio_wr_addr[31:12])
             20'hffff1:
-                mmio_wr_error = mmio_wr_addr[11:0] != 12'h000;
+                mmio_wr_error = mmio_wr_addr[11:2] != 10'h000;
             20'hffff2:
-                mmio_wr_error = mmio_wr_addr[11:0] != 12'h000;
+                mmio_wr_error = mmio_wr_addr[11:2] != 10'h000;
             20'hffff3: mmio_wr_error = uart_wr_error;
             default: mmio_wr_error = 1'b1;
         endcase
@@ -138,11 +146,11 @@ module soc_peripherals #(
         .clk        (clk),
         .rst        (rst),
         .rd_en      (mmio_rd_en && uart_rd_select),
-        .rd_offset  (mmio_rd_addr[11:0]),
+        .rd_offset  ({mmio_rd_addr[11:2], 2'b00}),
         .rd_data    (uart_rd_data),
         .rd_error   (uart_rd_error),
         .wr_en      (mmio_wr_en && uart_wr_select),
-        .wr_offset  (mmio_wr_addr[11:0]),
+        .wr_offset  ({mmio_wr_addr[11:2], 2'b00}),
         .wr_data    (mmio_wr_data),
         .wr_strb    (mmio_wr_strb),
         .wr_error   (uart_wr_error),

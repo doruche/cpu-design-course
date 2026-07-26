@@ -145,6 +145,41 @@ module soc_stage3_tb;
         end
     endtask
 
+    function automatic bit cpu_strobe_is_valid(
+        input [1:0] address_offset,
+        input [3:0] strobes
+    );
+        begin
+            case (address_offset)
+                2'd0: cpu_strobe_is_valid = strobes == 4'b0001 ||
+                                              strobes == 4'b0011 ||
+                                              strobes == 4'b1111;
+                2'd1: cpu_strobe_is_valid = strobes == 4'b0010;
+                2'd2: cpu_strobe_is_valid = strobes == 4'b0100 ||
+                                              strobes == 4'b1100;
+                2'd3: cpu_strobe_is_valid = strobes == 4'b1000;
+            endcase
+        end
+    endfunction
+
+    function automatic [31:0] merge_bytes(
+        input [31:0] old_value,
+        input [31:0] new_value,
+        input [ 3:0] strobes
+    );
+        integer byte_index;
+        begin
+            merge_bytes = old_value;
+            for (byte_index = 0; byte_index < 4;
+                 byte_index = byte_index + 1) begin
+                if (strobes[byte_index]) begin
+                    merge_bytes[byte_index*8 +: 8] =
+                        new_value[byte_index*8 +: 8];
+                end
+            end
+        end
+    endfunction
+
     task automatic mmio_read(
         input [31:0] address,
         input [ 1:0] expected_resp,
@@ -204,6 +239,207 @@ module soc_stage3_tb;
         end
     endtask
 
+    task automatic rejected_mmio_read_burst(input [31:0] address);
+        integer beat;
+        integer reads_before;
+        begin
+            reads_before = mmio_read_count;
+            s_araddr = address;
+            s_arlen = 8'd1;
+            s_arsize = 3'd2;
+            s_arburst = 2'b01;
+            s_arvalid = 1'b1;
+            s_rready = 1'b0;
+            #1;
+            check(s_arready, "rejected MMIO burst address was not accepted");
+            step();
+            s_arvalid = 1'b0;
+            check(mmio_read_count == reads_before,
+                  "rejected MMIO read caused a peripheral side effect");
+
+            repeat (2) begin
+                step();
+                check(s_rvalid && s_rresp == 2'b11 && !s_rlast,
+                      "rejected MMIO R response changed under backpressure");
+            end
+            s_rready = 1'b1;
+            for (beat = 0; beat < 2; beat = beat + 1) begin
+                #1;
+                check(s_rvalid && s_rresp == 2'b11,
+                      "rejected MMIO read did not return DECERR");
+                check(s_rlast == (beat == 1),
+                      "rejected MMIO read returned the wrong RLAST shape");
+                step();
+            end
+            s_rready = 1'b0;
+            check(!s_rvalid, "rejected MMIO read response did not retire");
+            check(mmio_read_count == reads_before,
+                  "rejected MMIO read touched the peripheral");
+        end
+    endtask
+
+    task automatic rejected_mmio_write_burst(input [31:0] address);
+        integer writes_before;
+        reg [15:0] led_before;
+        begin
+            writes_before = mmio_write_count;
+            led_before = led;
+            s_awaddr = address;
+            s_awlen = 8'd1;
+            s_awsize = 3'd2;
+            s_awburst = 2'b01;
+            s_awvalid = 1'b1;
+            s_wdata = 32'h0000_cafe;
+            s_wstrb = 4'hf;
+            s_wlast = 1'b0;
+            s_wvalid = 1'b1;
+            s_bready = 1'b0;
+            #1;
+            check(s_awready && !s_wready,
+                  "rejected MMIO write did not capture AW first");
+            step();
+            s_awvalid = 1'b0;
+
+            #1;
+            check(s_wready, "rejected MMIO write did not consume first W beat");
+            step();
+            s_wdata = 32'h0000_dead;
+            s_wlast = 1'b1;
+            #1;
+            check(s_wready, "rejected MMIO write did not consume final W beat");
+            step();
+            s_wvalid = 1'b0;
+
+            check(mmio_write_count == writes_before && led == led_before,
+                  "rejected MMIO write changed peripheral state");
+            #1;
+            check(s_bvalid && s_bresp == 2'b11,
+                  "rejected MMIO write did not return DECERR");
+            repeat (2) begin
+                step();
+                check(s_bvalid && s_bresp == 2'b11,
+                      "rejected MMIO B response changed under backpressure");
+            end
+            s_bready = 1'b1;
+            step();
+            s_bready = 1'b0;
+            check(!s_bvalid, "rejected MMIO write response did not retire");
+        end
+    endtask
+
+    task automatic reset_inflight_paths;
+        begin
+            // Reset with a valid MMIO R response held by backpressure.
+            s_araddr = 32'hffff_0000;
+            s_arlen = 8'h0;
+            s_arsize = 3'd2;
+            s_arburst = 2'b01;
+            s_arvalid = 1'b1;
+            s_rready = 1'b0;
+            step();
+            s_arvalid = 1'b0;
+            check(s_rvalid, "reset READ_MMIO setup failed");
+            rst = 1'b1;
+            step();
+            check(!s_rvalid, "reset did not discard held MMIO R response");
+            rst = 1'b0;
+            step();
+
+            // Reset after AW but before W: no write pulse or response may
+            // survive the reset.
+            s_awaddr = 32'hffff_1000;
+            s_awlen = 8'h0;
+            s_awsize = 3'd2;
+            s_awburst = 2'b01;
+            s_awvalid = 1'b1;
+            s_wvalid = 1'b0;
+            step();
+            s_awvalid = 1'b0;
+            check(s_wready, "reset WRITE_DATA setup failed");
+            rst = 1'b1;
+            step();
+            check(!s_bvalid && s_awready,
+                  "reset did not discard the partial MMIO write");
+            rst = 1'b0;
+            step();
+
+            // Reset while B is held after a legal side effect.
+            s_awaddr = 32'hffff_1000;
+            s_awvalid = 1'b1;
+            s_wdata = 32'h0000_4321;
+            s_wstrb = 4'hf;
+            s_wlast = 1'b1;
+            s_wvalid = 1'b1;
+            s_bready = 1'b0;
+            step();
+            s_awvalid = 1'b0;
+            step();
+            s_wvalid = 1'b0;
+            check(s_bvalid, "reset WRITE_MMIO_RESP setup failed");
+            rst = 1'b1;
+            step();
+            check(!s_bvalid && s_awready,
+                  "reset did not discard the held MMIO B response");
+            rst = 1'b0;
+            step();
+        end
+    endtask
+
+    task automatic parallel_memory_read_write;
+        begin
+            // AR and AW are independent AXI channels and may be accepted in
+            // the same cycle even though the current cpu master serializes.
+            s_araddr = 32'h0000_0080;
+            s_arlen = 8'h0;
+            s_arvalid = 1'b1;
+            s_awaddr = 32'h0000_0100;
+            s_awlen = 8'h0;
+            s_awvalid = 1'b1;
+            m_arready = 1'b1;
+            #1;
+            check(s_arready && s_awready && m_arvalid,
+                  "parallel memory AR/AW were not independently accepted");
+            step();
+            s_arvalid = 1'b0;
+            s_awvalid = 1'b0;
+            m_arready = 1'b0;
+
+            s_wdata = 32'hfeed_cafe;
+            s_wstrb = 4'hf;
+            s_wlast = 1'b1;
+            s_wvalid = 1'b1;
+            m_awready = 1'b1;
+            m_wready = 1'b1;
+            m_rdata = 32'h1357_9bdf;
+            m_rresp = 2'b00;
+            m_rlast = 1'b1;
+            m_rvalid = 1'b1;
+            s_rready = 1'b1;
+            #1;
+            check(m_awvalid && m_wvalid && s_wready,
+                  "parallel memory write channels were not forwarded");
+            check(s_rvalid && s_rdata == 32'h1357_9bdf && s_rlast,
+                  "parallel memory read response was not forwarded");
+            step();
+            s_wvalid = 1'b0;
+            m_awready = 1'b0;
+            m_wready = 1'b0;
+            m_rvalid = 1'b0;
+            m_rlast = 1'b0;
+            s_rready = 1'b0;
+
+            m_bresp = 2'b00;
+            m_bvalid = 1'b1;
+            s_bready = 1'b1;
+            #1;
+            check(s_bvalid && m_bready,
+                  "parallel memory write response was not forwarded");
+            step();
+            m_bvalid = 1'b0;
+            s_bready = 1'b0;
+        end
+    endtask
+
     task automatic send_uart_byte(input [7:0] value);
         integer bit_index;
         begin
@@ -230,12 +466,47 @@ module soc_stage3_tb;
 
     initial begin
         reg [31:0] value;
+        reg [31:0] expected_value;
         integer reads_before;
         integer writes_before;
+        integer address_offset;
+        integer strobe_value;
 
         repeat (3) step();
         rst = 1'b0;
         step();
+
+        // Unsupported MMIO bursts are consumed with a correctly shaped
+        // DECERR response and must never touch destructive device ports.
+        rejected_mmio_read_burst(32'hffff_3000);
+        rejected_mmio_write_burst(32'hffff_1000);
+
+        reads_before = mmio_read_count;
+        s_arsize = 3'd1;
+        mmio_read(32'hffff_3000, 2'b11, value);
+        check(mmio_read_count == reads_before,
+              "unsupported MMIO ARSIZE touched the peripheral");
+        s_arsize = 3'd2;
+        s_arburst = 2'b00;
+        mmio_read(32'hffff_3000, 2'b11, value);
+        check(mmio_read_count == reads_before,
+              "unsupported MMIO ARBURST touched the peripheral");
+        s_arburst = 2'b01;
+
+        writes_before = mmio_write_count;
+        s_awsize = 3'd1;
+        mmio_write(32'hffff_1000, 32'hffff_ffff, 4'hf, 2'b11);
+        check(mmio_write_count == writes_before && led == 16'h0,
+              "unsupported MMIO AWSIZE touched the peripheral");
+        s_awsize = 3'd2;
+        s_awburst = 2'b00;
+        mmio_write(32'hffff_1000, 32'hffff_ffff, 4'hf, 2'b11);
+        check(mmio_write_count == writes_before && led == 16'h0,
+              "unsupported MMIO AWBURST touched the peripheral");
+        s_awburst = 2'b01;
+
+        reset_inflight_paths();
+        parallel_memory_read_write();
 
         // Main-memory reads must bypass MMIO and preserve AXI burst metadata.
         reads_before = mmio_read_count;
@@ -314,8 +585,10 @@ module soc_stage3_tb;
         mmio_read(32'hffff_0000, 2'b00, value);
         check(value == 32'h0000_a55a, "switch register read mismatch");
 
-        mmio_write(32'hffff_1000, 32'h1234_5678, 4'b0101, 2'b00);
-        check(led == 16'h0078, "LED byte strobes were not honored");
+        mmio_write(32'hffff_1000, 32'h0000_0078, 4'b0001, 2'b00);
+        mmio_write(32'hffff_1001, 32'h0000_5600, 4'b0010, 2'b00);
+        check(led == 16'h5678,
+              "LED CPU-shaped byte address/strobes were not honored");
         mmio_write(32'hffff_1000, 32'h0000_beef, 4'b1111, 2'b00);
         check(led == 16'hbeef, "LED register write mismatch");
 
@@ -324,6 +597,31 @@ module soc_stage3_tb;
         check(value == 32'h1234_abcd, "seven-segment register readback mismatch");
         check(dig_en == 8'b0000_0001 && dig_seg == 8'b0111_1010,
               "EGO1 active-high seven-segment scan output mismatch");
+
+        // Exhaustively classify all address-low-bit/strobe combinations that
+        // MREQ can (or cannot) produce for byte/halfword/word stores.
+        for (address_offset = 0; address_offset < 4;
+             address_offset = address_offset + 1) begin
+            for (strobe_value = 0; strobe_value < 16;
+                 strobe_value = strobe_value + 1) begin
+                mmio_write(32'hffff_2000, 32'h1122_3344, 4'hf, 2'b00);
+                if (cpu_strobe_is_valid(address_offset[1:0],
+                                        strobe_value[3:0])) begin
+                    expected_value = merge_bytes(32'h1122_3344,
+                                                 32'ha5b6_c7d8,
+                                                 strobe_value[3:0]);
+                    mmio_write(32'hffff_2000 + address_offset,
+                               32'ha5b6_c7d8, strobe_value[3:0], 2'b00);
+                end else begin
+                    expected_value = 32'h1122_3344;
+                    mmio_write(32'hffff_2000 + address_offset,
+                               32'ha5b6_c7d8, strobe_value[3:0], 2'b11);
+                end
+                mmio_read(32'hffff_2000, 2'b00, value);
+                check(value == expected_value,
+                      "MMIO subword address/strobe matrix mismatch");
+            end
+        end
 
         mmio_read(32'hffff_4000, 2'b00, value);
         check(value != 32'h0, "timer did not advance after reset");

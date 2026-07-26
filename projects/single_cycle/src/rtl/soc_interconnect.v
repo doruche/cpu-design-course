@@ -77,6 +77,7 @@ module soc_interconnect(
     localparam READ_IDLE = 2'd0;
     localparam READ_MEMORY = 2'd1;
     localparam READ_MMIO = 2'd2;
+    localparam READ_MMIO_ERROR = 2'd3;
 
     localparam WRITE_ADDR = 2'd0;
     localparam WRITE_DATA = 2'd1;
@@ -89,12 +90,16 @@ module soc_interconnect(
     reg [31:0] mmio_read_data;
     reg [ 1:0] mmio_read_resp;
     reg [ 1:0] mmio_write_resp;
+    reg [ 7:0] mmio_error_read_len;
+    reg [ 7:0] mmio_error_read_beat;
 
     reg [31:0] write_addr;
     reg [ 7:0] write_len;
     reg [ 2:0] write_size;
     reg [ 1:0] write_burst;
     reg        write_is_mmio;
+    reg        write_shape_supported;
+    reg [ 7:0] write_beat;
     reg        memory_aw_done;
     reg        memory_w_done;
 
@@ -107,11 +112,39 @@ module soc_interconnect(
     wire memory_aw_handshake = m_axi_awvalid && m_axi_awready;
     wire memory_w_handshake = m_axi_wvalid && m_axi_wready;
 
+    wire read_shape_supported = s_axi_arlen == 8'h0 &&
+                                s_axi_arsize == 3'd2 &&
+                                s_axi_arburst == 2'b01;
+
+    function valid_mmio_strobe;
+        input [1:0] address_offset;
+        input [3:0] strobes;
+        begin
+            case (address_offset)
+                2'd0: valid_mmio_strobe = strobes == 4'b0001 ||
+                                                 strobes == 4'b0011 ||
+                                                 strobes == 4'b1111;
+                2'd1: valid_mmio_strobe = strobes == 4'b0010;
+                2'd2: valid_mmio_strobe = strobes == 4'b0100 ||
+                                                 strobes == 4'b1100;
+                2'd3: valid_mmio_strobe = strobes == 4'b1000;
+                default: valid_mmio_strobe = 1'b0;
+            endcase
+        end
+    endfunction
+
+    wire write_data_is_supported = write_shape_supported &&
+                                    write_len == 8'h0 &&
+                                    write_beat == 8'h0 &&
+                                    s_axi_wlast &&
+                                    valid_mmio_strobe(write_addr[1:0],
+                                                      s_axi_wstrb);
+
     assign mmio_rd_en = read_state == READ_IDLE && read_address_handshake &&
-                        read_address_is_mmio;
+                        read_address_is_mmio && read_shape_supported;
     assign mmio_rd_addr = s_axi_araddr;
     assign mmio_wr_en = write_state == WRITE_DATA && write_is_mmio &&
-                        write_data_handshake;
+                        write_data_handshake && write_data_is_supported;
     assign mmio_wr_addr = write_addr;
     assign mmio_wr_data = s_axi_wdata;
     assign mmio_wr_strb = s_axi_wstrb;
@@ -121,15 +154,23 @@ module soc_interconnect(
             read_state <= READ_IDLE;
             mmio_read_data <= 32'h0;
             mmio_read_resp <= 2'b00;
+            mmio_error_read_len <= 8'h0;
+            mmio_error_read_beat <= 8'h0;
         end else begin
             case (read_state)
                 READ_IDLE: begin
                     if (read_address_handshake) begin
                         if (read_address_is_mmio) begin
-                            mmio_read_data <= mmio_rd_data;
-                            mmio_read_resp <= (s_axi_arlen != 8'h0 ||
-                                               mmio_rd_error) ? 2'b11 : 2'b00;
-                            read_state <= READ_MMIO;
+                            if (read_shape_supported) begin
+                                mmio_read_data <= mmio_rd_data;
+                                mmio_read_resp <= mmio_rd_error
+                                                ? 2'b11 : 2'b00;
+                                read_state <= READ_MMIO;
+                            end else begin
+                                mmio_error_read_len <= s_axi_arlen;
+                                mmio_error_read_beat <= 8'h0;
+                                read_state <= READ_MMIO_ERROR;
+                            end
                         end else begin
                             read_state <= READ_MEMORY;
                         end
@@ -145,6 +186,15 @@ module soc_interconnect(
                         read_state <= READ_IDLE;
                     end
                 end
+                READ_MMIO_ERROR: begin
+                    if (s_axi_rvalid && s_axi_rready) begin
+                        if (mmio_error_read_beat == mmio_error_read_len) begin
+                            read_state <= READ_IDLE;
+                        end else begin
+                            mmio_error_read_beat <= mmio_error_read_beat + 1'b1;
+                        end
+                    end
+                end
                 default: read_state <= READ_IDLE;
             endcase
         end
@@ -158,6 +208,8 @@ module soc_interconnect(
             write_size <= 3'h0;
             write_burst <= 2'h0;
             write_is_mmio <= 1'b0;
+            write_shape_supported <= 1'b0;
+            write_beat <= 8'h0;
             memory_aw_done <= 1'b0;
             memory_w_done <= 1'b0;
             mmio_write_resp <= 2'b00;
@@ -170,6 +222,10 @@ module soc_interconnect(
                         write_size <= s_axi_awsize;
                         write_burst <= s_axi_awburst;
                         write_is_mmio <= write_address_is_mmio;
+                        write_shape_supported <= s_axi_awlen == 8'h0 &&
+                                                 s_axi_awsize == 3'd2 &&
+                                                 s_axi_awburst == 2'b01;
+                        write_beat <= 8'h0;
                         memory_aw_done <= 1'b0;
                         memory_w_done <= 1'b0;
                         write_state <= WRITE_DATA;
@@ -178,10 +234,14 @@ module soc_interconnect(
                 WRITE_DATA: begin
                     if (write_is_mmio) begin
                         if (write_data_handshake) begin
-                            mmio_write_resp <= (write_len != 8'h0 ||
-                                                !s_axi_wlast ||
-                                                mmio_wr_error) ? 2'b11 : 2'b00;
-                            write_state <= WRITE_MMIO_RESP;
+                            if (write_beat == write_len || s_axi_wlast) begin
+                                mmio_write_resp <=
+                                    (!write_data_is_supported ||
+                                     mmio_wr_error) ? 2'b11 : 2'b00;
+                                write_state <= WRITE_MMIO_RESP;
+                            end else begin
+                                write_beat <= write_beat + 1'b1;
+                            end
                         end
                     end else begin
                         if (memory_aw_handshake) begin
@@ -259,6 +319,12 @@ module soc_interconnect(
                 s_axi_rdata = mmio_read_data;
                 s_axi_rresp = mmio_read_resp;
                 s_axi_rlast = 1'b1;
+                s_axi_rvalid = 1'b1;
+            end
+            READ_MMIO_ERROR: begin
+                s_axi_rdata = 32'h0;
+                s_axi_rresp = 2'b11;
+                s_axi_rlast = mmio_error_read_beat == mmio_error_read_len;
                 s_axi_rvalid = 1'b1;
             end
             default: begin

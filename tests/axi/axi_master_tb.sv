@@ -154,9 +154,12 @@ module axi_master_tb;
                 step();
                 check(m_axi_rready, "RREADY dropped while a burst was pending");
                 m_axi_rdata = first_word + beat;
+                m_axi_rresp = 2'b00;
                 m_axi_rlast = beat == beat_count - 1;
                 m_axi_rvalid = 1'b1;
                 step();
+                check(m_axi_rresp == 2'b00,
+                      "legal cache read received a non-OKAY response");
                 m_axi_rvalid = 1'b0;
                 m_axi_rlast = 1'b0;
             end
@@ -210,6 +213,14 @@ module axi_master_tb;
         step();
         dc_cpu_ren = 4'h0;
         complete_read(1'b1, 32'h0000_0080, `DC_BLK_LEN, 32'hd000_0000);
+
+        // Even with DCache enabled, uncached MMIO retains its byte address and
+        // is always one 32-bit AXI beat rather than a cache-line refill.
+        dc_cpu_ren = 4'hf;
+        dc_cpu_raddr = 32'hffff_1001;
+        step();
+        dc_cpu_ren = 4'h0;
+        complete_read(1'b1, 32'hffff_1001, 1, 32'h4433_2211);
 
         check(ic_dev_rrdy, "pending ICache request was not exposed after DCache read");
         step();
@@ -270,6 +281,68 @@ module axi_master_tb;
         step();
         ic_cpu_ren = 4'h0;
         complete_read(1'b0, 32'h0000_00c0, `IC_BLK_LEN, 32'hc000_0000);
+
+        // Reset must abandon every partially accepted transaction and restore
+        // all cache-side ready signals without a late completion pulse.
+        dc_cpu_ren = 4'hf;
+        dc_cpu_raddr = 32'h0000_0200;
+        step();
+        dc_cpu_ren = 4'h0;
+        check(m_axi_arvalid, "reset READ_ADDR setup failed");
+        rst = 1'b1;
+        step();
+        check(!m_axi_arvalid && !m_axi_rready &&
+              ic_dev_rrdy && dc_dev_rrdy && dc_dev_wrdy,
+              "reset did not clear READ_ADDR");
+        rst = 1'b0;
+        step();
+
+        dc_cpu_ren = 4'hf;
+        dc_cpu_raddr = 32'h0000_0240;
+        step();
+        dc_cpu_ren = 4'h0;
+        m_axi_arready = 1'b1;
+        step();
+        m_axi_arready = 1'b0;
+        check(m_axi_rready, "reset READ_DATA setup failed");
+        rst = 1'b1;
+        step();
+        check(!m_axi_rready && ic_dev_rrdy && dc_dev_rrdy && dc_dev_wrdy,
+              "reset did not clear READ_DATA");
+        rst = 1'b0;
+        step();
+
+        dc_cpu_wen = 4'hf;
+        dc_cpu_waddr = 32'h0000_0300;
+        dc_cpu_wdata = 32'h1234_5678;
+        step();
+        dc_cpu_wen = 4'h0;
+        check(m_axi_awvalid && m_axi_wvalid,
+              "reset WRITE_SEND setup failed");
+        rst = 1'b1;
+        step();
+        check(!m_axi_awvalid && !m_axi_wvalid && !m_axi_bready && dc_dev_wrdy,
+              "reset did not clear WRITE_SEND");
+        rst = 1'b0;
+        step();
+
+        dc_cpu_wen = 4'hf;
+        dc_cpu_waddr = 32'h0000_0340;
+        dc_cpu_wdata = 32'h89ab_cdef;
+        step();
+        dc_cpu_wen = 4'h0;
+        m_axi_awready = 1'b1;
+        m_axi_wready = 1'b1;
+        step();
+        m_axi_awready = 1'b0;
+        m_axi_wready = 1'b0;
+        check(m_axi_bready, "reset WRITE_RESP setup failed");
+        rst = 1'b1;
+        step();
+        check(!m_axi_bready && dc_dev_wrdy,
+              "reset did not clear WRITE_RESP");
+        rst = 1'b0;
+        step();
 
         $display("axi_master_tb: PASS (IC beats=%0d, DC beats=%0d)",
                  `IC_BLK_LEN, `DC_BLK_LEN);

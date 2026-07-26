@@ -127,7 +127,11 @@ module axi_master(
             if (accept_dcache_read) begin
                 read_source <= READ_SOURCE_DCACHE;
                 read_addr <= dc_cpu_raddr;
-                read_len <= `DC_BLK_LEN - 1;
+                // DCache preserves the original address for uncached MMIO.
+                // Those accesses return one 32-bit port value, while normal
+                // cache misses still refill a complete 128-bit line.
+                read_len <= dc_cpu_raddr[31:16] == 16'hffff
+                          ? 8'h0 : `DC_BLK_LEN - 1;
                 read_beat <= 2'h0;
                 read_data <= 128'h0;
             end else if (accept_icache_read) begin

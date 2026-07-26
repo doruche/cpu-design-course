@@ -78,13 +78,13 @@ module uart_peripheral #(
     wire control_write = wr_en && wr_offset == 12'h00c && wr_strb[0];
     wire clear_tx = control_write && wr_data[0];
     wire clear_rx = control_write && wr_data[1];
-    wire tx_fifo_write = wr_en && wr_offset == 12'h004 && wr_strb[0] &&
-                         !tx_full && !clear_tx;
     wire tx_fifo_pop = tx_state == TX_IDLE && !tx_empty && !clear_tx;
+    wire tx_fifo_write = wr_en && wr_offset == 12'h004 && wr_strb[0] &&
+                         (!tx_full || tx_fifo_pop) && !clear_tx;
     wire rx_fifo_read = rd_en && rd_offset == 12'h000 && !rx_empty &&
                         !clear_rx;
     wire rx_fifo_write = rx_state == RX_STOP && rx_baud_count == 0 &&
-                          rx_sync && !rx_full && !clear_rx;
+                          rx_sync && (!rx_full || rx_fifo_read) && !clear_rx;
 
     initial begin
         if (CLKS_PER_BIT < 2) begin
