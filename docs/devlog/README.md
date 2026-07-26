@@ -6,7 +6,9 @@
 ## Active Tasks
 
 - [单周期 SoC 开发](single-cycle-soc.md) — Active；Stage 0～3 已完成，Stage 3
-  里程碑为 `single-cycle-soc-stage3`，Stage 4 未开始。
+  里程碑为 `single-cycle-soc-stage3`，构建/验证间章待实施，Stage 4 未开始。
+- [构建系统、CLI 与完整 SoC 验证间章](build-cli-and-soc-verification.md) — Planned；
+  迁移根构建入口到 `just`，整理配置与验证分层，并补齐 CPU 驱动的产品拓扑测试。
 
 ## Completed Tasks
 
