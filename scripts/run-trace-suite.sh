@@ -11,7 +11,7 @@ shift
 runner="$trace_dir/obj_dir/VminiRV_SoC"
 
 if [[ ! -x "$runner" ]]; then
-    echo "Trace runner is missing; run make trace-build first" >&2
+    echo "Trace runner is missing; run 'just trace CONFIG CASE' or 'just trace-all CONFIG'" >&2
     exit 2
 fi
 

@@ -1,0 +1,476 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+config_file="$root/config/build-configs.tsv"
+trace_dir="$root/cdp-tests"
+single_rtl="$root/projects/single_cycle/src/rtl"
+cache_root="$root/.cache"
+trace_lock="$cache_root/locks/trace.lock"
+export CCACHE_DIR="${CCACHE_DIR:-$cache_root/ccache}"
+
+config_name=
+config_product=
+config_topology=
+config_memory=
+config_cache=
+config_backend=
+config_defines=
+config_artifact=
+
+die() {
+    printf 'error: %s\n' "$*" >&2
+    exit 2
+}
+
+list_configs() {
+    awk -F '\t' '!/^#/ && NF {print $1}' "$config_file"
+}
+
+load_config() {
+    local requested=$1
+    local record
+
+    record=$(awk -F '\t' -v name="$requested" \
+        '!/^#/ && $1 == name {print; found = 1} END {if (!found) exit 1}' \
+        "$config_file") || {
+        printf 'Unknown configuration: %s\nAvailable configurations:\n' \
+            "$requested" >&2
+        list_configs | sed 's/^/  /' >&2
+        exit 2
+    }
+
+    IFS=$'\t' read -r config_name config_product config_topology \
+        config_memory config_cache config_backend config_defines \
+        config_artifact <<<"$record"
+
+    [[ "$config_backend" == "verilator-trace" ]] || \
+        die "unsupported backend in $requested: $config_backend"
+    [[ -d "$root/projects/$config_product/src/rtl" ]] || \
+        die "missing product RTL: projects/$config_product/src/rtl"
+    case "$config_topology:$config_memory:$config_cache" in
+        basic:trace-ram:na|axi-direct:trace-bram:bypass|\
+        axi-direct:trace-bram:cache|product-soc:trace-bram+mmio:bypass|\
+        product-soc:trace-bram+mmio:cache) ;;
+        *) die "invalid configuration tuple for $requested" ;;
+    esac
+    if [[ "$config_product" == pipeline && "$config_topology" != basic ]]; then
+        die "pipeline currently supports only the Basic topology"
+    fi
+}
+
+rtl_dir() {
+    printf '%s/projects/%s/src/rtl\n' "$root" "$config_product"
+}
+
+mapfile_sorted() {
+    local directory=$1
+    find "$directory" -maxdepth 1 -type f -name '*.v' -print | sort
+}
+
+define_args() {
+    local item
+    [[ "$config_defines" == "-" ]] && return 0
+    IFS=',' read -ra items <<<"$config_defines"
+    for item in "${items[@]}"; do
+        printf '%s\n' "-D$item"
+    done
+}
+
+trace_memory_sources() {
+    printf '%s\n' "$trace_dir/vsrc/ram.v"
+    if [[ "$config_memory" != trace-ram ]]; then
+        printf '%s\n' "$trace_dir/vsrc/bram_axi.v"
+    fi
+}
+
+print_config() {
+    local product_rtl
+    product_rtl=$(rtl_dir)
+    printf 'configuration: %s\n' "$config_name"
+    printf '  product: %s\n' "$config_product"
+    printf '  topology: %s\n' "$config_topology"
+    printf '  memory-model: %s\n' "$config_memory"
+    printf '  cache-mode: %s\n' "$config_cache"
+    printf '  backend: %s\n' "$config_backend"
+    printf '  compiler-defines: %s\n' "$config_defines"
+    printf '  artifact-directory: %s\n' "$config_artifact"
+    printf '  shared-trace-directory: cdp-tests/obj_dir (serialized)\n'
+    printf '  rtl-sources:\n'
+    mapfile_sorted "$product_rtl" | sed "s#^$root/#    #"
+    printf '  memory-sources:\n'
+    trace_memory_sources | sed "s#^$root/#    #"
+}
+
+require_product_topology() {
+    if [[ "$config_topology" == product-soc ]]; then
+        rg -q '(ifdef|elsif) SOC_TOPOLOGY' "$single_rtl/miniRV_SoC.v" || \
+            die "$config_name is reserved until checkpoint I3 implements SOC_TOPOLOGY"
+    fi
+}
+
+lint_config() {
+    local product_rtl waiver
+    local -a rtl_sources memory_sources defines
+    product_rtl=$(rtl_dir)
+    waiver="$root/config/verilator-$config_product.vlt"
+    mapfile -t rtl_sources < <(mapfile_sorted "$product_rtl")
+    mapfile -t memory_sources < <(trace_memory_sources)
+    mapfile -t defines < <(define_args)
+    [[ -f "$waiver" ]] || die "missing lint waiver: ${waiver#"$root/"}"
+    require_product_topology
+    print_config
+    mkdir -p "$root/$config_artifact"
+    verilator --lint-only --Wall -DRUN_TRACE=1 --top-module miniRV_SoC \
+        -I"$product_rtl" "${defines[@]}" "$waiver" \
+        "${memory_sources[@]}" "${rtl_sources[@]}"
+}
+
+trace_prepare_locked() {
+    local product_rtl current_file desired
+    local -a rtl_sources memory_sources defines sim_opts
+    product_rtl=$(rtl_dir)
+    current_file="$cache_root/trace/current-config"
+    desired=$config_name
+    require_product_topology
+    mkdir -p "$root/$config_artifact" "$(dirname "$current_file")"
+    if [[ ! -f "$current_file" || $(<"$current_file") != "$desired" ]]; then
+        make -C "$trace_dir" clean >/dev/null
+        printf '%s\n' "$desired" >"$current_file"
+    fi
+    mapfile -t rtl_sources < <(mapfile_sorted "$product_rtl")
+    mapfile -t memory_sources < <(trace_memory_sources)
+    mapfile -t defines < <(define_args)
+    sim_opts=(--trace -Wno-lint -Wno-style -Wno-TIMESCALEMOD \
+        -I"$product_rtl" "${defines[@]}")
+    make -C "$trace_dir" build \
+        VSRC="${memory_sources[*]} ${rtl_sources[*]}" \
+        SIM_OPTS="${sim_opts[*]}"
+}
+
+trace_one_locked() {
+    local case_name=$1
+    [[ -f "$trace_dir/bin/$case_name.bin" ]] || \
+        die "unknown Trace case: $case_name"
+    trace_prepare_locked
+    "$root/scripts/run-trace-suite.sh" "$trace_dir" "$case_name"
+}
+
+trace_all_locked() {
+    local -a cases
+    mapfile -t cases < <(
+        find "$trace_dir/bin" -maxdepth 1 -type f -name '*.bin' -printf '%f\n' |
+            sed 's/\.bin$//' | sort
+    )
+    trace_prepare_locked
+    "$root/scripts/run-trace-suite.sh" "$trace_dir" "${cases[@]}"
+}
+
+with_trace_lock() {
+    mkdir -p "$(dirname "$trace_lock")"
+    exec 9>"$trace_lock"
+    flock 9
+    "$@"
+}
+
+lint_cache_modules() {
+    verilator --lint-only --Wall --top-module ICache -DRUN_TRACE=1 \
+        -I"$single_rtl" "$single_rtl/ICache.v"
+    verilator --lint-only --Wall --top-module ICache -DRUN_TRACE=1 \
+        -DENABLE_ICACHE=1 -I"$single_rtl" "$single_rtl/ICache.v"
+    verilator --lint-only --Wall --top-module DCache -DRUN_TRACE=1 \
+        -I"$single_rtl" "$single_rtl/DCache.v"
+    verilator --lint-only --Wall --top-module DCache -DRUN_TRACE=1 \
+        -DENABLE_DCACHE=1 -I"$single_rtl" "$single_rtl/DCache.v"
+}
+
+unit_cache() {
+    local output="$cache_root/unit/cache"
+    printf 'unit-suite: cache\n  backend: iverilog+vvp\n  artifact-directory: .cache/unit/cache\n'
+    lint_cache_modules
+    mkdir -p "$output"
+    iverilog -g2012 -Wall -Wno-sensitivity-entire-array -DRUN_TRACE=1 \
+        -I"$single_rtl" -s icache_tb -o "$output/icache-bypass" \
+        "$single_rtl/ICache.v" "$root/tests/cache/icache_tb.sv"
+    vvp "$output/icache-bypass"
+    iverilog -g2012 -Wall -Wno-sensitivity-entire-array -DRUN_TRACE=1 \
+        -DENABLE_ICACHE=1 -I"$single_rtl" -s icache_tb \
+        -o "$output/icache-enabled" \
+        "$single_rtl/ICache.v" "$root/tests/cache/icache_tb.sv"
+    vvp "$output/icache-enabled"
+    iverilog -g2012 -Wall -Wno-sensitivity-entire-array -DRUN_TRACE=1 \
+        -I"$single_rtl" -s dcache_tb -o "$output/dcache-bypass" \
+        "$single_rtl/DCache.v" "$root/tests/cache/dcache_tb.sv"
+    vvp "$output/dcache-bypass"
+    iverilog -g2012 -Wall -Wno-sensitivity-entire-array -DRUN_TRACE=1 \
+        -DENABLE_DCACHE=1 -I"$single_rtl" -s dcache_tb \
+        -o "$output/dcache-enabled" \
+        "$single_rtl/DCache.v" "$root/tests/cache/dcache_tb.sv"
+    vvp "$output/dcache-enabled"
+}
+
+unit_axi_master() {
+    local output="$cache_root/unit/axi-master"
+    printf 'unit-suite: axi-master\n  backend: iverilog+vvp\n  artifact-directory: .cache/unit/axi-master\n'
+    verilator --lint-only --Wall --top-module axi_master -DRUN_TRACE=1 \
+        -I"$single_rtl" "$single_rtl/axi_master.v"
+    verilator --lint-only --Wall --top-module axi_master -DRUN_TRACE=1 \
+        -DENABLE_ICACHE=1 -DENABLE_DCACHE=1 -I"$single_rtl" \
+        "$single_rtl/axi_master.v"
+    mkdir -p "$output"
+    iverilog -g2012 -Wall -DRUN_TRACE=1 -I"$single_rtl" -s axi_master_tb \
+        -o "$output/axi-bypass" "$single_rtl/axi_master.v" \
+        "$root/tests/axi/axi_master_tb.sv"
+    vvp "$output/axi-bypass"
+    iverilog -g2012 -Wall -DRUN_TRACE=1 -DENABLE_ICACHE=1 \
+        -DENABLE_DCACHE=1 -I"$single_rtl" -s axi_master_tb \
+        -o "$output/axi-cache" "$single_rtl/axi_master.v" \
+        "$root/tests/axi/axi_master_tb.sv"
+    vvp "$output/axi-cache"
+}
+
+lint_fabric() {
+    verilator --lint-only --Wall --top-module soc_interconnect \
+        "$single_rtl/soc_interconnect.v"
+    verilator --lint-only --Wall --top-module soc_peripherals \
+        -I"$single_rtl" "$single_rtl/soc_peripherals.v" \
+        "$single_rtl/seven_segment.v" "$single_rtl/uart_peripheral.v"
+}
+
+unit_peripherals() {
+    local output="$cache_root/unit/peripherals"
+    printf 'unit-suite: peripherals\n  backend: iverilog+vvp\n  artifact-directory: .cache/unit/peripherals\n'
+    lint_fabric
+    mkdir -p "$output"
+    iverilog -g2012 -Wall -I"$single_rtl" -s uart_peripheral_tb \
+        -o "$output/uart" "$single_rtl/uart_peripheral.v" \
+        "$root/tests/soc_stage3/uart_peripheral_tb.sv"
+    vvp "$output/uart"
+    iverilog -g2012 -Wall -I"$single_rtl" -s seven_segment_tb \
+        -o "$output/seven-segment" "$single_rtl/seven_segment.v" \
+        "$root/tests/soc_stage3/seven_segment_tb.sv"
+    vvp "$output/seven-segment"
+    iverilog -g2012 -Wall -I"$single_rtl" -s timer_peripheral_tb \
+        -o "$output/timer" "$single_rtl/soc_peripherals.v" \
+        "$single_rtl/seven_segment.v" "$single_rtl/uart_peripheral.v" \
+        "$root/tests/soc_stage3/timer_peripheral_tb.sv"
+    vvp "$output/timer"
+}
+
+integration_fabric_mmio() {
+    local output="$cache_root/integration/fabric-mmio"
+    printf 'integration-suite: fabric-mmio\n  backend: iverilog+vvp\n  artifact-directory: .cache/integration/fabric-mmio\n'
+    lint_fabric
+    mkdir -p "$output"
+    iverilog -g2012 -Wall -I"$single_rtl" -s soc_stage3_tb \
+        -o "$output/test" "$single_rtl/soc_interconnect.v" \
+        "$single_rtl/soc_peripherals.v" "$single_rtl/seven_segment.v" \
+        "$single_rtl/uart_peripheral.v" \
+        "$root/tests/soc_stage3/soc_stage3_tb.sv"
+    vvp "$output/test"
+}
+
+integration_dcache_mmio() {
+    local output="$cache_root/integration/dcache-mmio"
+    printf 'integration-suite: dcache-mmio\n  backend: iverilog+vvp\n  artifact-directory: .cache/integration/dcache-mmio\n'
+    lint_fabric
+    mkdir -p "$output"
+    iverilog -g2012 -Wall -DRUN_TRACE=1 -DENABLE_DCACHE=1 \
+        -DPATH="$trace_dir/bin/addi.bin" -I"$single_rtl" \
+        -s soc_stage3_full_tb -o "$output/test" \
+        "$single_rtl/DCache.v" "$single_rtl/axi_master.v" \
+        "$single_rtl/soc_interconnect.v" "$single_rtl/soc_peripherals.v" \
+        "$single_rtl/seven_segment.v" "$single_rtl/uart_peripheral.v" \
+        "$trace_dir/vsrc/bram_axi.v" \
+        "$root/tests/soc_stage3/soc_stage3_full_tb.sv"
+    vvp "$output/test"
+}
+
+run_unit() {
+    case "$1" in
+        cache) unit_cache ;;
+        axi-master) unit_axi_master ;;
+        peripherals) unit_peripherals ;;
+        *) die "unknown unit suite: $1 (expected cache, axi-master, or peripherals)" ;;
+    esac
+}
+
+run_integration() {
+    case "$1" in
+        fabric-mmio) integration_fabric_mmio ;;
+        dcache-mmio) integration_dcache_mmio ;;
+        *) die "unknown integration suite: $1 (expected fabric-mmio or dcache-mmio)" ;;
+    esac
+}
+
+run_system() {
+    case "$1" in
+        soc-smoke) system_soc_smoke ;;
+        *) die "unknown system suite: $1 (expected soc-smoke)" ;;
+    esac
+}
+
+system_soc_smoke() {
+    local output="$cache_root/system/soc-smoke"
+    local program="$output/smoke.bin"
+    local -a rtl_sources
+    load_config single-soc-cache
+    print_config
+    printf 'system-suite: soc-smoke\n'
+    printf '  backend: riscv32-elf+iverilog+vvp\n'
+    printf '  artifact-directory: .cache/system/soc-smoke\n'
+    "$root/scripts/build-soc-smoke.sh" "$output"
+    mapfile -t rtl_sources < <(mapfile_sorted "$single_rtl")
+    iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
+        -DRUN_TRACE=1 -DSIMULATION_CLOCK=1 -DBEHAVIORAL_MEMORY=1 \
+        -DSOC_TOPOLOGY=1 -DENABLE_ICACHE=1 -DENABLE_DCACHE=1 \
+        -DPATH="$program" -I"$single_rtl" -s soc_system_tb \
+        -o "$output/soc-system" "${rtl_sources[@]}" \
+        "$trace_dir/vsrc/bram_axi.v" \
+        "$root/tests/soc_system/soc_system_tb.sv"
+    vvp "$output/soc-system"
+}
+
+run_gate() {
+    case "$1" in
+        single-stage2)
+            unit_axi_master
+            unit_cache
+            lint_config_for single-basic
+            lint_config_for single-axi-direct-bypass
+            lint_config_for single-axi-direct-cache
+            trace_all_for single-basic
+            trace_all_for single-axi-direct-bypass
+            trace_all_for single-axi-direct-cache
+            ;;
+        single-stage3)
+            integration_fabric_mmio
+            unit_peripherals
+            integration_dcache_mmio
+            run_gate single-stage2
+            ;;
+        products-basic)
+            lint_config_for single-basic
+            trace_all_for single-basic
+            lint_config_for pipeline-basic
+            trace_all_for pipeline-basic
+            git -C "$root" diff --check
+            ;;
+        *) die "unknown gate: $1 (expected single-stage2, single-stage3, or products-basic)" ;;
+    esac
+}
+
+lint_config_for() {
+    load_config "$1"
+    lint_config
+}
+
+trace_all_for() {
+    load_config "$1"
+    print_config
+    with_trace_lock trace_all_locked
+}
+
+load_local_settings() {
+    local local_file="$root/local.mk"
+    local name value
+    [[ -f "$local_file" ]] || return 0
+    for name in VIVADO_BIN VIVADO_STAGE_ROOT VIVADO_JOBS; do
+        [[ -n "${!name:-}" ]] && continue
+        value=$(awk -F ':=' -v key="$name" \
+            '$1 ~ "^[[:space:]]*" key "[[:space:]]*$" {sub(/^[[:space:]]*/, "", $2); sub(/[[:space:]]*$/, "", $2); print $2}' \
+            "$local_file")
+        [[ -n "$value" ]] && export "$name=$value"
+    done
+}
+
+run_vivado() {
+    local product=$1 action=$2
+    case "$product" in single_cycle|pipeline) ;; *) die "unknown product: $product" ;; esac
+    case "$action" in stage|synth|bitstream) ;; *) die "unknown Vivado action: $action" ;; esac
+    printf 'vivado-product: %s\nvivado-action: %s\ncanonical-project: projects/%s/miniRV.xpr\n' \
+        "$product" "$action" "$product"
+    load_local_settings
+    PRODUCT="$product" "$root/scripts/vivado.sh" "$action"
+}
+
+show_status() {
+    git -C "$root" status --short --branch
+    git -C "$root" submodule status
+    printf '\nStable configurations:\n'
+    list_configs | sed 's/^/  /'
+    printf '\nVerification suites:\n'
+    printf '  unit: cache, axi-master, peripherals\n'
+    printf '  integration: fabric-mmio, dcache-mmio\n'
+    printf '  system: soc-smoke\n'
+    printf '  gate: single-stage2, single-stage3, products-basic\n'
+}
+
+clean_outputs() {
+    mkdir -p "$(dirname "$trace_lock")"
+    exec 9>"$trace_lock"
+    flock 9
+    make -C "$trace_dir" clean
+    rm -rf "$cache_root"
+}
+
+command=${1:-}
+case "$command" in
+    status)
+        [[ $# == 1 ]] || die "usage: $0 status"
+        show_status
+        ;;
+    show-config)
+        [[ $# == 2 ]] || die "usage: $0 show-config CONFIG"
+        load_config "$2"
+        print_config
+        ;;
+    lint)
+        [[ $# == 2 ]] || die "usage: $0 lint CONFIG"
+        load_config "$2"
+        lint_config
+        ;;
+    unit)
+        [[ $# == 2 ]] || die "usage: $0 unit SUITE"
+        run_unit "$2"
+        ;;
+    integration)
+        [[ $# == 2 ]] || die "usage: $0 integration SUITE"
+        run_integration "$2"
+        ;;
+    trace)
+        [[ $# == 3 ]] || die "usage: $0 trace CONFIG CASE"
+        load_config "$2"
+        print_config
+        mkdir -p "$root/$config_artifact"
+        with_trace_lock trace_one_locked "$3" 2>&1 | \
+            tee "$root/$config_artifact/trace-$3.log"
+        ;;
+    trace-all)
+        [[ $# == 2 ]] || die "usage: $0 trace-all CONFIG"
+        load_config "$2"
+        print_config
+        mkdir -p "$root/$config_artifact"
+        with_trace_lock trace_all_locked 2>&1 | \
+            tee "$root/$config_artifact/trace-all.log"
+        ;;
+    system)
+        [[ $# == 2 ]] || die "usage: $0 system SUITE"
+        run_system "$2"
+        ;;
+    gate)
+        [[ $# == 2 ]] || die "usage: $0 gate GATE"
+        run_gate "$2"
+        ;;
+    vivado)
+        [[ $# == 3 ]] || die "usage: $0 vivado PRODUCT ACTION"
+        run_vivado "$2" "$3"
+        ;;
+    clean)
+        [[ $# == 1 ]] || die "usage: $0 clean"
+        clean_outputs
+        ;;
+    *)
+        die "usage: $0 {status|show-config|lint|unit|integration|trace|trace-all|system|gate|vivado|clean} ..."
+        ;;
+esac

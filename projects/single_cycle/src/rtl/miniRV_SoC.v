@@ -14,7 +14,7 @@ module miniRV_SoC(
     output wire         tx
 );
 
-`ifdef RUN_TRACE
+`ifdef SIMULATION_CLOCK
     wire sys_clk = fpga_clk;
     wire sys_rst = fpga_rst;
 `else
@@ -87,7 +87,17 @@ module miniRV_SoC(
         .m_axi_rvalid   (cpu_rvalid)
     );
 
-`ifdef RUN_TRACE
+// Canonical Vivado builds have physical clocking and always select the product
+// fabric. Simulation configurations must name their topology explicitly.
+`ifdef SOC_TOPOLOGY
+`define MINI_RV_SOC_TOPOLOGY
+`else
+`ifndef SIMULATION_CLOCK
+`define MINI_RV_SOC_TOPOLOGY
+`endif
+`endif
+
+`ifdef BASIC_TRACE
 
     // The fixed Trace top-level exposes the board ports but does not model the
     // physical peripherals. Keep deterministic inactive outputs in either
@@ -101,8 +111,6 @@ module miniRV_SoC(
     /* verilator lint_off UNUSEDSIGNAL */
     wire unused_trace_inputs = &{1'b0, sw, rx};
     /* verilator lint_on UNUSEDSIGNAL */
-
-`ifdef BASIC_TRACE
 
     // The historical Basic Trace profile uses Inst_ROM/Data_RAM inside
     // cpu_top and deliberately leaves the AXI path inactive.
@@ -125,7 +133,19 @@ module miniRV_SoC(
                                       cpu_arvalid, cpu_rready};
     /* verilator lint_on UNUSEDSIGNAL */
 
-`else
+`elsif AXI_DIRECT_TOPOLOGY
+
+    // AXI-direct simulation deliberately bypasses the product fabric so Cache
+    // and AXI-master behavior can be diagnosed independently of MMIO routing.
+    assign led = 16'h0;
+    assign dig_en = 8'h0;
+    assign dig_seg = 8'h0;
+    assign dig_seg1 = 8'h0;
+    assign tx = 1'b1;
+
+    /* verilator lint_off UNUSEDSIGNAL */
+    wire unused_direct_inputs = &{1'b0, sw, rx};
+    /* verilator lint_on UNUSEDSIGNAL */
 
     // The pinned Trace framework supplies this behavioral AXI RAM. Keep the
     // simulation model outside canonical product RTL.
@@ -172,8 +192,11 @@ module miniRV_SoC(
         .s_axi_rready   (cpu_rready)
     );
 
-`endif
-`else
+`elsif MINI_RV_SOC_TOPOLOGY
+
+    // The product topology is the default for the canonical Vivado build and
+    // is selected explicitly by SOC_TOPOLOGY in repository simulations. The
+    // same interconnect/peripheral owners are therefore used in both cases.
 
     wire [31:0] mem_awaddr;
     wire [ 7:0] mem_awlen;
@@ -312,6 +335,11 @@ module miniRV_SoC(
         .s_axi_awlen    (mem_awlen),
         .s_axi_awsize   (mem_awsize),
         .s_axi_awburst  (mem_awburst),
+`ifdef BEHAVIORAL_MEMORY
+        .s_axi_awlock   (1'b0),
+        .s_axi_awcache  (4'h0),
+        .s_axi_awprot   (3'h0),
+`endif
         .s_axi_awready  (mem_awready),
         .s_axi_awvalid  (mem_awvalid),
         .s_axi_wdata    (mem_wdata),
@@ -328,6 +356,11 @@ module miniRV_SoC(
         .s_axi_arlen    (mem_arlen),
         .s_axi_arsize   (mem_arsize),
         .s_axi_arburst  (mem_arburst),
+`ifdef BEHAVIORAL_MEMORY
+        .s_axi_arlock   (1'b0),
+        .s_axi_arcache  (4'h0),
+        .s_axi_arprot   (3'h0),
+`endif
         .s_axi_arready  (mem_arready),
         .s_axi_arvalid  (mem_arvalid),
         .s_axi_rid      (unused_bram_rid),
@@ -338,6 +371,10 @@ module miniRV_SoC(
         .s_axi_rresp    (mem_rresp)
     );
 
+`endif
+
+`ifdef MINI_RV_SOC_TOPOLOGY
+`undef MINI_RV_SOC_TOPOLOGY
 `endif
 
 endmodule

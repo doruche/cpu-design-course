@@ -2,9 +2,20 @@
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-required=(git make verilator g++ python3 rsync unzip)
-optional=(iverilog gtkwave riscv32-unknown-elf-gcc riscv64-unknown-elf-gcc cmd.exe powershell.exe wslpath)
+required=(git just make verilator g++ python3 iverilog vvp flock rsync unzip xmllint \
+    riscv32-unknown-elf-gcc riscv32-unknown-elf-objcopy riscv32-unknown-elf-objdump)
+optional=(gtkwave riscv64-unknown-elf-gcc cmd.exe powershell.exe wslpath)
 missing=0
+
+if [[ -f "$root/local.mk" ]]; then
+    for name in VIVADO_BIN VIVADO_STAGE_ROOT VIVADO_JOBS; do
+        [[ -n "${!name:-}" ]] && continue
+        value=$(awk -F ':=' -v key="$name" \
+            '$1 ~ "^[[:space:]]*" key "[[:space:]]*$" {sub(/^[[:space:]]*/, "", $2); sub(/[[:space:]]*$/, "", $2); print $2}' \
+            "$root/local.mk")
+        [[ -n "$value" ]] && export "$name=$value"
+    done
+fi
 
 printf 'Required tools:\n'
 for tool in "${required[@]}"; do
@@ -26,6 +37,15 @@ for tool in "${optional[@]}"; do
 done
 
 printf '\nVersions:\n'
+just_version=$(just --version | awk '{print $2}')
+minimum_just=1.40.0
+if [[ $(printf '%s\n%s\n' "$minimum_just" "$just_version" | sort -V | head -n1) != "$minimum_just" ]]; then
+    printf '  just %s is too old; version %s or newer is required\n' \
+        "$just_version" "$minimum_just"
+    missing=1
+else
+    printf '  just %s (minimum %s)\n' "$just_version" "$minimum_just"
+fi
 verilator --version | sed 's/^/  /'
 g++ --version | sed -n '1s/^/  /p'
 make --version | sed -n '1s/^/  /p'
@@ -33,6 +53,8 @@ make --version | sed -n '1s/^/  /p'
 printf '\nRepository inputs:\n'
 for path in \
     "$root/projects/single_cycle/miniRV.xpr" \
+    "$root/Justfile" \
+    "$root/config/build-configs.tsv" \
     "$root/projects/single_cycle/src/rtl/cpu_core.v" \
     "$root/config/verilator-single_cycle.vlt" \
     "$root/projects/pipeline/miniRV.xpr" \

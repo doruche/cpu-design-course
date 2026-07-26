@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Planned，等待独立实施
+- 状态：In Progress（I0～I4 已实施并通过规定验证；I5 切换中）
 - 建立日期：2026-07-26
 - 基线提交：`6bad8c6`
 - 位置：单周期 SoC Stage 3 与 Stage 4 之间
@@ -204,6 +204,31 @@ Stage 5 的 implementation/bitstream 仍是独立门禁。
 - 冻结本任务的公开 CLI、配置名、验证分层和停止条件。
 
 默认写集：本任务书、父任务书和 `docs/devlog/README.md`。
+
+I0 状态：Completed（2026-07-26）。公开 CLI、六个稳定配置、验证分层和停止条件按本文
+冻结。`6bad8c6` 至 `5750da8` 之间记录的 Stage 3 PASS 只作为迁移前历史证据，不因
+本检查点的文档或 CLI 工作重新计作验证运行。
+
+一次性迁移表如下。新入口必须直接拥有对应工具参数；除固定 Trace submodule 的内部
+Makefile 外，不以递归调用旧根 Make target 作为终态。
+
+| 旧根入口 | 解析后的能力 | 新入口 |
+| --- | --- | --- |
+| `make doctor` / `status` / `help` | 环境、仓库状态、入口发现 | `just doctor` / `status` / `--list` |
+| `make lint PRODUCT=... TRACE_PROFILE=... CACHE=...` | 显式产品、主存与 Cache lint | `just lint <config>` |
+| `make cache-test` | ICache/DCache bypass 与 enabled unit | `just unit cache` |
+| `make axi-test` | AXI master bypass 与 line-mode unit | `just unit axi-master` |
+| `make soc-stage3-peripheral-test` | UART、数码管、timer unit | `just unit peripherals` |
+| `make soc-stage3-unit-test` | interconnect + 五类 MMIO integration | `just integration fabric-mmio` |
+| `make soc-stage3-full-test` | DCache 至 fabric/MMIO integration | `just integration dcache-mmio` |
+| `make trace-basic[-all]` | 单周期或流水线历史 Basic Trace | `just trace[-all] single-basic|pipeline-basic` |
+| `make trace-axi[-all]` | 单周期 AXI 直连、Cache bypass Trace | `just trace[-all] single-axi-direct-bypass` |
+| `make trace-axi-cache[-all]` | 单周期 AXI 直连、Cache enabled Trace | `just trace[-all] single-axi-direct-cache` |
+| `make soc-stage2-test` | Stage 2 能力编排 | `just gate single-stage2` |
+| `make soc-stage3-test` | Stage 3 能力编排 | `just gate single-stage3` |
+| `make check-products` | 双产品 Basic lint/Trace | `just gate products-basic` |
+| `make vivado-*` | canonical project staging/synth/bitstream backend | `just vivado <product> <action>` |
+| `make export-submission` / `clean` | 提交导出 / 生成物清理 | `just export-submission` / `clean` |
 
 ### I1：Just CLI 骨架
 
