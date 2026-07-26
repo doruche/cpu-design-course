@@ -5,7 +5,7 @@
 
 ## Active Tasks
 
-- [单周期 SoC 开发](single-cycle-soc.md) — Active；Stage 0～1 已完成，Stage 2
+- [单周期 SoC 开发](single-cycle-soc.md) — Active；Stage 0～2 已完成，Stage 3
   尚未开始。
 
 ## Completed Tasks

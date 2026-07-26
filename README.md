@@ -18,8 +18,9 @@
   Windows 侧完成。Lab 1 不要求下板，本里程碑未做也不声明板级验证。
 - Lab 2 双产品基线已经刷新；`projects/pipeline/` 当前是 2026-07-23 的
   `projects/single_cycle/` tracked 工程快照，尚未开始流水线 RTL 改造。
-- 单周期 SoC Stage 0～1 已完成：ICache/DCache 已整理为 canonical RTL，并有独立的
-  旁路/启用测试；它们尚未接入 `cpu_top`，AXI 主存路径仍未开始。
+- 单周期 SoC Stage 0～2 已完成：默认产品路径已经接入 ICache/DCache、状态机式
+  AXI master 和 AXI BRAM 共享主存；历史 ROM/RAM 路径仍由独立 Basic Trace
+  profile 保留。Stage 3 外设与系统互连尚未开始。
 
 ## 快速开始
 
@@ -30,16 +31,22 @@ git submodule update --init --recursive
 make doctor
 ```
 
-运行单个 Trace 测试：
+运行单个 AXI Trace 测试（Cache 旁路）：
 
 ```bash
-make trace TEST=addi
+make trace-axi TEST=addi
 ```
 
-运行完整 Basic Trace：
+运行完整历史 Basic Trace：
 
 ```bash
-make trace-all
+make trace-basic-all
+```
+
+运行单周期 SoC Stage 2 完整自动化门禁：
+
+```bash
+make soc-stage2-test
 ```
 
 查看所有入口：

@@ -83,10 +83,17 @@ module ICache(
             end
 
             if (state == STATE_REFILL_WAIT && dev_rvalid) begin
-                cache_data[req_index] <= dev_rdata;
-                cache_tag[req_index] <= req_tag;
                 cache_valid[req_index] <= 1'b1;
             end
+        end
+    end
+
+    // Keep payload/tag storage out of the asynchronous-reset process so Vivado
+    // can infer on-chip RAM instead of expanding both arrays into registers.
+    always @(posedge cpu_clk) begin
+        if (state == STATE_REFILL_WAIT && dev_rvalid) begin
+            cache_data[req_index] <= dev_rdata;
+            cache_tag[req_index] <= req_tag;
         end
     end
 

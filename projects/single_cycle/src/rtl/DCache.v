@@ -136,20 +136,28 @@ module DCache(
 
 `ifdef ENABLE_DCACHE
             if (state == STATE_READ_WAIT && dev_rvalid && !req_uncached) begin
-                cache_data[req_index] <= dev_rdata;
-                cache_tag[req_index] <= req_tag;
                 cache_valid[req_index] <= 1'b1;
-            end
-
-            if (state == STATE_WRITE_REQ && dev_wrdy &&
-                !req_uncached && cache_hit) begin
-                cache_data[req_index] <= apply_write_mask(
-                    cache_data[req_index], req_wdata, req_wen, req_offset
-                );
             end
 `endif
         end
     end
+
+`ifdef ENABLE_DCACHE
+    // Payload/tag arrays are intentionally not part of the asynchronous-reset
+    // process. Only valid bits need reset; separating these writes preserves
+    // RAM inference for the cache storage.
+    always @(posedge cpu_clk) begin
+        if (state == STATE_READ_WAIT && dev_rvalid && !req_uncached) begin
+            cache_data[req_index] <= dev_rdata;
+            cache_tag[req_index] <= req_tag;
+        end else if (state == STATE_WRITE_REQ && dev_wrdy &&
+                     !req_uncached && cache_hit) begin
+            cache_data[req_index] <= apply_write_mask(
+                cache_data[req_index], req_wdata, req_wen, req_offset
+            );
+        end
+    end
+`endif
 
     always @(*) begin
         next_state = state;
