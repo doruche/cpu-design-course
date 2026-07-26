@@ -1,8 +1,5 @@
 #include "peripheral.h"
-
-#ifndef C_TEST_STUDENT_ID
-#error C_TEST_STUDENT_ID must be supplied by the repository build
-#endif
+#include "../runtime/c_test_identity.h"
 
 #define LED_BASE  0xFFFF1000
 #define DLED_BASE 0xFFFF2000
@@ -20,7 +17,8 @@ int main()
 {
     uart_init();
 
-    printf(C_TEST_STUDENT_ID " Test #1 - Formatted input/output test:\n");
+    printf(C_TEST_UART_GUARD "\n"
+           C_TEST_STUDENT_ID " Test #1 - Formatted input/output test:\n");
     
     /****** Phase 0 ******/
     printf("<Phase 0> - Formatted output test:\n");

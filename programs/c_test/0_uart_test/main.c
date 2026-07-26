@@ -1,11 +1,9 @@
+#include "../runtime/c_test_identity.h"
+
 #define SW_BASE   0xFFFF0000
 #define LED_BASE  0xFFFF1000
 #define DLED_BASE 0xFFFF2000
 #define UART_BASE 0xFFFF3000
-
-#ifndef C_TEST_STUDENT_ID
-#error C_TEST_STUDENT_ID must be supplied by the repository build
-#endif
 
 #ifdef C_TEST_HOST
 extern unsigned int c_test_mmio_read(unsigned int address);
@@ -58,7 +56,8 @@ int main()
 {
     uart_init();
 
-    print_str(C_TEST_STUDENT_ID " Test #0 - UART simple test:\n\r");
+    print_str(C_TEST_UART_GUARD "\n\r"
+              C_TEST_STUDENT_ID " Test #0 - UART simple test:\n\r");
     print_str("<Phase 0> - Output test:\n\r");
     print_str("Hello World!\n\r");
 

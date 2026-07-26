@@ -1,10 +1,7 @@
 #include "peripheral.h"
 #include <stdlib.h>
 #include <string.h>
-
-#ifndef C_TEST_STUDENT_ID
-#error C_TEST_STUDENT_ID must be supplied by the repository build
-#endif
+#include "../runtime/c_test_identity.h"
 
 void swap(int* a, int* b)
 {
@@ -47,7 +44,8 @@ int main(void)
 {
     uart_init();
 
-    printf(C_TEST_STUDENT_ID " Test #2 - Sorting test:\n");
+    printf(C_TEST_UART_GUARD "\n"
+           C_TEST_STUDENT_ID " Test #2 - Sorting test:\n");
 
     /****** Phase 0 ******/
     printf("<Phase 0> - Fixed size sorting test:\n");

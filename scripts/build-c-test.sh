@@ -11,13 +11,10 @@ case "$selector" in
     *) echo "usage: $0 {c-test-0|c-test-1|c-test-2}" >&2; exit 2 ;;
 esac
 
-student_id=${STUDENT_ID:-DEVELOPMENT}
-if [[ "$student_id" != DEVELOPMENT && ! "$student_id" =~ ^[0-9]{8,12}$ ]]; then
+student_id=${STUDENT_ID:-2024311488}
+if [[ ! "$student_id" =~ ^[0-9]{8,12}$ ]]; then
     echo "error: STUDENT_ID must contain 8 to 12 decimal digits" >&2
     exit 2
-fi
-if [[ "$student_id" == DEVELOPMENT ]]; then
-    echo "note: STUDENT_ID is unset; producing a non-candidate development build" >&2
 fi
 
 for tool in riscv32-unknown-elf-gcc riscv32-unknown-elf-objcopy \
@@ -52,7 +49,8 @@ riscv32-unknown-elf-objcopy -O binary "$prefix.elf" "$prefix.raw.bin"
 
 artifact_args=()
 artifact_sources=("${sources[@]}" "$runtime_dir/c_test_runtime.h" \
-    "$runtime_dir/c_test_io.h" "$runtime_dir/link.ld" \
+    "$runtime_dir/c_test_io.h" "$runtime_dir/c_test_identity.h" \
+    "$runtime_dir/link.ld" \
     "$root/scripts/build-c-test.sh" "$root/scripts/c-test-artifacts.py")
 for path in "$source_dir/peripheral.h" "$source_dir/peripheral.c"; do
     [[ -f "$path" ]] && artifact_sources+=("$path")

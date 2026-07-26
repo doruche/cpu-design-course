@@ -33,15 +33,15 @@ they create temporary and generated files beside the source. The only public
 entries are the root Just recipes:
 
 ```bash
-STUDENT_ID=20XXXXXXXX just program c-test-0
-STUDENT_ID=20XXXXXXXX just program c-test-1
-STUDENT_ID=20XXXXXXXX just program c-test-2
+just program c-test-0
+just program c-test-1
+just program c-test-2
 ```
 
-Replace `20XXXXXXXX` with the real 8-to-12 digit student ID. If `STUDENT_ID` is
-unset, the build uses the explicit `DEVELOPMENT` identity and marks its manifest
-as non-candidate. Such a build is suitable for software and RTL development but
-must not be sent to the course bitstream or recorded as board evidence.
+The tracked default student ID is `2024311488`, defined once in
+`runtime/c_test_identity.h`. `STUDENT_ID` remains an explicit 8-to-12 digit
+override, for example `STUDENT_ID=2024311488 just program c-test-0`. Both the
+default and a valid override produce candidate manifests.
 
 Outputs are isolated under `.cache/programs/c_test/<test>/`:
 

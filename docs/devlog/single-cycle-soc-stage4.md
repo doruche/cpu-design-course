@@ -50,7 +50,7 @@ bitstream 和转换脚本是带哈希的本地输入，不是第二份课程规�
 | --- | --- | --- |
 | 课程 C_TEST 行为 | 固定指导书与原始归档 | 不修改 submodule 或忽略目录中的归档 |
 | 可维护 C_TEST 源码 | `programs/c_test/0_*`～`2_*` | 只在工作副本完成 TODO 和明确的软件缺陷 |
-| 学号身份 | 用户提供的必需输入 | 不猜测、不提交占位符作为通过产物 |
+| 学号身份 | `runtime/c_test_identity.h` 与显式 `STUDENT_ID` 覆盖 | tracked 默认值来自用户确认；只接受 8～12 位十进制数字 |
 | 公开程序构建 CLI | 根 `Justfile` 与 `scripts/` | 不恢复根 Make CLI；内部后端不得成为第二公开入口 |
 | 生成程序产物 | 忽略的 `.cache/programs/c_test/` | 不在源码目录生成 ELF、BIN、COE 或临时 linker script |
 | RTL System oracle | `tests/` 下的仓库 testbench | CPU 发起 MMIO；testbench 只驱动/观察板级边界 |
@@ -171,7 +171,7 @@ just gate    single-stage4-auto
 - 先为 UART helper、格式化输入、timer rollover、quicksort 和 heap 边界建立失败测试；
 - 将 C_TEST 0～2 构建接入公开 Just CLI，产物只进入 `.cache/programs/c_test/`；
 - 结构化验证 ELF sections、150 KiB address contract、raw/COE/UART payload 和 manifest；
-- 要求用户提供学号输入；缺失身份时允许开发构建，但不得生成候选板测/关闭产物。
+- 使用用户确认并 tracked 的默认学号；`STUDENT_ID` 只作为显式数字覆盖输入。
 
 默认写集：`Justfile`、`scripts/`、`tests/`、`programs/c_test/README.md` 和必要的测试
 fixture。此检查点不修改 C_TEST TODO 或产品 RTL。
@@ -191,7 +191,8 @@ fixture。此检查点不修改 C_TEST TODO 或产品 RTL。
 
 状态：Completed（2026-07-27）。十五处 TODO 与已知空指针、时钟宏、timer 顺序缺陷均
 已关闭；同时补上有界 `%s`、整数/heap 边界和不依赖宿主浮点 multilib 的六位小数输出。
-身份改成显式 `STUDENT_ID` 构建输入；未提供时只允许 `DEVELOPMENT` 非候选 manifest。
+身份由共享头文件默认提供 `2024311488`，并保留显式 `STUDENT_ID` 数字覆盖；默认构建
+即可生成候选 manifest。
 
 ### S4-3：CPU-driven C_TEST System
 
@@ -212,8 +213,14 @@ product fabric、256 KiB simulation-only behavioral memory 和 MMIO 运行；输
 
 ### S4-U：课程 bitstream 用户验证
 
-状态：Awaiting User Identity And Board Evidence。真实学号、课程 bitstream 烧录和三套
-实际交互记录尚未提供；当前生成物均明确标记为非候选开发产物。
+状态：Awaiting User Board Evidence。学号 `2024311488` 已由用户确认，三套候选生成物
+已经就绪；课程 bitstream 烧录和三套实际交互记录尚未提供。
+
+2026-07-27 首轮课程 bitstream 实板验证中，三个测试的交互、排序、timer、switch、LED
+和数码管结果均符合预期；但课程下载器跳转到程序后会稳定吞掉第一个 UART TX 字节，
+使三个标题的学号都显示为 `024311488`。该现象不出现在直接从 reset PC 启动的 System
+suite，边界限定为课程下载器到 C_TEST 的 UART 交接。候选程序因此在首行前增加一个
+可牺牲的空格和换行；S4-U 仍等待更新生成物的标题复测，不提前标记 Completed。
 
 agent 负责准备并记录：
 
@@ -242,6 +249,19 @@ agent 负责准备并记录：
 先按程序构建、UART package、串口配置和输入序列定位；不得把失败静默归因于自己的
 产品 RTL。
 
+### 2026-07-27 自动证据
+
+- 包含本记录的干净提交上 `just gate single-stage4-auto` 通过；Just 格式、doctor、shell
+  syntax、源码占位符检查、C_TEST software/build/System、既有 Unit/Integration、
+  `soc-smoke`、XML 和 whitespace 门禁均通过；
+- 六个稳定配置 lint 均通过，六轮完整 Trace 各为 `Passed (45)`、`Failed (0)`；
+- 三份 manifest 均以各自 `source.commit` 记录源提交，并记录 `source.dirty=false`、entry 0、
+  `rv32i2p1_m2p0_zmmul1p0`，且 raw/COE/UART payload 结构化逐 word 比较通过；
+- 三个 CPU-driven suite 与 transcript oracle 均 PASS。三份 manifest 均记录学号
+  `2024311488` 和 `candidate=true`，可用于课程 bitstream S4-U；
+- Vivado implementation、自己的 bitstream、自己的 SoC 实板和课程 bitstream S4-U
+  均为 **Not Run**。
+
 ## 停止条件
 
 出现以下任一情况立即停止当前检查点并请求重新定界：
@@ -254,7 +274,7 @@ agent 负责准备并记录：
 - 需要以自己的 SoC 实板结果作为当前检查点输入；
 - 需要进入 DDR、CoreMark、LLAMA2、流水线产品或性能优化；
 - 需要 testbench 绕过 CPU 直接操纵外设内部状态才能令 C_TEST 通过；
-- 缺失用户学号却准备生成候选板测或关闭产物。
+- 使用非数字、长度不在 8～12 位内或未经用户确认的身份准备候选板测产物。
 
 ## 完成后的交接
 

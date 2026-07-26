@@ -11,7 +11,7 @@ from pathlib import Path
 
 def identity(text: str, test: int) -> str:
     match = re.match(
-        rf"(?P<id>DEVELOPMENT|[0-9]{{8,12}}) Test #{test} - ", text)
+        rf" \n\r(?P<id>[0-9]{{8,12}}) Test #{test} - ", text)
     if not match:
         raise SystemExit("transcript has no valid build identity header")
     return match.group("id")
@@ -31,7 +31,7 @@ def check_exact(text: str, expected: str) -> None:
 def check_test0(text: str) -> None:
     student = identity(text, 0)
     expected = (
-        f"{student} Test #0 - UART simple test:\n\r"
+        f" \n\r{student} Test #0 - UART simple test:\n\r"
         "<Phase 0> - Output test:\n\r"
         "Hello World!\n\r"
         "\n\r<Phase 1> - Input test:\n\r"
@@ -45,7 +45,7 @@ def check_test0(text: str) -> None:
 def check_test1(text: str) -> None:
     student = identity(text, 1)
     expected = (
-        f"{student} Test #1 - Formatted input/output test:\n\r"
+        f" \n\r{student} Test #1 - Formatted input/output test:\n\r"
         "<Phase 0> - Formatted output test:\n\r"
         "123\n\r0x456\n\rc\n\rHello World!\n\r98.765400\n\r"
         "\n\r<Phase 1> - Formatted input test:\n\r"
