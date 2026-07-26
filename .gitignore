@@ -8,7 +8,7 @@
 /materials/lab2/
 
 # Machine-local configuration and caches
-/local.mk
+/local.env
 /.cache/
 /dist/
 *.Zone.Identifier

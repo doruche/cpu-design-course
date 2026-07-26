@@ -2,6 +2,9 @@
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+source "$root/scripts/local-settings.sh"
+load_local_settings "$root/local.env"
+
 action=${1:-}
 product=${PRODUCT:-single_cycle}
 source_dir="$root/projects/$product"
@@ -17,7 +20,7 @@ if [[ ! -f "$source_dir/miniRV.xpr" ]]; then
 fi
 
 if [[ -z "${VIVADO_STAGE_ROOT:-}" ]]; then
-    echo "VIVADO_STAGE_ROOT is not set; copy local.mk.example to local.mk" >&2
+    echo "VIVADO_STAGE_ROOT is not set; copy local.env.example to local.env" >&2
     exit 2
 fi
 

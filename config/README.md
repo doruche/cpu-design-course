@@ -1,4 +1,17 @@
-# Verilator Lint Baselines
+# Build Configurations And Lint Baselines
+
+`build-configs.tsv` is the single machine-readable owner for the stable product
+verification configurations. `just show-config <name>` resolves each row into
+its product, topology, memory model, Cache mode, backend, compiler defines,
+canonical RTL source set, and artifact directory. Unknown names and invalid
+tuples are rejected before a backend runs.
+
+Stable names are `single-basic`, `single-axi-direct-bypass`,
+`single-axi-direct-cache`, `single-soc-bypass`, `single-soc-cache`, and
+`pipeline-basic`. Trace commands serialize access to the pinned framework's
+shared `cdp-tests/obj_dir`.
+
+## Verilator Lint Baselines
 
 `verilator-single_cycle.vlt` contains exact waivers generated from the untouched
 official Lab 1 template with Verilator 5.051. The waivers make the imported

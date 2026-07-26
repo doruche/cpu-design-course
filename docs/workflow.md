@@ -44,11 +44,13 @@ directory must be fixed in its canonical owner and regenerated.
    datapath row under the rules in [`design/README.md`](../design/README.md)
    before editing RTL.
 2. Edit canonical RTL.
-3. Run `make lint`.
-4. Run a targeted Trace case with `make trace TEST=<case>`.
+3. Select an explicit configuration with `just show-config <config>`, then run
+   `just lint <config>`.
+4. Run a targeted Trace case with `just trace <config> <case>`.
 5. Inspect the generated VCD and matching `cdp-tests/asm/<case>.dump` on failure.
-6. Run the relevant module test before integrating high-risk state machines.
-7. Run `make trace-all` at a feature-group milestone.
+6. Run the relevant `just unit <suite>` or `just integration <suite>` before
+   integrating high-risk state machines.
+7. Run `just trace-all <config>` at a feature-group milestone.
 
 Trace compiles canonical RTL directly. `cdp-tests/mySoC/` remains the untouched
 upstream placeholder.
@@ -62,7 +64,8 @@ Vivado is a lower-frequency FPGA backend gate, not the interactive editor:
 2. Vivado 2023.2 opens the tracked official `.xpr` in project mode.
 3. Repository Tcl runs synthesis, implementation, reports, and bitstream
    generation.
-4. Selected reports are copied back with source revision metadata.
+4. Generated reports remain in disposable staging; selected formal evidence is
+   copied back only with source revision metadata.
 5. Any fix is made in WSL and restaged.
 
 Run synthesis after changes to top-level wiring, reset, clocking, memory
@@ -74,6 +77,15 @@ Track the official `.xpr` initially. Do not replace it with a from-scratch
 project-generation Tcl flow until the official project has completed a clean
 Windows staging build and there is concrete evidence that `.xpr` state causes a
 problem.
+
+The public entry is `just vivado <product> <stage|synth|bitstream>`. Physical
+implementation and bitstream actions remain separate from RTL simulation gates.
+
+Machine-local Vivado paths and job count belong in the ignored `local.env`,
+created from `local.env.example`. It accepts only `VIVADO_BIN`,
+`VIVADO_STAGE_ROOT`, and `VIVADO_JOBS` as literal `KEY=VALUE` entries; exported
+environment variables take precedence. These host settings do not select a
+product topology or verification configuration.
 
 ## Git Workflow
 
@@ -135,7 +147,7 @@ the maintained product versions live under `projects/single_cycle/src/rtl/`.
 The existing Lab 1 EGO1 project is the starting template for both streams; no
 separate Lab 2 Vivado template is required by the guide.
 
-Before the pipeline product is created, extend the root build configuration
-with a `pipeline` lint baseline. Before AXI integration, split Basic and AXI
-Trace/lint source profiles so each product is checked against the correct
-memory model without changing `cdp-tests/`.
+The root `Justfile` and `config/build-configs.tsv` now expose the Basic, AXI
+direct, and product-SoC profiles explicitly. The fixed `cdp-tests/` Makefile is
+used only as a serialized Trace backend and is not a second public repository
+CLI.

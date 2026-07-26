@@ -2,20 +2,13 @@
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+source "$root/scripts/local-settings.sh"
+load_local_settings "$root/local.env"
+
 required=(git just make verilator g++ python3 iverilog vvp flock rsync unzip xmllint \
     riscv32-unknown-elf-gcc riscv32-unknown-elf-objcopy riscv32-unknown-elf-objdump)
 optional=(gtkwave riscv64-unknown-elf-gcc cmd.exe powershell.exe wslpath)
 missing=0
-
-if [[ -f "$root/local.mk" ]]; then
-    for name in VIVADO_BIN VIVADO_STAGE_ROOT VIVADO_JOBS; do
-        [[ -n "${!name:-}" ]] && continue
-        value=$(awk -F ':=' -v key="$name" \
-            '$1 ~ "^[[:space:]]*" key "[[:space:]]*$" {sub(/^[[:space:]]*/, "", $2); sub(/[[:space:]]*$/, "", $2); print $2}' \
-            "$root/local.mk")
-        [[ -n "$value" ]] && export "$name=$value"
-    done
-fi
 
 printf 'Required tools:\n'
 for tool in "${required[@]}"; do
@@ -81,7 +74,7 @@ printf '\nVivado batch access:\n'
 if [[ -n "${VIVADO_BIN:-}" && -f "${VIVADO_BIN}" ]]; then
     printf '  [ok] %s\n' "$VIVADO_BIN"
 else
-    printf '  [not configured] copy local.mk.example to local.mk after installing Vivado 2023.2\n'
+    printf '  [not configured] copy local.env.example to local.env after installing Vivado 2023.2\n'
 fi
 
 if ((missing)); then

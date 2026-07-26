@@ -6,11 +6,11 @@
 ## Active Tasks
 
 - [单周期 SoC 开发](single-cycle-soc.md) — Active；Stage 0～3 已完成，Stage 3
-  里程碑为 `single-cycle-soc-stage3`，构建/验证间章待实施，Stage 4 未开始。
-- [构建系统、CLI 与完整 SoC 验证间章](build-cli-and-soc-verification.md) — In Progress；
-  I0～I4 已完成实现与验证，正在执行最终 CLI 切换和关闭审计。
+  里程碑为 `single-cycle-soc-stage3`，构建/验证间章已完成，Stage 4 未开始。
 
 ## Completed Tasks
 
+- [构建系统、CLI 与完整 SoC 验证间章](build-cli-and-soc-verification.md) — Completed，
+  2026-07-26；公开入口已切换到 Just，六配置与 CPU-driven SoC smoke 已关闭验证。
 - [单周期 RTL 清理与微重构](single-cycle-rtl-cleanup.md) — Done，2026-07-23；三个
   实现 checkpoint 均已独立提交并通过规定门禁。

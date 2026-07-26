@@ -6,8 +6,8 @@
 
 ## 当前状态
 
-- Lab 1 完整单周期 CPU 已完成；2026-07-20 复核时 `make lint` 和全部 45 项
-  Trace（包括修复后的 `start`）均通过。
+- Lab 1 完整单周期 CPU 已完成；2026-07-20 复核时 lint 和全部 45 项 Trace
+  （包括修复后的 `start`）均通过。
 - Lab 1 官方 `miniRV_basic_ego1` 工程的导入基线 tag 为
   `upstream-lab1-template`；完整 Lab 1 状态由 `lab1-complete` tag 保存。
 - `projects/single_cycle/src/rtl/` 和 `projects/pipeline/src/rtl/` 分别是两套产品的
@@ -22,6 +22,8 @@
   路径已经接入 Cache、AXI 主存/MMIO 互连和五类外设；Stage 3 的完整链路、错误事务、
   子字访问和外设边界均有仓库测试。Stage 4 C_TEST 与板级联调尚未开始，历史 ROM/RAM
   路径仍由独立 Basic Trace profile 保留。
+- 仓库公开构建与验证 CLI 已统一为根 `Justfile`。六个稳定配置显式区分产品、拓扑、
+  Cache、后端和产物目录；Cache-enabled CPU-driven SoC smoke 已覆盖主存和五类 MMIO。
 
 ## 快速开始
 
@@ -29,37 +31,45 @@
 
 ```bash
 git submodule update --init --recursive
-make doctor
+just doctor
 ```
 
 运行单个 AXI Trace 测试（Cache 旁路）：
 
 ```bash
-make trace-axi TEST=addi
+just trace single-axi-direct-bypass addi
 ```
 
 运行完整历史 Basic Trace：
 
 ```bash
-make trace-basic-all
+just trace-all single-basic
 ```
 
 运行单周期 SoC Stage 3 完整自动化门禁：
 
 ```bash
-make soc-stage3-test
+just gate single-stage3
+```
+
+运行 CPU 驱动的 Cache-enabled SoC 系统仿真：
+
+```bash
+just system soc-smoke
 ```
 
 查看所有入口：
 
 ```bash
-make help
+just --list
 ```
 
 ## 目录边界
 
 ```text
 .
+├── Justfile                # 唯一公开构建与验证 CLI
+├── config/                 # 稳定配置清单与 lint waiver
 ├── projects/
 │   ├── single_cycle/       # 单周期 CPU，Lab 2 继续演化为单周期 SoC
 │   └── pipeline/           # 从当前单周期基线派生，先做流水线 CPU，再集成 SoC
@@ -71,6 +81,7 @@ make help
 │   └── MANIFEST.md         # 下载物哈希和依赖版本
 ├── design/                 # 持续维护的数据通路表和控制信号表 CSV
 ├── programs/               # 板上程序源码；COE 由源码生成
+├── tests/                  # Unit、Integration 与 System testbench/程序
 ├── artifacts/              # 精选的正式 Vivado 报告
 ├── docs/                   # 本项目工作流，不复制指导书
 └── scripts/                # Trace、Vivado staging 和导出脚本

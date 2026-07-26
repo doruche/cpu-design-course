@@ -54,6 +54,10 @@ for product in single_cycle pipeline; do
     rtl_sources=("$rtl_dir"/*.v)
     trace_vsrc="$trace_dir/vsrc/bram_axi.v $trace_dir/vsrc/ram.v ${rtl_sources[*]}"
     trace_opts="--trace -Wno-lint -Wno-style -Wno-TIMESCALEMOD -I$rtl_dir"
+    if [[ "$product" == single_cycle ]]; then
+        trace_opts+=" -DSIMULATION_CLOCK=1 -DBEHAVIORAL_MEMORY=1"
+        trace_opts+=" -DAXI_DIRECT_TOPOLOGY=1"
+    fi
 
     printf 'Verifying exported %s RTL with all Trace cases...\n' "$product"
     make -C "$trace_dir" clean

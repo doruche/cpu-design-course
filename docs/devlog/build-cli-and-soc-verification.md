@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：In Progress（I0～I4 已实施并通过规定验证；I5 切换中）
+- 状态：Completed（2026-07-26）
 - 建立日期：2026-07-26
 - 基线提交：`6bad8c6`
 - 位置：单周期 SoC Stage 3 与 Stage 4 之间
@@ -19,7 +19,7 @@
 
 ## 为什么需要这个间章
 
-当前根 `Makefile` 已经能够运行 Stage 0～3 所需门禁，但接口逐步叠加了四类不同概念：
+迁移基线中的根 `Makefile` 能够运行 Stage 0～3 所需门禁，但接口逐步叠加了四类不同概念：
 
 - 产品选择：`single_cycle` / `pipeline`；
 - 运行拓扑：历史 Basic 主存、AXI 直连行为级 BRAM、非 Trace 板级 SoC；
@@ -229,6 +229,10 @@ Makefile 外，不以递归调用旧根 Make target 作为终态。
 | `make check-products` | 双产品 Basic lint/Trace | `just gate products-basic` |
 | `make vivado-*` | canonical project staging/synth/bitstream backend | `just vivado <product> <action>` |
 | `make export-submission` / `clean` | 提交导出 / 生成物清理 | `just export-submission` / `clean` |
+| `cache-lint` / `axi-lint` / `soc-stage3-lint` | 各 suite 的前置 lint | 对应 `just unit` / `integration` 内部门禁 |
+| `trace-profile` / `trace-build` / `trace-clean` | Trace 配置切换、构建和清理实现 | `scripts/build.sh` 的加锁内部步骤 |
+| `trace-demo` | 七项历史 demo 子集 | 对显式配置逐项执行 `just trace <config> <case>` |
+| `check` | 隐式默认 lint + 全 Trace + whitespace | 显式 `just lint`、`trace-all` 与 `gate closure` |
 
 ### I1：Just CLI 骨架
 
@@ -285,6 +289,39 @@ Makefile 外，不以递归调用旧根 Make target 作为终态。
 - 审计 `just --list`、各 recipe usage、配置说明和门禁名称；
 - 运行最终关闭矩阵并形成独立 Git 检查点；
 - 关闭本间章后才恢复单周期 SoC Stage 4。
+
+I5 状态：Completed（2026-07-26）。根 Makefile 已删除；README、workflow、父任务和
+索引已切换到 Just。历史开发记录中的实际 `make` 命令保持原样。I0～I4 的实现检查点
+为 `b616e4a`（`build: add explicit just verification workflows`）；I5 的独立检查点为包含
+本关闭记录的提交。机器相关的 Vivado 路径和并行度也已从 Make 风格的 `local.mk`
+迁移到 Git 忽略的 `local.env`；`doctor` 与 Vivado 后端共享同一份白名单解析器，调用者
+环境变量保持最高优先级。
+
+## 关闭记录
+
+2026-07-26 运行 `just gate closure` 并通过，关闭证据如下：
+
+- `just --fmt --check`、`just doctor`、六个稳定配置解析和全部六配置 lint 通过；未知配置
+  能够以非零状态拒绝；`just --list`、recipe usage、根 Makefile 缺失和当前
+  README/workflow 的公开入口另行复核通过；
+- Unit 全部通过：ICache、DCache 的 bypass/enabled，AXI master 的一拍/四拍，以及
+  UART、数码管和 timer；Integration 的 `fabric-mmio` 与 `dcache-mmio` 通过；
+- `single-basic`、`single-axi-direct-bypass`、`single-axi-direct-cache`、
+  `single-soc-bypass`、`single-soc-cache` 和 `pipeline-basic` 的完整 Trace 均为
+  45 passed、0 failed；Trace 通过文件锁串行使用共享 `cdp-tests/obj_dir`；
+- Cache-enabled CPU-driven SoC smoke 通过：复位 PC 为 `0x00000000`，观察到 ICache 与
+  DCache 四拍回填，主存 write-through 与 cached load 正确；366 次 MMIO read 和 3 次
+  MMIO write 均为单拍，并验证 switch、LED、八个数码管扫描槽、UART RX/TX 完整帧和
+  timer；
+- `xmllint --noout projects/single_cycle/miniRV.xpr`、`git diff --check` 和全部 shell
+  脚本语法检查通过；关闭矩阵后运行 `just clean`，成功清理仓库生成物；
+- Vivado 2023.2 `single_cycle` synthesis 通过：99 infos、46 warnings、0 critical
+  warnings、0 errors。综合后 50 MHz CPU 时钟 WNS 为 1.344 ns、TNS 为 0.000 ns，综合
+  时序约束满足；资源为 3746 Slice LUTs、1755 Slice Registers、12.5 Block RAM Tiles
+  和 0 DSPs。以上仅为 synthesis 证据；
+- `just export-submission` 的缺失身份/报告/程序输入拒绝路径通过；实际提交包导出为
+  **Not Run**。Vivado implementation、bitstream、Stage 4 C_TEST 和实际板测均为
+  **Not Run**，System PASS 与 synthesis PASS 不替代这些后续门禁。
 
 ## 关闭门禁
 

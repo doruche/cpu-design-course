@@ -50,7 +50,7 @@ vivado product action:
 
 # Export the submission archive using the documented environment variables.
 export-submission:
-    @./scripts/export-submission.sh
+    @./scripts/build.sh export-submission
 
 # Remove generated repository and Trace outputs.
 clean:

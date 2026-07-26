@@ -6,7 +6,6 @@ config_file="$root/config/build-configs.tsv"
 trace_dir="$root/cdp-tests"
 single_rtl="$root/projects/single_cycle/src/rtl"
 cache_root="$root/.cache"
-trace_lock="$cache_root/locks/trace.lock"
 export CCACHE_DIR="${CCACHE_DIR:-$cache_root/ccache}"
 
 config_name=
@@ -167,8 +166,9 @@ trace_all_locked() {
 }
 
 with_trace_lock() {
-    mkdir -p "$(dirname "$trace_lock")"
-    exec 9>"$trace_lock"
+    # Lock the stable repository directory inode so `just clean` can remove
+    # all generated outputs without replacing the lock underneath waiters.
+    exec 9<"$root"
     flock 9
     "$@"
 }
@@ -328,7 +328,7 @@ system_soc_smoke() {
         -o "$output/soc-system" "${rtl_sources[@]}" \
         "$trace_dir/vsrc/bram_axi.v" \
         "$root/tests/soc_system/soc_system_tb.sv"
-    vvp "$output/soc-system"
+    vvp "$output/soc-system" 2>&1 | tee "$output/system.log"
 }
 
 run_gate() {
@@ -356,7 +356,30 @@ run_gate() {
             trace_all_for pipeline-basic
             git -C "$root" diff --check
             ;;
-        *) die "unknown gate: $1 (expected single-stage2, single-stage3, or products-basic)" ;;
+        closure)
+            just --justfile "$root/Justfile" --fmt --check
+            "$root/scripts/doctor.sh"
+            unit_cache
+            unit_axi_master
+            unit_peripherals
+            integration_fabric_mmio
+            integration_dcache_mmio
+            for config in single-basic single-axi-direct-bypass \
+                single-axi-direct-cache single-soc-bypass single-soc-cache \
+                pipeline-basic; do
+                lint_config_for "$config"
+                trace_all_for "$config"
+            done
+            system_soc_smoke
+            xmllint --noout "$root/projects/single_cycle/miniRV.xpr"
+            [[ ! -e "$root/Makefile" ]] || die "root Makefile still exists"
+            if rg -n '`make |^make ' "$root/README.md" \
+                "$root/docs/workflow.md"; then
+                die "current README/workflow still expose root make commands"
+            fi
+            git -C "$root" diff --check
+            ;;
+        *) die "unknown gate: $1 (expected single-stage2, single-stage3, products-basic, or closure)" ;;
     esac
 }
 
@@ -368,20 +391,9 @@ lint_config_for() {
 trace_all_for() {
     load_config "$1"
     print_config
-    with_trace_lock trace_all_locked
-}
-
-load_local_settings() {
-    local local_file="$root/local.mk"
-    local name value
-    [[ -f "$local_file" ]] || return 0
-    for name in VIVADO_BIN VIVADO_STAGE_ROOT VIVADO_JOBS; do
-        [[ -n "${!name:-}" ]] && continue
-        value=$(awk -F ':=' -v key="$name" \
-            '$1 ~ "^[[:space:]]*" key "[[:space:]]*$" {sub(/^[[:space:]]*/, "", $2); sub(/[[:space:]]*$/, "", $2); print $2}' \
-            "$local_file")
-        [[ -n "$value" ]] && export "$name=$value"
-    done
+    mkdir -p "$root/$config_artifact"
+    with_trace_lock trace_all_locked 2>&1 | \
+        tee "$root/$config_artifact/trace-all.log"
 }
 
 run_vivado() {
@@ -390,7 +402,6 @@ run_vivado() {
     case "$action" in stage|synth|bitstream) ;; *) die "unknown Vivado action: $action" ;; esac
     printf 'vivado-product: %s\nvivado-action: %s\ncanonical-project: projects/%s/miniRV.xpr\n' \
         "$product" "$action" "$product"
-    load_local_settings
     PRODUCT="$product" "$root/scripts/vivado.sh" "$action"
 }
 
@@ -403,14 +414,11 @@ show_status() {
     printf '  unit: cache, axi-master, peripherals\n'
     printf '  integration: fabric-mmio, dcache-mmio\n'
     printf '  system: soc-smoke\n'
-    printf '  gate: single-stage2, single-stage3, products-basic\n'
+    printf '  gate: single-stage2, single-stage3, products-basic, closure\n'
 }
 
 clean_outputs() {
-    mkdir -p "$(dirname "$trace_lock")"
-    exec 9>"$trace_lock"
-    flock 9
-    make -C "$trace_dir" clean
+    with_trace_lock make -C "$trace_dir" clean
     rm -rf "$cache_root"
 }
 
@@ -466,11 +474,15 @@ case "$command" in
         [[ $# == 3 ]] || die "usage: $0 vivado PRODUCT ACTION"
         run_vivado "$2" "$3"
         ;;
+    export-submission)
+        [[ $# == 1 ]] || die "usage: $0 export-submission"
+        with_trace_lock "$root/scripts/export-submission.sh"
+        ;;
     clean)
         [[ $# == 1 ]] || die "usage: $0 clean"
         clean_outputs
         ;;
     *)
-        die "usage: $0 {status|show-config|lint|unit|integration|trace|trace-all|system|gate|vivado|clean} ..."
+        die "usage: $0 {status|show-config|lint|unit|integration|trace|trace-all|system|gate|vivado|export-submission|clean} ..."
         ;;
 esac
