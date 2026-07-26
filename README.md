@@ -20,8 +20,8 @@
   `projects/single_cycle/` tracked 工程快照，尚未开始流水线 RTL 改造。
 - 单周期 SoC Stage 0～3 已完成，里程碑 tag 为 `single-cycle-soc-stage3`。默认产品
   路径已经接入 Cache、AXI 主存/MMIO 互连和五类外设；Stage 3 的完整链路、错误事务、
-  子字访问和外设边界均有仓库测试。Stage 4 C_TEST 与板级联调尚未开始，历史 ROM/RAM
-  路径仍由独立 Basic Trace profile 保留。
+  子字访问和外设边界均有仓库测试。Stage 4 的 C_TEST 软件与自动化联调边界已定义、
+  实现未开始；历史 ROM/RAM 路径仍由独立 Basic Trace profile 保留。
 - 仓库公开构建与验证 CLI 已统一为根 `Justfile`。六个稳定配置显式区分产品、拓扑、
   Cache、后端和产物目录；Cache-enabled CPU-driven SoC smoke 已覆盖主存和五类 MMIO。
 

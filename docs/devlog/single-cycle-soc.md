@@ -6,7 +6,7 @@
 - 建立日期：2026-07-26
 - 基线提交：`87f2f3c`
 - 产品：`projects/single_cycle/`
-- 当前阶段：Stage 3 与构建/验证间章已完成；Stage 4 未开始
+- 当前阶段：Stage 3 与构建/验证间章已完成；Stage 4 已定义、实现未开始
 
 本文记录单周期 SoC 开发的总体方向和阶段顺序。课程要求仍以固定版本的指导书、
 Trace 框架和课程验收说明为准；各阶段的具体接口、实现方案和验证安排在进入该阶段
@@ -72,14 +72,16 @@ Trace 框架和课程验收说明为准；各阶段的具体接口、实现方�
 - 增加经过真实产品 fabric 的 Cache bypass/enabled AXI Trace；
 - 增加由 CPU 执行测试程序、同时经过双 Cache、AXI、系统互连、主存和五类 MMIO 的
   自动化 SoC 系统仿真；
-- 本间章已完成；Stage 4 仍保持 Not Started，等待独立授权后再进入 C_TEST、bitstream
-  或实际板测。
+- 本间章已完成；Stage 4 的软件、镜像、自动化和用户证据边界已在独立任务书中冻结，
+  实现尚未开始。
 
-### Stage 4：C_TEST 与板级联调
+### Stage 4：C_TEST 软件与自动化联调
 
-- 完成 C_TEST 0～2 中与当前 EGO1、miniRV 配置相关的内容。
-- 先确认测试程序和外设使用方式，再在自己的单周期 SoC 上联调。
-- 将自动化结果与用户完成的实际板级观察分别记录。
+- 按[独立任务书](single-cycle-soc-stage4.md)完成 C_TEST 0～2、可审计程序镜像和
+  CPU-driven `single-soc-cache` System 验证；
+- 由用户使用课程提供的已知良好 miniRV + EGO1 SoC bitstream 验证 C_TEST 软件；
+- 不在本阶段修改产品 XCI/COE 绑定、运行 implementation/bitstream 或声明自己的 SoC
+  已经下板通过。
 
 ### Stage 5：单周期 SoC 收尾
 
@@ -105,7 +107,9 @@ Trace 框架和课程验收说明为准；各阶段的具体接口、实现方�
 - Stage 3：已完成，2026-07-26；里程碑 tag `single-cycle-soc-stage3`。
 - 构建/验证间章：Completed，2026-07-26；详见
   [独立任务书](build-cli-and-soc-verification.md)。
-- Stage 4～Stage 5：未开始。
+- Stage 4：Defined，2026-07-27；详见[独立任务书](single-cycle-soc-stage4.md)，实现未
+  开始。
+- Stage 5：未开始。
 
 ## 阶段记录
 
@@ -428,6 +432,7 @@ Stage 3R 按 3R-0～3R-3 顺序完成，并保存为 `single-cycle-soc-stage3` �
 替代用户对 EGO1 的 UART、开关、LED、数码管和计时器观察。
 
 Stage 3 handoff：Stage 3 与
-[构建系统、CLI 与完整 SoC 验证间章](build-cli-and-soc-verification.md)均已关闭。Stage 4
-仍保持 Not Started；后续只通过 `single-soc-cache` 的 Just 配置进入 C_TEST/板级联调，
-且需独立授权。
+[构建系统、CLI 与完整 SoC 验证间章](build-cli-and-soc-verification.md)均已关闭。
+[Stage 4 独立任务书](single-cycle-soc-stage4.md)已完成 docs-only 合同冻结，但 C_TEST、
+构建和测试实现均未开始；后续只通过 `single-soc-cache` 的 Just 配置推进，并服从任务书
+中的用户证据和停止边界。
