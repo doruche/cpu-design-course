@@ -6,7 +6,9 @@
 ## Active Tasks
 
 - [单周期 SoC 开发](single-cycle-soc.md) — Active；Stage 0～3 已完成，Stage 3
-  里程碑为 `single-cycle-soc-stage3`，构建/验证间章与 Stage 4 已完成；下一阶段尚未进入。
+  里程碑为 `single-cycle-soc-stage3`，构建/验证间章与 Stage 4 已完成；Stage 5 Active。
+- [单周期 SoC Stage 5：物理工程与自有板级闭环](single-cycle-soc-stage5.md) — Active；
+  S5-0 合同冻结完成，自动工程从 S5-1 开始，EGO1 烧录与观察由用户执行。
 
 ## Completed Tasks
 

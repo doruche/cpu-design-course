@@ -6,7 +6,7 @@
 - 建立日期：2026-07-26
 - 基线提交：`87f2f3c`
 - 产品：`projects/single_cycle/`
-- 当前阶段：Stage 4 已完成；课程 bitstream 用户板测通过，下一阶段尚未进入
+- 当前阶段：Stage 5 Active；S5-0 合同冻结完成，S5-1 尚未开始
 
 本文记录单周期 SoC 开发的总体方向和阶段顺序。课程要求仍以固定版本的指导书、
 Trace 框架和课程验收说明为准；各阶段的具体接口、实现方案和验证安排在进入该阶段
@@ -20,8 +20,11 @@ Trace 框架和课程验收说明为准；各阶段的具体接口、实现方�
 - 建立 Cache、AXI 和共享主存路径；
 - 接入课程要求的内存映射外设；
 - 支持 C_TEST 0～2 的板级运行；
-- 完成单周期 SoC 的 Trace、Vivado 和课程检查准备；
+- 完成单周期 SoC 的 Trace、Vivado、自有 bitstream 和 EGO1 板级验证；
 - 保存可复现的单周期 SoC 里程碑，供后续流水线 SoC 集成使用。
+
+单周期/流水线的正式 artifacts、数据通路图、课程报告和最终提交物在两产品 merge 后
+统一整理，不属于本单周期 SoC 阶段任务的关闭条件。
 
 ## 总体边界
 
@@ -85,9 +88,12 @@ Trace 框架和课程验收说明为准；各阶段的具体接口、实现方�
 
 ### Stage 5：单周期 SoC 收尾
 
-- 完成 Vivado 综合、实现、时序和板级工程收尾。
-- 对照课程检查内容整理数据通路、代码说明和报告所需证据。
-- 清理临时开发入口，更新仓库状态说明并保存单周期 SoC 里程碑。
+- 按[独立任务书](single-cycle-soc-stage5.md)关闭时钟复位、物理主存、程序初始化和
+  Vivado 实现门禁，生成可追溯的 C_TEST 0～2 自有 bitstream；
+- 由 agent 完成 RTL、构建、自动回归、Vivado synthesis/implementation/bitstream 和
+  候选审计，由用户完成 EGO1 烧录、串口交互和物理外设观察；
+- 本阶段不整理 `artifacts/`、数据通路图、正式报告或最终提交包；这些工作延期到
+  流水线 SoC 完成并 merge 之后统一处理。
 
 ## 推进规则
 
@@ -109,7 +115,8 @@ Trace 框架和课程验收说明为准；各阶段的具体接口、实现方�
   [独立任务书](build-cli-and-soc-verification.md)。
 - Stage 4：Completed，2026-07-27；详见
   [独立任务书](single-cycle-soc-stage4.md)，S4-1～S4-3 与 S4-U 均已完成。
-- Stage 5：未开始。
+- Stage 5：Active，2026-07-27；详见
+  [独立任务书](single-cycle-soc-stage5.md)，S5-0 docs-only 合同冻结完成，S5-1 尚未开始。
 
 ## 阶段记录
 
@@ -433,6 +440,6 @@ Stage 3R 按 3R-0～3R-3 顺序完成，并保存为 `single-cycle-soc-stage3` �
 
 Stage 3 handoff：Stage 3 与
 [构建系统、CLI 与完整 SoC 验证间章](build-cli-and-soc-verification.md)均已关闭。
-[Stage 4 独立任务书](single-cycle-soc-stage4.md)已完成 docs-only 合同冻结，但 C_TEST、
-构建和测试实现均未开始；后续只通过 `single-soc-cache` 的 Just 配置推进，并服从任务书
-中的用户证据和停止边界。
+[Stage 4 独立任务书](single-cycle-soc-stage4.md)的自动范围和课程 bitstream 用户验证均已
+完成；后续按 [Stage 5 独立任务书](single-cycle-soc-stage5.md)关闭自己的 Vivado 物理
+工程、bitstream 和 EGO1 板级证据。
