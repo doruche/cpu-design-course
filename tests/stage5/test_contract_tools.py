@@ -12,6 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.dont_write_bytecode = True
+sys.path.insert(0, str(ROOT / "scripts"))
 
 
 def load_script(name: str, filename: str):
@@ -25,6 +26,7 @@ def load_script(name: str, filename: str):
 
 stage5_contract = load_script("stage5_contract", "stage5_contract.py")
 vivado_result = load_script("vivado_result", "check_vivado_result.py")
+vivado_evidence = load_script("vivado_evidence", "collect_vivado_evidence.py")
 
 
 class StaticHelperTests(unittest.TestCase):
@@ -89,6 +91,48 @@ class VivadoVerdictTests(unittest.TestCase):
 
     def test_rejects_missing_evidence(self) -> None:
         self.assertTrue(vivado_result.evaluate({"schema": 1}))
+
+
+class VivadoReportParserTests(unittest.TestCase):
+    def test_timing_parser_accounts_for_false_path_io(self) -> None:
+        report = """
+1. checking no_clock (0)
+2. checking constant_clock (0)
+3. checking unconstrained_internal_endpoints (0)
+ There are 18 input ports with no input delay specified. (HIGH)
+ There are 18 input ports with no input delay but user has a false path constraint.
+ There are 39 ports with no output delay specified. (HIGH)
+ There are 39 ports with no output delay but with a false path constraint
+ WNS(ns) TNS(ns) TNS Failing Endpoints TNS Total Endpoints WHS(ns) THS(ns)
+ ------- ------- --------------------- ------------------- ------- -------
+ 0.112 0.000 0 8464 0.038 0.000 0 8464
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "timing.rpt"
+            path.write_text(report, encoding="utf-8")
+            timing = vivado_evidence.parse_timing(path)
+        self.assertEqual(timing["setup_wns_ns"], 0.112)
+        self.assertEqual(timing["hold_whs_ns"], 0.038)
+        self.assertEqual(timing["unconstrained_paths"], 0)
+
+    def test_timing_parser_rejects_missing_check_timing_section(self) -> None:
+        report = """
+WNS(ns) TNS(ns) TNS Failing Endpoints TNS Total Endpoints WHS(ns) THS(ns)
+------- ------- --------------------- ------------------- ------- -------
+0.112 0.000 0 8464 0.038 0.000 0 8464
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "timing.rpt"
+            path.write_text(report, encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "no no_clock check"):
+                vivado_evidence.parse_timing(path)
+
+    def test_report_marker_is_required(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "drc.rpt"
+            path.write_text("", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "unexpected format"):
+                vivado_evidence.require_report(path, "Report DRC")
 
 
 if __name__ == "__main__":

@@ -21,8 +21,13 @@ UART_BAUD = 115_200
 
 
 def component_value(document: dict, name: str) -> str:
-    parameters = document["ip_inst"]["parameters"]["component_parameters"]
-    values = parameters[name]
+    parameter_sets = document["ip_inst"]["parameters"]
+    values = None
+    for section in ("component_parameters", "model_parameters"):
+        candidate = parameter_sets.get(section, {}).get(name)
+        if candidate is not None:
+            values = candidate
+            break
     if not isinstance(values, list) or not values:
         raise ValueError(f"XCI parameter {name} has no value")
     return str(values[0]["value"])
@@ -56,6 +61,19 @@ def check_static_contract(root: Path) -> list[str]:
         bram = json.loads(bram_path.read_text(encoding="utf-8"))
         width = int(component_value(bram, "Write_Width_A"))
         depth = int(component_value(bram, "Write_Depth_A"))
+        generated_depths = {
+            int(component_value(bram, name))
+            for name in (
+                "C_WRITE_DEPTH_A",
+                "C_READ_DEPTH_A",
+                "C_WRITE_DEPTH_B",
+                "C_READ_DEPTH_B",
+            )
+        }
+        generated_address_widths = {
+            int(component_value(bram, name))
+            for name in ("C_ADDRA_WIDTH", "C_ADDRB_WIDTH")
+        }
         memory_bytes = width * depth // 8
         coe_file = component_value(bram, "Coe_File")
         print(
@@ -69,10 +87,17 @@ def check_static_contract(root: Path) -> list[str]:
                 f"BRAM AXI capacity is {memory_bytes} bytes; "
                 f"need at least {MIN_MEMORY_BYTES}"
             )
+        if generated_depths != {depth}:
+            errors.append("BRAM generated depth metadata differs from Write_Depth_A")
+        if generated_address_widths != {(depth - 1).bit_length()}:
+            errors.append("BRAM generated address width does not cover its depth")
         if Path(coe_file.replace("\\", "/")).name.lower() == "lw.coe":
             errors.append(
                 "BRAM AXI still has the legacy implicit lw.coe initialization"
             )
+        coe_path = (bram_path.parent / coe_file).resolve()
+        if not coe_path.is_file():
+            errors.append(f"tracked BRAM placeholder COE does not exist: {coe_path}")
     except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
         errors.append(f"cannot audit BRAM XCI: {exc}")
 

@@ -492,9 +492,30 @@ run_vivado() {
     local product=$1 action=$2
     case "$product" in single_cycle|pipeline) ;; *) die "unknown product: $product" ;; esac
     case "$action" in stage|synth|bitstream) ;; *) die "unknown Vivado action: $action" ;; esac
+    if [[ "$product:$action" == single_cycle:bitstream ]]; then
+        die "single-cycle bitstreams require: just vivado-candidate c-test-0|1|2"
+    fi
     printf 'vivado-product: %s\nvivado-action: %s\ncanonical-project: projects/%s/miniRV.xpr\n' \
         "$product" "$action" "$product"
     PRODUCT="$product" "$root/scripts/vivado.sh" "$action"
+}
+
+run_vivado_candidate() {
+    local program=$1 action=$2
+    case "$program" in
+        c-test-0|c-test-1|c-test-2) ;;
+        *) die "unknown Vivado candidate: $program (expected c-test-0..2)" ;;
+    esac
+    case "$action" in
+        stage|bitstream) ;;
+        *) die "unknown candidate action: $action (expected stage or bitstream)" ;;
+    esac
+    run_program "$program"
+    printf 'vivado-product: single_cycle\n'
+    printf 'vivado-action: %s\n' "$action"
+    printf 'vivado-candidate: %s\n' "$program"
+    printf 'canonical-project: projects/single_cycle/miniRV.xpr\n'
+    PRODUCT=single_cycle "$root/scripts/vivado.sh" "$action" "$program"
 }
 
 show_status() {
@@ -509,6 +530,8 @@ show_status() {
     printf '  gate: single-stage2, single-stage3, single-stage4-auto, products-basic, closure\n'
     printf '\nBoard programs:\n'
     printf '  c-test-0, c-test-1, c-test-2\n'
+    printf '\nVivado candidates:\n'
+    printf '  c-test-0, c-test-1, c-test-2 (stage or bitstream)\n'
 }
 
 clean_outputs() {
@@ -572,6 +595,10 @@ case "$command" in
         [[ $# == 3 ]] || die "usage: $0 vivado PRODUCT ACTION"
         run_vivado "$2" "$3"
         ;;
+    vivado-candidate)
+        [[ $# == 3 ]] || die "usage: $0 vivado-candidate PROGRAM {stage|bitstream}"
+        run_vivado_candidate "$2" "$3"
+        ;;
     export-submission)
         [[ $# == 1 ]] || die "usage: $0 export-submission"
         with_trace_lock "$root/scripts/export-submission.sh"
@@ -581,6 +608,6 @@ case "$command" in
         clean_outputs
         ;;
     *)
-        die "usage: $0 {status|show-config|lint|unit|program|integration|trace|trace-all|system|gate|vivado|export-submission|clean} ..."
+        die "usage: $0 {status|show-config|lint|unit|program|integration|trace|trace-all|system|gate|vivado|vivado-candidate|export-submission|clean} ..."
         ;;
 esac

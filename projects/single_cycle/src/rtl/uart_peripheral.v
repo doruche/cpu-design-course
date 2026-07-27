@@ -66,8 +66,8 @@ module uart_peripheral #(
     reg [2:0] rx_bit_index;
     reg [7:0] tx_shift;
     reg [7:0] rx_shift;
-    reg       rx_meta;
-    reg       rx_sync;
+    (* ASYNC_REG = "TRUE" *) reg rx_meta;
+    (* ASYNC_REG = "TRUE" *) reg rx_sync;
     reg       interrupt_enable;
 
     wire tx_empty = tx_count == 0;

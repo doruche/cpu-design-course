@@ -52,6 +52,10 @@ gate gate:
 vivado product action:
     @./scripts/build.sh vivado "{{ product }}" "{{ action }}"
 
+# Stage or build one explicitly named single-cycle board candidate.
+vivado-candidate program action="bitstream":
+    @./scripts/build.sh vivado-candidate "{{ program }}" "{{ action }}"
+
 # Export the submission archive using the documented environment variables.
 export-submission:
     @./scripts/build.sh export-submission

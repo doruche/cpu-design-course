@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（S5-0～S5-1 完成；S5-2 尚未开始）
+- 状态：Active（S5-0～S5-2 完成；S5-3 尚未开始）
 - 父任务：[单周期 SoC 开发](single-cycle-soc.md)
 - 基线提交：`6793cf0`
 - 产品：`projects/single_cycle/`
@@ -205,6 +205,8 @@ error、DRC critical warning 和 Vivado critical-warning message 均必须为 0�
 
 ### S5-2：板级工程修复与候选构建入口
 
+状态：Completed（2026-07-27，产品修复与 dirty-source 工程验证）。
+
 - 使用未门控的 Clock Wizard 输出驱动产品时钟；复位必须在产品时钟域安全释放，并在
   PLL 未锁定或板级复位有效时保持产品复位；
 - 审计 switch 和 UART RX 等异步输入，已有同步器必须保留，缺失且影响物理正确性的
@@ -220,6 +222,35 @@ error、DRC critical warning 和 Vivado critical-warning message 均必须为 0�
 
 若需要改变 CPU ISA、Trace public 信号、Stage 3 Cache/AXI/MMIO 语义、C_TEST 软件功能
 或引入 bootloader，立即停止并重新定界。
+
+本检查点完成了以下产品和工程修复：
+
+- `sys_clk` 直接使用 Clock Wizard 的 50 MHz BUFG 输出，不再以 `pll_lock` 组合门控；
+  产品 reset 在板级低有效 reset 或 lock 丢失时异步断言，并在 50 MHz 域两拍同步释放；
+- switch 增加两级同步，UART RX 原两级同步器保留并与 reset/switch 同步链一样标注
+  `ASYNC_REG`；新 RTL 未使用声明初始化；
+- `bram_axi` 扩为 32 bit × 38,400 word（153,600 bytes），A/B generated depth 和
+  16-bit native address width 均由 XCI 结构化检查；canonical 默认 COE 改为只含零字的
+  `stage5-placeholder.coe`，候选不再依赖 `lw.coe`；
+- 新增 `just vivado-candidate c-test-0|1|2 {stage|bitstream}`，候选由同次 program build
+  的 manifest/COE 选择；bitstream 要求 clean 源提交，Tcl 回读实际 COE，collector
+  复核 manifest/COE/hash，并把 selection、manifest 和 COE 快照随候选 evidence 保存；
+- staging 使用删除 excluded 生成物的镜像复制，避免旧 XCI XML、OOC checkpoint、日志
+  或报告污染下一构建；旧的未命名单周期 bitstream 入口会被拒绝；
+- canonical Tcl 明确要求 Vivado 2023.2、目标器件和 BRAM 深度，implementation 生成
+  timing、methodology、DRC 和 CDC 报告；后处理缺少任何必要 timing 区段、报告 marker、
+  当前 run 日志或结构化 violation count 时均 fail closed，并继续拒绝 setup/hold、
+  未约束路径、DRC 或 critical warning 违例。
+
+修复后 targeted evidence：`just unit stage5-contract` 的 8 个用例通过，包含 reset/lock、
+switch 同步、报告缺段和空报告反例；`just lint single-soc-cache`、定向 `addi` Trace、
+`just system soc-smoke`、XPR XML、XCI JSON、shell/Python 语法和 `git diff --check` 通过。
+显式 `c-test-0` staging 审计得到 COE SHA-256
+`7456a6db65dc7ed70a1cc71f390cdaffa17c493df42671bb498e124fa7c9f43f`，并正确把开发态
+记为 dirty。另一次从清空的 staging 启动的 canonical Vivado 2023.2 synthesis 完成，
+实际器件为 `xc7a35tcsg324-1`、BRAM 为 153,600 bytes、critical warning 为 0；该运行只
+验证 S5-2 工程路径，因源树尚未提交而不是 S5-3 的 clean synthesis/implementation 证据。
+implementation、CDC 报告内容和三套 bitstream 在 S5-3 关闭，EGO1 仍为 Not Run。
 
 ### S5-3：自动回归、实现和三套 bitstream
 

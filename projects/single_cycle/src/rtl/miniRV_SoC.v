@@ -17,12 +17,40 @@ module miniRV_SoC(
 `ifdef SIMULATION_CLOCK
     wire sys_clk = fpga_clk;
     wire sys_rst = fpga_rst;
+    wire [15:0] peripheral_sw = sw;
 `else
     wire pll_clk1;
     wire pll_lock;
-    wire sys_clk = pll_lock & pll_clk1;
-    reg  sys_rst;
-    always @(posedge fpga_clk) sys_rst <= !fpga_rst | !pll_lock;
+    wire sys_clk = pll_clk1;
+    wire async_sys_rst = !fpga_rst | !pll_lock;
+
+    // Assert reset immediately when the active-low board reset is pressed or
+    // Clock Wizard lock is lost. Release is delayed for two complete product
+    // clock edges so every 50 MHz consumer leaves reset in one clock domain.
+    (* ASYNC_REG = "TRUE" *) reg [1:0] sys_rst_pipe;
+    always @(posedge sys_clk or posedge async_sys_rst) begin
+        if (async_sys_rst) begin
+            sys_rst_pipe <= 2'b11;
+        end else begin
+            sys_rst_pipe <= {sys_rst_pipe[0], 1'b0};
+        end
+    end
+    wire sys_rst = sys_rst_pipe[1];
+
+    // EGO1 switches are asynchronous to the product clock. Synchronize each
+    // stable level before exposing the bank through the MMIO register.
+    (* ASYNC_REG = "TRUE" *) reg [15:0] sw_meta;
+    (* ASYNC_REG = "TRUE" *) reg [15:0] sw_sync;
+    always @(posedge sys_clk or posedge sys_rst) begin
+        if (sys_rst) begin
+            sw_meta <= 16'h0;
+            sw_sync <= 16'h0;
+        end else begin
+            sw_meta <= sw;
+            sw_sync <= sw_meta;
+        end
+    end
+    wire [15:0] peripheral_sw = sw_sync;
 
     clk_wiz_0 U_clkgen (
         .clk_in1    (fpga_clk),
@@ -310,7 +338,7 @@ module miniRV_SoC(
         .mmio_wr_data   (mmio_wr_data),
         .mmio_wr_strb   (mmio_wr_strb),
         .mmio_wr_error  (mmio_wr_error),
-        .sw             (sw),
+        .sw             (peripheral_sw),
         .led            (led),
         .dig_en         (dig_en),
         .dig_seg        (dig_seg),

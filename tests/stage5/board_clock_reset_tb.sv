@@ -73,6 +73,18 @@ module board_clock_reset_tb;
         check(dut.sys_rst === 1'b0,
               "product reset did not release after two product-clock edges");
 
+        // Switch levels cross the board boundary through two synchronizer
+        // stages before the MMIO register observes them.
+        sw = 16'ha55a;
+        @(posedge dut.sys_clk);
+        #1;
+        check(dut.peripheral_sw == 16'h0000,
+              "switch input bypassed the first synchronizer stage");
+        @(posedge dut.sys_clk);
+        #1;
+        check(dut.peripheral_sw == 16'ha55a,
+              "switch input did not cross both synchronizer stages");
+
         // Loss of lock is an asynchronous reset assertion condition.  It must
         // not wait for either the 100 MHz input or the 50 MHz product clock.
         @(negedge fpga_clk);
