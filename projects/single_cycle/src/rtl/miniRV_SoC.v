@@ -17,7 +17,6 @@ module miniRV_SoC(
 `ifdef SIMULATION_CLOCK
     wire sys_clk = fpga_clk;
     wire sys_rst = fpga_rst;
-    wire [15:0] peripheral_sw = sw;
 `else
     wire pll_clk1;
     wire pll_lock;
@@ -225,6 +224,10 @@ module miniRV_SoC(
     // The product topology is the default for the canonical Vivado build and
     // is selected explicitly by SOC_TOPOLOGY in repository simulations. The
     // same interconnect/peripheral owners are therefore used in both cases.
+
+`ifdef SIMULATION_CLOCK
+    wire [15:0] peripheral_sw = sw;
+`endif
 
     wire [31:0] mem_awaddr;
     wire [ 7:0] mem_awlen;
