@@ -6,7 +6,7 @@
 - 建立日期：2026-07-26
 - 基线提交：`87f2f3c`
 - 产品：`projects/single_cycle/`
-- 当前阶段：Stage 4 S4-1～S4-3 已完成；候选身份已就绪，S4-U 等待课程 bitstream 证据
+- 当前阶段：Stage 4 已完成；课程 bitstream 用户板测通过，下一阶段尚未进入
 
 本文记录单周期 SoC 开发的总体方向和阶段顺序。课程要求仍以固定版本的指导书、
 Trace 框架和课程验收说明为准；各阶段的具体接口、实现方案和验证安排在进入该阶段
@@ -107,8 +107,8 @@ Trace 框架和课程验收说明为准；各阶段的具体接口、实现方�
 - Stage 3：已完成，2026-07-26；里程碑 tag `single-cycle-soc-stage3`。
 - 构建/验证间章：Completed，2026-07-26；详见
   [独立任务书](build-cli-and-soc-verification.md)。
-- Stage 4：Awaiting User Board Evidence，2026-07-27；详见
-  [独立任务书](single-cycle-soc-stage4.md)，S4-1～S4-3 已完成，S4-U 未运行。
+- Stage 4：Completed，2026-07-27；详见
+  [独立任务书](single-cycle-soc-stage4.md)，S4-1～S4-3 与 S4-U 均已完成。
 - Stage 5：未开始。
 
 ## 阶段记录

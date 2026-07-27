@@ -2,16 +2,17 @@
 
 ## 状态
 
-- 状态：Awaiting User Board Evidence（2026-07-27；S4-1～S4-3 已完成）
+- 状态：Completed（2026-07-27；S4-1～S4-3 与 S4-U 均完成）
 - 父任务：[单周期 SoC 开发](single-cycle-soc.md)
 - 基线提交：`bb7e97d`
 - 产品配置：`single-soc-cache`
 - 课程程序：`programs/c_test/0_uart_test`、`1_formatIO_test`、`2_sort_test`
 - 物理软件 oracle：课程提供的 miniRV + EGO1 SoC bitstream
 
-S4-0 先冻结 Stage 4 合同；随后 S4-1～S4-3 已完成 C_TEST 源码、程序构建/镜像审计、
-软件定向测试和 CPU-driven System suite。实现没有修改产品 RTL、设计 CSV、XCI、COE
-绑定、Vivado 工程或两个 submodule；课程 bitstream 与实际板测仍未运行。
+S4-0 先冻结 Stage 4 合同；随后 S4-1～S4-3 完成 C_TEST 源码、程序构建/镜像审计、
+软件定向测试和 CPU-driven System suite，S4-U 使用课程 miniRV + EGO1 bitstream 完成
+三套用户板测。实现没有修改产品 RTL、设计 CSV、XCI、COE 绑定、Vivado 工程或两个
+submodule；自己的 SoC bitstream 与实板验证仍未运行。
 
 ## 重新划界
 
@@ -213,14 +214,15 @@ product fabric、256 KiB simulation-only behavioral memory 和 MMIO 运行；输
 
 ### S4-U：课程 bitstream 用户验证
 
-状态：Awaiting User Board Evidence。学号 `2024311488` 已由用户确认，三套候选生成物
-已经就绪；课程 bitstream 烧录和三套实际交互记录尚未提供。
+状态：Completed（2026-07-27）。学号 `2024311488`、三套候选生成物、课程 bitstream
+烧录和实际交互均已由用户验证。
 
 2026-07-27 首轮课程 bitstream 实板验证中，三个测试的交互、排序、timer、switch、LED
 和数码管结果均符合预期；但课程下载器跳转到程序后会稳定吞掉第一个 UART TX 字节，
 使三个标题的学号都显示为 `024311488`。该现象不出现在直接从 reset PC 启动的 System
 suite，边界限定为课程下载器到 C_TEST 的 UART 交接。候选程序因此在首行前增加一个
-可牺牲的空格和换行；S4-U 仍等待更新生成物的标题复测，不提前标记 Completed。
+可牺牲的空格和换行；用户随后复测三份更新生成物，三个标题均完整显示
+`2024311488`，S4-U 关闭。
 
 agent 负责准备并记录：
 
@@ -259,8 +261,23 @@ agent 负责准备并记录：
   `rv32i2p1_m2p0_zmmul1p0`，且 raw/COE/UART payload 结构化逐 word 比较通过；
 - 三个 CPU-driven suite 与 transcript oracle 均 PASS。三份 manifest 均记录学号
   `2024311488` 和 `candidate=true`，可用于课程 bitstream S4-U；
-- Vivado implementation、自己的 bitstream、自己的 SoC 实板和课程 bitstream S4-U
-  均为 **Not Run**。
+- Vivado implementation、自己的 bitstream 和自己的 SoC 实板均为 **Not Run**；它们
+  不由课程 bitstream S4-U 的通过替代。
+
+### 2026-07-27 课程 bitstream 用户证据
+
+- 板测程序源提交为 `c2d0808`；交叉工具链为 `riscv32-unknown-elf-gcc 15.1.0`；
+- 课程 `lab2_IOtest_miniRV_ego1.bit` SHA-256 为
+  `fcbbfe3815c278050f4fdf51585da8863c90a53bf55818aa3879b3c2b26130ac`；
+- C_TEST 0～2 的 UART package SHA-256 依次为
+  `2461a941a1c01b085dd556c62eb397ec0215003bbe065913e5a73c33c26daf6e`、
+  `d63dbf7df5f185c0248ddc58b635b7fb6467fa787a8dddfc3a672047aa6fb989`、
+  `dbcc54e256f42c8740326b9d3c1d013b409f2f5585d2ffd7464cab61d8e17df7`；
+- 用户使用 EGO1、115200 baud、8N1、无流控和二进制文件发送完成验证。首轮三个测试的
+  UART 交互、switch、LED、数码管、排序、heap 和 timer 结果均符合预期；修复下载器
+  交接首字节后，三份最终候选的 `2024311488` 标题复测均通过；
+- S4-U 结果：C_TEST 0 **PASS**、C_TEST 1 **PASS**、C_TEST 2 **PASS**。该证据只证明
+  C_TEST 软件在课程已知良好 SoC bitstream 上成立，不证明自己的 RTL bitstream 或实板。
 
 ## 停止条件
 

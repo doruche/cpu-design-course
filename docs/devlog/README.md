@@ -6,13 +6,12 @@
 ## Active Tasks
 
 - [单周期 SoC 开发](single-cycle-soc.md) — Active；Stage 0～3 已完成，Stage 3
-  里程碑为 `single-cycle-soc-stage3`，构建/验证间章与 Stage 4 S4-1～S4-3 已完成。
-- [单周期 SoC Stage 4：C_TEST 软件与自动化联调](single-cycle-soc-stage4.md) —
-  Awaiting User Board Evidence，2026-07-27；S4-1～S4-3 已实现且候选身份已就绪，
-  S4-U 只等待课程 bitstream 板测。
+  里程碑为 `single-cycle-soc-stage3`，构建/验证间章与 Stage 4 已完成；下一阶段尚未进入。
 
 ## Completed Tasks
 
+- [单周期 SoC Stage 4：C_TEST 软件与自动化联调](single-cycle-soc-stage4.md) —
+  Completed，2026-07-27；S4-1～S4-3 自动范围和 S4-U 课程 bitstream 用户板测均通过。
 - [构建系统、CLI 与完整 SoC 验证间章](build-cli-and-soc-verification.md) — Completed，
   2026-07-26；公开入口已切换到 Just，六配置与 CPU-driven SoC smoke 已关闭验证。
 - [单周期 RTL 清理与微重构](single-cycle-rtl-cleanup.md) — Done，2026-07-23；三个

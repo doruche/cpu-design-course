@@ -21,8 +21,8 @@
 - 单周期 SoC Stage 0～3 已完成，里程碑 tag 为 `single-cycle-soc-stage3`。默认产品
   路径已经接入 Cache、AXI 主存/MMIO 互连和五类外设；Stage 3 的完整链路、错误事务、
   子字访问和外设边界均有仓库测试。Stage 4 的 C_TEST 0～2、可审计程序镜像和三套
-  CPU-driven System suite 已实现；学号身份已写入默认候选构建，课程 bitstream 验证
-  仍等待用户板级证据。
+  CPU-driven System suite 已实现；学号身份已写入默认候选构建，课程 miniRV + EGO1
+  bitstream 的三套用户板测均已通过。自己的 SoC bitstream 与实板验证仍属于后续阶段。
   历史 ROM/RAM 路径仍由独立 Basic Trace profile 保留。
 - 仓库公开构建与验证 CLI 已统一为根 `Justfile`。六个稳定配置显式区分产品、拓扑、
   Cache、后端和产物目录；Cache-enabled CPU-driven SoC smoke 已覆盖主存和五类 MMIO。
