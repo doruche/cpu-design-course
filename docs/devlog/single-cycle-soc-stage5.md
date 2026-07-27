@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（S5-0 合同冻结完成；S5-1 尚未开始）
+- 状态：Active（S5-0～S5-1 完成；S5-2 尚未开始）
 - 父任务：[单周期 SoC 开发](single-cycle-soc.md)
 - 基线提交：`6793cf0`
 - 产品：`projects/single_cycle/`
@@ -165,6 +165,8 @@ XPR/XCI/XDC/Tcl 修改。若某项交互后来成为多候选或后续流水线�
 
 ### S5-1：失败基线与物理合同检查
 
+状态：Completed（2026-07-27，失败合同与修复前基线）。
+
 - 只为会被多个候选或后续流水线重复消费、且能够稳定表达行为合同的边界建立自动
   检查：至少覆盖 reset/PLL lock 行为、BRAM 最小容量和候选 COE 选择；
 - 自动检查应在当前基线上复现能够稳定表达的 50 KiB、`lw.coe` 隐式绑定和复位行为
@@ -175,6 +177,31 @@ XPR/XCI/XDC/Tcl 修改。若某项交互后来成为多候选或后续流水线�
 
 默认写集：`tests/`、`scripts/`、`Justfile`、必要的配置清单和本文。此检查点不修改
 产品 RTL/XCI；自动失败用例和一次性审查的对应基线均成立后才进入 S5-2。
+
+本检查点在产品基线 `fe9f99a` 上新增 `just unit stage5-contract`，并保留以下修复前
+失败证据：
+
+- 结构化 XCI 检查读出 `Write_Width_A=32`、`Write_Depth_A=12800`，即 51,200 bytes，
+  低于 153,600 bytes；同一检查读出 `Coe_File=../../../coe/lw.coe`；
+- 公开 CLI 的 `vivado-candidate c-test-0` dry-run 不存在，证明当前入口不能显式命名
+  候选程序；
+- board-clock testbench 使用持续运行的 50 MHz Clock Wizard 模型，复现了产品时钟在
+  lock 低时停止、复位在首个产品时钟前提前释放、lock 丢失不能异步断言复位，以及
+  lock 丢失后产品时钟再次停止四个失败；
+- Clock Wizard 的 100 MHz 输入、50 MHz BUFG 输出和 locked 端口检查通过；
+  `soc_peripherals`/timer、`uart_peripheral` 与 C_TEST 均冻结为 50 MHz，UART 冻结为
+  115200 baud；
+- 一次性代码审查确认 `sys_clk = pll_lock & pll_clk1` 是逻辑门控时钟，`sys_rst` 在
+  100 MHz `fpga_clk` 域生成后供 50 MHz 域使用；UART RX 已有两级同步器，switch
+  直接进入产品域，S5-2 必须补齐其同步边界；
+- 一次性 build Tcl 审查确认当前仅以 run 状态包含 `Complete` 为成功，并只生成报告；
+  没有 setup/hold、未约束路径、DRC 或 critical warning 的机器判定。
+
+同时新增并以 5 个单元用例冻结实现后证据判定：synthesis/implementation 必须完成；
+setup WNS/TNS 与 hold WHS/THS 均不得为负；未约束路径必须为 0；implementation DRC
+error、DRC critical warning 和 Vivado critical-warning message 均必须为 0。该判定器
+的正例及每类反例均通过，完整 `stage5-contract` 在修复前按预期失败。S5-1 没有修改
+产品 RTL、XCI/XPR/XDC 或 C_TEST，也没有运行 synthesis、implementation 或 bitstream。
 
 ### S5-2：板级工程修复与候选构建入口
 

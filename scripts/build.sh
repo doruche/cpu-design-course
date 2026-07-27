@@ -257,6 +257,40 @@ unit_peripherals() {
     vvp "$output/timer"
 }
 
+unit_stage5_contract() {
+    local output="$cache_root/unit/stage5-contract"
+    local contract_failed=0
+    local -a rtl_sources
+    printf 'unit-suite: stage5-contract\n'
+    printf '  backend: python3+iverilog+vvp\n'
+    printf '  artifact-directory: .cache/unit/stage5-contract\n'
+    mkdir -p "$output"
+    PYTHONDONTWRITEBYTECODE=1 python3 \
+        "$root/tests/stage5/test_contract_tools.py"
+    PYTHONDONTWRITEBYTECODE=1 python3 \
+        "$root/scripts/stage5_contract.py" --root "$root" || \
+        contract_failed=1
+    if just --justfile "$root/Justfile" --dry-run \
+        vivado-candidate c-test-0 >"$output/candidate-cli.log" 2>&1; then
+        printf 'Candidate CLI: explicit c-test-0 selection is available\n'
+    else
+        cat "$output/candidate-cli.log"
+        printf 'FAIL: public Vivado candidate entry is not available\n' >&2
+        contract_failed=1
+    fi
+    mapfile -t rtl_sources < <(mapfile_sorted "$single_rtl")
+    iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
+        -DPATH="$trace_dir/bin/addi.bin" \
+        -I"$single_rtl" -s board_clock_reset_tb \
+        -o "$output/board-clock-reset" \
+        "$root/tests/stage5/clk_wiz_0_model.v" \
+        "${rtl_sources[@]}" "$trace_dir/vsrc/bram_axi.v" \
+        "$root/tests/stage5/board_clock_reset_tb.sv"
+    vvp "$output/board-clock-reset" || contract_failed=1
+    ((contract_failed == 0)) || \
+        die "Stage 5 physical contract is not closed"
+}
+
 integration_fabric_mmio() {
     local output="$cache_root/integration/fabric-mmio"
     printf 'integration-suite: fabric-mmio\n  backend: iverilog+vvp\n  artifact-directory: .cache/integration/fabric-mmio\n'
@@ -292,7 +326,8 @@ run_unit() {
         axi-master) unit_axi_master ;;
         peripherals) unit_peripherals ;;
         c-test-software) "$root/scripts/run-c-test-software.sh" ;;
-        *) die "unknown unit suite: $1 (expected cache, axi-master, peripherals, or c-test-software)" ;;
+        stage5-contract) unit_stage5_contract ;;
+        *) die "unknown unit suite: $1 (expected cache, axi-master, peripherals, c-test-software, or stage5-contract)" ;;
     esac
 }
 
@@ -468,7 +503,7 @@ show_status() {
     printf '\nStable configurations:\n'
     list_configs | sed 's/^/  /'
     printf '\nVerification suites:\n'
-    printf '  unit: cache, axi-master, peripherals, c-test-software\n'
+    printf '  unit: cache, axi-master, peripherals, c-test-software, stage5-contract\n'
     printf '  integration: fabric-mmio, dcache-mmio\n'
     printf '  system: soc-smoke, c-test-0, c-test-1, c-test-2\n'
     printf '  gate: single-stage2, single-stage3, single-stage4-auto, products-basic, closure\n'
