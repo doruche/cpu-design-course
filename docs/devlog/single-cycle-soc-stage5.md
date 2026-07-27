@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（S5-0～S5-2 完成；S5-3 尚未开始）
+- 状态：Active（S5-0～S5-3 完成；S5-U Pending，EGO1 Not Run）
 - 父任务：[单周期 SoC 开发](single-cycle-soc.md)
 - 基线提交：`6793cf0`
 - 产品：`projects/single_cycle/`
@@ -254,6 +254,8 @@ implementation、CDC 报告内容和三套 bitstream 在 S5-3 关闭，EGO1 仍�
 
 ### S5-3：自动回归、实现和三套 bitstream
 
+状态：Completed（2026-07-27，自动回归、clean Vivado 实现与三候选审计）。
+
 - 先运行受影响的 targeted test，再运行 `just gate single-stage4-auto`；
 - 对 clean 源提交运行 canonical Vivado synthesis 和 implementation；
 - 在 50 MHz 下检查 setup/hold、未约束路径、DRC 和 critical warning；
@@ -264,7 +266,41 @@ Vivado 完整日志、报告和 bitstream 继续留在忽略的 staging/build �
 任务书中记录必要摘要，不创建 `artifacts/` 里程碑目录。若 implementation 不能在
 50 MHz 收敛，先定位时序路径；不得直接降频或修改 C_TEST 时钟常量掩盖问题。
 
+三套候选均从 clean 源提交
+`f4cf37f0f876f79c83437df7e2684ef665286a09` 使用 Vivado 2023.2 为
+`xc7a35tcsg324-1` 独立 reset synthesis/implementation 后生成。候选清单如下；串口设置
+均为 **115200 baud、8N1、无流控**：
+
+| 候选 | 源提交 | bitstream SHA-256 | COE SHA-256 | manifest SHA-256 | selection SHA-256 | setup WNS/TNS | hold WHS/THS |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `c-test-0` | `f4cf37f0f876f79c83437df7e2684ef665286a09` | `f5d28d797dac252e6e2313bf988660cf822e760cb413c9f29404b231f54b2d7f` | `7456a6db65dc7ed70a1cc71f390cdaffa17c493df42671bb498e124fa7c9f43f` | `8ed62e03904a8d9b978f68d522cf1347e5e946ff671a11d4ff1417964b48a835` | `74478b1b38ed3ca95b867c0492c0ef3258e4d4fdaf9d9b5aebfd6f3d05103bf9` | `+0.432 ns / 0` | `+0.036 ns / 0` |
+| `c-test-1` | `f4cf37f0f876f79c83437df7e2684ef665286a09` | `e1f350d23ccc88d23de792768b88607a62a3109def67d3c1fa01cd48a41b9c49` | `93e3ed4ee9ac8ae3f66aa9538d1c788a27b74137f3880cd559fea04983e71628` | `cf90f545fc967f6e08e7f930f37e96c95b33f6e894433656dc8cc710378ced59` | `7b758d061b5f3db6ee1c0af8628a797e0d799cbd4778a477a8b6dab880da6086` | `+0.432 ns / 0` | `+0.036 ns / 0` |
+| `c-test-2` | `f4cf37f0f876f79c83437df7e2684ef665286a09` | `5f17105e014aca873136166773ded5d2e1fcf726196a2d1710c4eb55bd2d86dc` | `05a61ef6733064a3eb9ca50fc44c345dcc3909dc82fb5b6f17f67cb13c74e60f` | `cd7fd684facc8b3165e31fedfbdf594f98523116cc813f164548fa9570685329` | `c3fff021b7f5784282c14519fc91c3f3eda5a942559a7163812f795fdb4ed5a7` | `+0.432 ns / 0` | `+0.036 ns / 0` |
+
+每个候选 bundle 位于忽略目录
+`/mnt/z/cpu-design-vivado/candidates/single_cycle/<candidate>/`，并保留 bitstream、
+`stage5_evidence.json`、selection、manifest、COE 快照及 timing、DRC、methodology、CDC、
+utilization、power 报告。逐候选复核确认：
+
+- XCI 请求和实际消费的 COE 路径相同，bundle 内四项 SHA-256 与结构化 evidence 一致；
+- BRAM 为 32 bit × 38,400 word，即 153,600 bytes；setup/hold TNS/THS 均为 0，
+  未约束路径为 0；
+- implementation DRC error/critical warning、methodology critical warning 和当前 Vivado
+  日志 critical warning 均为 0；普通 DRC warning 包含已记录的 `REQP-1839/1840`，
+  不属于本阶段冻结的阻断级别；
+- CDC 对每个候选均为 `CDC-3 Info ×17`（UART RX 与 16 路 switch 的两级
+  `ASYNC_REG` 同步）和 `CDC-9 Info ×1`（异步断言、同步释放的 reset 链）。
+
+自动回归保持成立：`just unit stage5-contract` 的 9 个用例通过；
+`just gate single-stage4-auto` 通过三个 C_TEST software/System suite、Stage 3 integration、
+六配置 lint、45/45 Trace 和 SoC smoke。XPR XML、XCI JSON、shell/Python 语法和
+`git diff --check` 也通过。以上只关闭 S5-3 自动范围；自己的 EGO1 烧录、UART transcript
+和物理外设观察仍为 **Not Run**。正式 `artifacts/`、图、报告、最终提交包装和流水线工作
+继续为 **Deferred**。
+
 ### S5-U：自己的 EGO1 用户板测
+
+状态：Pending（用户负责；EGO1 Not Run）。
 
 本检查点由 agent 准备、用户执行：
 
@@ -278,6 +314,8 @@ Vivado 完整日志、报告和 bitstream 继续留在忽略的 staging/build �
 软件 oracle，但不计入本检查点 PASS。
 
 ### S5-4：单周期 SoC 关闭与交接
+
+状态：Not Started；S5-U 完成前不得进入。
 
 - 在最终 RTL/工程提交上重跑 Stage 5 自动门禁和必要的 clean Vivado 候选构建；
 - 记录 S5-U 三套用户结果，更新 README、父任务和开发日志索引；

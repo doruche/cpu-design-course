@@ -6,7 +6,7 @@
 - 建立日期：2026-07-26
 - 基线提交：`87f2f3c`
 - 产品：`projects/single_cycle/`
-- 当前阶段：Stage 5 Active；S5-0～S5-2 完成，S5-3 尚未开始
+- 当前阶段：Stage 5 Active；S5-0～S5-3 完成，S5-U Pending（EGO1 Not Run）
 
 本文记录单周期 SoC 开发的总体方向和阶段顺序。课程要求仍以固定版本的指导书、
 Trace 框架和课程验收说明为准；各阶段的具体接口、实现方案和验证安排在进入该阶段
@@ -116,7 +116,8 @@ Trace 框架和课程验收说明为准；各阶段的具体接口、实现方�
 - Stage 4：Completed，2026-07-27；详见
   [独立任务书](single-cycle-soc-stage4.md)，S4-1～S4-3 与 S4-U 均已完成。
 - Stage 5：Active，2026-07-27；详见
-  [独立任务书](single-cycle-soc-stage5.md)，S5-0～S5-2 已完成，S5-3 尚未开始。
+  [独立任务书](single-cycle-soc-stage5.md)，S5-0～S5-3 已完成，S5-U EGO1 用户板测
+  Pending。
 
 ## 阶段记录
 
@@ -441,5 +442,7 @@ Stage 3R 按 3R-0～3R-3 顺序完成，并保存为 `single-cycle-soc-stage3` �
 Stage 3 handoff：Stage 3 与
 [构建系统、CLI 与完整 SoC 验证间章](build-cli-and-soc-verification.md)均已关闭。
 [Stage 4 独立任务书](single-cycle-soc-stage4.md)的自动范围和课程 bitstream 用户验证均已
-完成；后续按 [Stage 5 独立任务书](single-cycle-soc-stage5.md)关闭自己的 Vivado 物理
-工程、bitstream 和 EGO1 板级证据。
+完成；[Stage 5 独立任务书](single-cycle-soc-stage5.md)的时钟复位、物理主存、可追溯
+候选入口、自动回归和三套 clean Vivado implementation/bitstream 已完成到 S5-3。
+自己的 EGO1 烧录、串口交互和外设观察仍为 Not Run，由用户在 S5-U 执行；S5-U 完成前
+不进入 S5-4。
