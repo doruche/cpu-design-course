@@ -25,6 +25,14 @@ proc write_fact {stream key value} {
     puts $stream "$key\t$value"
 }
 
+proc normalize_ip_file {ip_object value} {
+    if {[file pathtype $value] eq "absolute"} {
+        return [file normalize $value]
+    }
+    set ip_file [file normalize [get_property IP_FILE $ip_object]]
+    return [file normalize [file join [file dirname $ip_file] $value]]
+}
+
 open_project $project_xpr
 set vivado_version [version -short]
 if {$vivado_version ne "2023.2"} {
@@ -48,13 +56,14 @@ if {$candidate_coe ne "-"} {
     }
     set_property -dict [list CONFIG.Load_Init_File {true} \
                              CONFIG.Coe_File $candidate_coe] $bram_ip
-    set actual_candidate_coe \
-        [file normalize [get_property CONFIG.Coe_File $bram_ip]]
+    set actual_candidate_coe [normalize_ip_file \
+        $bram_ip [get_property CONFIG.Coe_File $bram_ip]]
     if {![string equal -nocase $actual_candidate_coe $candidate_coe]} {
         error "bram_axi did not consume the requested candidate COE"
     }
 } else {
-    set actual_candidate_coe [get_property CONFIG.Coe_File $bram_ip]
+    set actual_candidate_coe [normalize_ip_file \
+        $bram_ip [get_property CONFIG.Coe_File $bram_ip]]
 }
 
 set bram_width [get_property CONFIG.Write_Width_A $bram_ip]
