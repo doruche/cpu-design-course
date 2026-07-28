@@ -43,4 +43,4 @@
 !/projects/*/src/rtl/ip/*/
 !/projects/*/src/rtl/ip/*/*.xci
 
-artifacts/*
+__pycache__/

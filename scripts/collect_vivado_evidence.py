@@ -216,7 +216,7 @@ def collect(stage_dir: Path, action: str) -> dict:
     timing = parse_timing(artifact_dir / "timing_summary.rpt")
     require_report(artifact_dir / "drc.rpt", "Report DRC")
     require_report(artifact_dir / "methodology.rpt", "Report Methodology")
-    require_report(artifact_dir / "cdc.rpt", "Report CDC")
+    require_report(artifact_dir / "cdc.rpt", "CDC Report")
     drc_errors = int(facts["drc_error_count"])
     drc_critical = int(facts["drc_critical_warning_count"])
     methodology_critical = int(facts["methodology_critical_warning_count"])

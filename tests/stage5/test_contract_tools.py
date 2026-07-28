@@ -134,6 +134,20 @@ WNS(ns) TNS(ns) TNS Failing Endpoints TNS Total Endpoints WHS(ns) THS(ns)
             with self.assertRaisesRegex(ValueError, "unexpected format"):
                 vivado_evidence.require_report(path, "Report DRC")
 
+    def test_cdc_report_uses_vivado_title_order(self) -> None:
+        report = """\
+| Command      : report_cdc -details -file cdc.rpt
+
+CDC Report
+
+ID     Severity  Count  Description
+CDC-3  Info         17  1-bit synchronized with ASYNC_REG property
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "cdc.rpt"
+            path.write_text(report, encoding="utf-8")
+            vivado_evidence.require_report(path, "CDC Report")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -12,9 +12,15 @@
   里程碑为 `single-cycle-soc-stage3`，构建/验证间章与 Stage 4 已完成；Stage 5 Active。
 - [单周期 SoC Stage 5：物理工程与自有板级闭环](single-cycle-soc-stage5.md) — Active；
   S5-0～S5-2 已完成，S5-3 自动回归与三套候选待执行，EGO1 烧录与观察由用户执行。
+- 当前无 Active 的本地任务书；流水线 CPU/SoC 尚未启动。
 
 ## Completed Tasks
 
+- [单周期 SoC 开发](single-cycle-soc.md) — Completed，2026-07-28；Stage 0～5、
+  自有 bitstream 与 EGO1 板测均已关闭，里程碑为 `single-cycle-soc-stage5`。
+- [单周期 SoC Stage 5：物理工程与自有板级闭环](single-cycle-soc-stage5.md) —
+  Completed，2026-07-28；S5-0～S5-4 与 S5-U 均已完成，三套自有候选已通过
+  clean Vivado 实现、审计和用户 EGO1 板测。
 - [单周期 SoC Stage 4：C_TEST 软件与自动化联调](single-cycle-soc-stage4.md) —
   Completed，2026-07-27；S4-1～S4-3 自动范围和 S4-U 课程 bitstream 用户板测均通过。
 - [构建系统、CLI 与完整 SoC 验证间章](build-cli-and-soc-verification.md) — Completed，
