@@ -53,9 +53,6 @@ load_config() {
         product-soc:trace-bram+mmio:cache) ;;
         *) die "invalid configuration tuple for $requested" ;;
     esac
-    if [[ "$config_product" == pipeline && "$config_topology" != basic ]]; then
-        die "pipeline currently supports only the Basic topology"
-    fi
 }
 
 rtl_dir() {
@@ -103,7 +100,7 @@ print_config() {
 
 require_product_topology() {
     if [[ "$config_topology" == product-soc ]]; then
-        rg -q '(ifdef|elsif) SOC_TOPOLOGY' "$single_rtl/miniRV_SoC.v" || \
+        rg -q '(ifdef|elsif) SOC_TOPOLOGY' "$(rtl_dir)/miniRV_SoC.v" || \
             die "$config_name is reserved until checkpoint I3 implements SOC_TOPOLOGY"
     fi
 }

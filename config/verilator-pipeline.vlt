@@ -32,3 +32,11 @@ lint_off -rule UNUSEDSIGNAL -file "*projects/pipeline/src/rtl/Data_RAM.v" -match
 lint_off -rule UNUSEDSIGNAL -file "*projects/pipeline/src/rtl/Inst_ROM.v" -match "Bits of signal are not used: 'inst_addr'[1:0]*"
 
 lint_off -rule SYNCASYNCNET -file "*projects/pipeline/src/rtl/miniRV_SoC.v" -match "Signal flopped as both synchronous and async: 'fpga_rst'*"
+
+// The AXI RAM is a pinned Trace-framework model, not repository-owned RTL.
+lint_off -rule EOFNEWLINE -file "*cdp-tests/vsrc/bram_axi.v" -match "*"
+lint_off -rule WIDTHTRUNC -file "*cdp-tests/vsrc/bram_axi.v" -match "*"
+lint_off -rule WIDTHEXPAND -file "*cdp-tests/vsrc/bram_axi.v" -match "*"
+lint_off -rule UNUSEDSIGNAL -file "*cdp-tests/vsrc/bram_axi.v" -match "*"
+lint_off -rule PROCASSINIT -file "*cdp-tests/vsrc/bram_axi.v" -match "*"
+lint_off -rule CASEINCOMPLETE -file "*cdp-tests/vsrc/bram_axi.v" -match "*"

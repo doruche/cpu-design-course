@@ -5,3 +5,7 @@ single-axi-direct-cache	single_cycle	axi-direct	trace-bram	cache	verilator-trace
 single-soc-bypass	single_cycle	product-soc	trace-bram+mmio	bypass	verilator-trace	RUN_TRACE=1,SIMULATION_CLOCK=1,BEHAVIORAL_MEMORY=1,SOC_TOPOLOGY=1	.cache/trace/single-soc-bypass
 single-soc-cache	single_cycle	product-soc	trace-bram+mmio	cache	verilator-trace	RUN_TRACE=1,SIMULATION_CLOCK=1,BEHAVIORAL_MEMORY=1,SOC_TOPOLOGY=1,ENABLE_ICACHE=1,ENABLE_DCACHE=1	.cache/trace/single-soc-cache
 pipeline-basic	pipeline	basic	trace-ram	na	verilator-trace	RUN_TRACE=1,SIMULATION_CLOCK=1,BEHAVIORAL_MEMORY=1,BASIC_TRACE=1	.cache/trace/pipeline-basic
+pipeline-axi-direct-bypass	pipeline	axi-direct	trace-bram	bypass	verilator-trace	RUN_TRACE=1,SIMULATION_CLOCK=1,BEHAVIORAL_MEMORY=1,AXI_DIRECT_TOPOLOGY=1	.cache/trace/pipeline-axi-direct-bypass
+pipeline-axi-direct-cache	pipeline	axi-direct	trace-bram	cache	verilator-trace	RUN_TRACE=1,SIMULATION_CLOCK=1,BEHAVIORAL_MEMORY=1,AXI_DIRECT_TOPOLOGY=1,ENABLE_ICACHE=1,ENABLE_DCACHE=1	.cache/trace/pipeline-axi-direct-cache
+pipeline-soc-bypass	pipeline	product-soc	trace-bram+mmio	bypass	verilator-trace	RUN_TRACE=1,SIMULATION_CLOCK=1,BEHAVIORAL_MEMORY=1,SOC_TOPOLOGY=1	.cache/trace/pipeline-soc-bypass
+pipeline-soc-cache	pipeline	product-soc	trace-bram+mmio	cache	verilator-trace	RUN_TRACE=1,SIMULATION_CLOCK=1,BEHAVIORAL_MEMORY=1,SOC_TOPOLOGY=1,ENABLE_ICACHE=1,ENABLE_DCACHE=1	.cache/trace/pipeline-soc-cache
