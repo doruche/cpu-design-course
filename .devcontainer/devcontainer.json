@@ -1,0 +1,11 @@
+{
+    "name": "cpu-design-course",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "workspaceFolder": "/workspaces/cpu-design-course",
+    "remoteUser": "vscode",
+    "containerEnv": {
+        "SHELL": "/bin/bash"
+    }
+}

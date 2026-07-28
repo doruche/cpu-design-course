@@ -41,6 +41,7 @@ sources+=("$runtime_dir/c_test_runtime.c" "$runtime_dir/start.S")
 riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -mno-relax \
     -ffunction-sections -fdata-sections -fno-builtin -Os \
     -DC_TEST_STUDENT_ID=\"$student_id\" \
+    -I"$runtime_dir/freestanding" \
     -nostdlib -Wl,--build-id=none -Wl,--no-relax -Wl,--gc-sections \
     -T "$runtime_dir/link.ld" -o "$prefix.elf" "${sources[@]}"
 riscv32-unknown-elf-objdump -d -s -M no-aliases "$prefix.elf" \
@@ -50,6 +51,7 @@ riscv32-unknown-elf-objcopy -O binary "$prefix.elf" "$prefix.raw.bin"
 artifact_args=()
 artifact_sources=("${sources[@]}" "$runtime_dir/c_test_runtime.h" \
     "$runtime_dir/c_test_io.h" "$runtime_dir/c_test_identity.h" \
+    "$runtime_dir/freestanding/stdlib.h" "$runtime_dir/freestanding/string.h" \
     "$runtime_dir/link.ld" \
     "$root/scripts/build-c-test.sh" "$root/scripts/c-test-artifacts.py")
 for path in "$source_dir/peripheral.h" "$source_dir/peripheral.c"; do

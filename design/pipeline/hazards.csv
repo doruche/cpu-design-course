@@ -1,7 +1,8 @@
 producer_stage,consumer_stage,dependency,forward_source,stall_required,notes
-EX,MEM,store_data,EX result or MEM result,no,Store data must be forwarded before the memory stage
-EX,EX,ALU operand,EX/MEM result,no,Forward newest available result
-MEM,EX,ALU operand,MEM/WB result,no,Forward writeback result when EX/MEM has no match
-MEM,EX,load result,none,yes,Load-use dependency waits for returned data
-EX,ID,branch operand,EX/MEM or MEM/WB result,implementation-defined,Branch resolution stage determines exact requirement
-EX,EX,multiply/divide result,none,yes,Wait for multi-cycle completion handshake
+EX,MEM,store_data,EX/MEM result or MEM/WB result,no,Store data is selected by the EX rs2 forwarding mux and captured in EX_MEM.store_data; there is no MEM to MEM path
+EX,EX,ALU operand,EX/MEM result,no,Forward newest available result; every writeback source except WB_RAM is already resolved in EX_MEM.alu_result
+MEM,EX,ALU operand,MEM/WB result,no,Forward writeback result when EX/MEM has no match; both comparators require producer rf_we and rd not x0
+MEM,EX,load result,none,yes,Load-use dependency stalls ID one cycle then forwards MEM/WB result; the detector also covers the rs2 of a store
+WB,ID,register read,RF write-first bypass,no,RF reads are combinational and the write lands at the end of WB so RF must return the value being written when wR matches
+EX,EX,branch operand,EX/MEM result or MEM/WB result,no,Branches jal and jalr resolve in EX with the existing ALU comparator so branch operands use the ordinary EX forwarding network; a taken transfer discards the two younger instructions and a load producing a branch operand still takes the load-use stall
+EX,EX,multiply/divide result,none,yes,EX stalls while ALU busy is high; ALU start is decoded from alu_op so EX must latch the result and stop presenting the mul or div op once busy falls or the unit restarts while EX is held by a downstream stall

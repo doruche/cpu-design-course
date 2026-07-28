@@ -16,9 +16,8 @@ module multiplier #(
 
     localparam PRODUCT_WIDTH = WIDTH + WIDTH;
     localparam COUNT_WIDTH = (WIDTH <= 1) ? 1 : $clog2(WIDTH);
-    localparam [1:0] IDLE    = 2'd0;
-    localparam [1:0] ADD_SUB = 2'd1;
-    localparam [1:0] SHIFT   = 2'd2;
+    localparam [1:0] IDLE   = 2'd0;
+    localparam [1:0] RUNNING = 2'd1;
     function [COUNT_WIDTH-1:0] count_cast;
         input integer value;
         begin
@@ -39,8 +38,26 @@ module multiplier #(
     reg [WIDTH:0] multiplicand;
     reg [WIDTH:0] multiplicand_neg;
 
-    wire [PRODUCT_WIDTH+1:0] shifted_product =
-        {product[PRODUCT_WIDTH+1], product[PRODUCT_WIDTH+1:1]};
+    // One Booth step: the recode add/sub and the arithmetic right shift are
+    // combined so a step costs one cycle instead of two. The shift reads the
+    // added value directly rather than waiting for it to be registered.
+    reg [PRODUCT_WIDTH+1:0] added_product;
+    always @(*) begin
+        case (product[1:0])
+            2'b01: added_product = {
+                product[PRODUCT_WIDTH+1:WIDTH+1] + multiplicand,
+                product[WIDTH:0]
+            };
+            2'b10: added_product = {
+                product[PRODUCT_WIDTH+1:WIDTH+1] + multiplicand_neg,
+                product[WIDTH:0]
+            };
+            default: added_product = product;
+        endcase
+    end
+
+    wire [PRODUCT_WIDTH+1:0] stepped_product =
+        {added_product[PRODUCT_WIDTH+1], added_product[PRODUCT_WIDTH+1:1]};
 
     assign busy = state != IDLE;
 
@@ -60,31 +77,16 @@ module multiplier #(
                         product          <= {{(WIDTH+1){1'b0}}, y, 1'b0};
                         multiplicand     <= {x[WIDTH-1], x};
                         multiplicand_neg <= ~{x[WIDTH-1], x} + 1'b1;
-                        state            <= ADD_SUB;
+                        state            <= RUNNING;
                     end
                 end
-                ADD_SUB: begin
-                    case (product[1:0])
-                        2'b01: product <= {
-                            product[PRODUCT_WIDTH+1:WIDTH+1] + multiplicand,
-                            product[WIDTH:0]
-                        };
-                        2'b10: product <= {
-                            product[PRODUCT_WIDTH+1:WIDTH+1] + multiplicand_neg,
-                            product[WIDTH:0]
-                        };
-                        default: product <= product;
-                    endcase
-                    state <= SHIFT;
-                end
-                SHIFT: begin
-                    product <= shifted_product;
+                RUNNING: begin
+                    product <= stepped_product;
                     if (count == LAST_COUNT) begin
-                        z     <= shifted_product[RESULT_LSB+RESULT_WIDTH:RESULT_LSB+1];
+                        z     <= stepped_product[RESULT_LSB+RESULT_WIDTH:RESULT_LSB+1];
                         state <= IDLE;
                     end else begin
                         count <= count + 1'b1;
-                        state <= ADD_SUB;
                     end
                 end
                 default: state <= IDLE;

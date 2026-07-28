@@ -37,6 +37,7 @@
 #define CLOCKS_PER_SEC (1000000 * MHZ)
 
 #define TIMER_BASE  0xFFFF4000
+#define UART_BASE   0xFFFF3000
 
 /*  | offset | read op               | write op      |
     |--------+-----------------------+---------------|
@@ -48,11 +49,16 @@
 volatile unsigned int *timer_low  = (volatile unsigned int*) TIMER_BASE;
 volatile unsigned int *timer_high = (volatile unsigned int*)(TIMER_BASE + 8);
 
+// The low word wraps every 2^32/(50 MHz) = 86 s, which is well inside a
+// CoreMark run, so the halves are sampled high-low-high and retried on a carry.
 time_l get_time(void)
 {
-    time_l t_l = *timer_low;
-    time_l t_h = *timer_high;
-    return (t_h << 32) | (t_l & 0x00000000FFFFFFFFLL);
+    unsigned int t_h, t_l;
+    do {
+        t_h = *timer_high;
+        t_l = *timer_low;
+    } while (t_h != *timer_high);
+    return ((time_l)t_h << 32) | (time_l)t_l;
 }
 
 // #define INSNC ((unsigned int volatile *)0x20000060) //trace and debug unit
@@ -134,7 +140,16 @@ void delay_ms(int ms){
 
 void portable_init(core_portable *p, int *argc, char *argv[])
 {
-	delay_ms(100);  
+	// The repository runtime's start.S replaces init_asm.S, so the FIFO clear
+	// that lived there happens here instead.
+	*(volatile unsigned int *)(UART_BASE + 0xC) = 0x3;
+
+	// The board wait lets the serial terminal settle; RTL simulation of it
+	// would cost more cycles than the benchmark itself.
+#ifndef COREMARK_INIT_DELAY_MS
+#define COREMARK_INIT_DELAY_MS 100
+#endif
+	delay_ms(COREMARK_INIT_DELAY_MS);
 	ee_printf("CoreMark 1.0\n");
   
 	if (sizeof(ee_ptr_int) != sizeof(ee_u8 *))

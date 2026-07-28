@@ -84,4 +84,11 @@ void *memset(void *destination, int value, size_t size)
     return destination;
 }
 
+size_t strnlen(const char *string, size_t limit)
+{
+    size_t length = 0;
+    while (length < limit && string[length] != '\0') length++;
+    return length;
+}
+
 #endif

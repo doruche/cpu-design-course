@@ -1,7 +1,11 @@
 // `define RUN_TRACE
 
-// `define ENABLE_ICACHE
-// `define ENABLE_DCACHE
+// The board product closes Stage 2 with both caches enabled. Trace profiles
+// select bypass or enabled behavior independently through compiler defines.
+`ifndef RUN_TRACE
+    `define ENABLE_ICACHE
+    `define ENABLE_DCACHE
+`endif
 
 `define PC_INIT_VAL 32'h0
 
