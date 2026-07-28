@@ -331,7 +331,8 @@ run_unit() {
 run_program() {
     case "$1" in
         c-test-0|c-test-1|c-test-2) "$root/scripts/build-c-test.sh" "$1" ;;
-        *) die "unknown program: $1 (expected c-test-0, c-test-1, or c-test-2)" ;;
+        coremark) "$root/scripts/build-coremark.sh" ;;
+        *) die "unknown program: $1 (expected c-test-0, c-test-1, c-test-2, or coremark)" ;;
     esac
 }
 
@@ -347,7 +348,8 @@ run_system() {
     case "$1" in
         soc-smoke) system_soc_smoke ;;
         c-test-0|c-test-1|c-test-2) system_c_test "$1" ;;
-        *) die "unknown system suite: $1 (expected soc-smoke or c-test-0..2)" ;;
+        coremark) system_coremark ;;
+        *) die "unknown system suite: $1 (expected soc-smoke, c-test-0..2, or coremark)" ;;
     esac
 }
 
@@ -377,6 +379,36 @@ system_c_test() {
         tee "$output/system.log"
     python3 "$root/scripts/check-c-test-transcript.py" \
         "$test_id" "$transcript"
+}
+
+system_coremark() {
+    local output="$cache_root/system/coremark"
+    local program="$cache_root/programs/c_test/coremark-sim/coremark-sim.raw.bin"
+    local transcript="$output/transcript.txt"
+    local product_rtl
+    local -a rtl_sources
+    load_config pipeline-soc-cache
+    print_config
+    printf 'system-suite: coremark\n'
+    printf '  backend: riscv32im-freestanding+iverilog+vvp\n'
+    printf '  artifact-directory: .cache/system/coremark\n'
+    # One iteration and no settling delay: the CRCs this proves do not depend on
+    # either, and the reported score is only meaningful on the board.
+    COREMARK_ITERATIONS=1 COREMARK_INIT_DELAY_MS=0 \
+        "$root/scripts/build-coremark.sh" coremark-sim
+    mkdir -p "$output"
+    product_rtl=$(rtl_dir)
+    mapfile -t rtl_sources < <(mapfile_sorted "$product_rtl")
+    iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
+        -DRUN_TRACE=1 -DSIMULATION_CLOCK=1 -DBEHAVIORAL_MEMORY=1 \
+        -DSOC_TOPOLOGY=1 -DENABLE_ICACHE=1 -DENABLE_DCACHE=1 \
+        -DPATH="$program" -I"$product_rtl" \
+        -s coremark_system_tb -o "$output/coremark-system" \
+        "${rtl_sources[@]}" "$trace_dir/vsrc/bram_axi.v" \
+        "$root/tests/coremark/coremark_system_tb.sv"
+    vvp "$output/coremark-system" "+TRANSCRIPT=$transcript" 2>&1 | \
+        tee "$output/system.log"
+    python3 "$root/scripts/check-coremark-transcript.py" "$transcript"
 }
 
 system_soc_smoke() {
@@ -523,10 +555,10 @@ show_status() {
     printf '\nVerification suites:\n'
     printf '  unit: cache, axi-master, peripherals, c-test-software, stage5-contract\n'
     printf '  integration: fabric-mmio, dcache-mmio\n'
-    printf '  system: soc-smoke, c-test-0, c-test-1, c-test-2\n'
+    printf '  system: soc-smoke, c-test-0, c-test-1, c-test-2, coremark\n'
     printf '  gate: single-stage2, single-stage3, single-stage4-auto, products-basic, closure\n'
     printf '\nBoard programs:\n'
-    printf '  c-test-0, c-test-1, c-test-2\n'
+    printf '  c-test-0, c-test-1, c-test-2, coremark\n'
     printf '\nVivado candidates:\n'
     printf '  c-test-0, c-test-1, c-test-2 (stage or bitstream)\n'
 }

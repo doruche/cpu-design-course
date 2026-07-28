@@ -23,7 +23,7 @@ All six supplied programs are retained:
 | `1_formatIO_test/` | `printf`/`scanf` I/O | Stage 4 implemented |
 | `2_sort_test/` | Recursion and allocation | Stage 4 implemented |
 | `3_ddr_test/` | DDR read/write test | Imported unchanged; deferred |
-| `4_coremark/` | CoreMark workload | Imported unchanged |
+| `4_coremark/` | CoreMark workload | Ported; benchmark sources unchanged |
 | `5_llama2.c/` | LLAMA2 inference workload | Imported unchanged; deferred |
 
 ## Repository Builds
@@ -36,6 +36,7 @@ entries are the root Just recipes:
 just program c-test-0
 just program c-test-1
 just program c-test-2
+just program coremark
 ```
 
 The tracked default student ID is `2024311488`, defined once in
@@ -55,8 +56,31 @@ Outputs are isolated under `.cache/programs/c_test/<test>/`:
 The repository-owned freestanding runtime under `runtime/` avoids inheriting
 the host toolchain's floating-point multilib ABI. It owns startup/BSS clearing,
 the bounded heap, C_TEST formatting/parsing, UART polling, and the timer's
-high-low-high snapshot. The retained `Makefile` and supplied `compile*.sh` files
-are provenance/reference inputs, not public build interfaces.
+high-low-high snapshot. `runtime/freestanding/` supplies the handful of hosted
+declarations the supplied sources include; the toolchain ships no rv32im/ilp32
+libc. The retained `Makefile` and supplied `compile*.sh` files are
+provenance/reference inputs, not public build interfaces.
+
+## CoreMark
+
+`just program coremark` builds the benchmark against the same runtime, linker
+script, and audit pipeline as the C_TESTs, but keeps CoreMark's own
+`-O2 -funroll-loops -fpeel-loops -fgcse-sm -fgcse-las` contract and links
+`libgcc` for the soft-float and 64-bit helpers. `COREMARK_ITERATIONS` (default
+700) and `COREMARK_INIT_DELAY_MS` (default 100) are overridable.
+
+Only the port files changed: `core_portme.c` gained a wrap-safe high-low-high
+timer read, the UART FIFO clear that `init_asm.S` used to perform, and a
+compile-time init delay. The benchmark sources under
+`4_coremark/src/coremark/src/` are untouched.
+
+```bash
+just system coremark
+```
+
+runs a one-iteration image on the pipeline SoC in RTL simulation and checks
+CoreMark's own iteration-independent CRCs. It cannot produce a valid score —
+CoreMark requires a ten-second run, which is a board measurement.
 
 Run deterministic software and CPU-driven RTL checks with:
 
