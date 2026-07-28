@@ -485,14 +485,14 @@ run_gate() {
             unit_peripherals
             integration_fabric_mmio
             integration_dcache_mmio
-            for config in single-basic single-axi-direct-bypass \
-                single-axi-direct-cache single-soc-bypass single-soc-cache \
-                pipeline-basic; do
+            while IFS= read -r config; do
                 lint_config_for "$config"
                 trace_all_for "$config"
-            done
+            done < <(list_configs)
             system_soc_smoke
-            xmllint --noout "$root/projects/single_cycle/miniRV.xpr"
+            system_coremark
+            xmllint --noout "$root/projects/single_cycle/miniRV.xpr" \
+                "$root/projects/pipeline/miniRV.xpr"
             [[ ! -e "$root/Makefile" ]] || die "root Makefile still exists"
             if rg -n '`make |^make ' "$root/README.md" \
                 "$root/docs/workflow.md"; then

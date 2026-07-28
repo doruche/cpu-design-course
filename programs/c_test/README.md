@@ -89,6 +89,7 @@ just unit c-test-software
 just system c-test-0
 just system c-test-1
 just system c-test-2
+just system coremark
 ```
 
 These checks do not replace the user-owned course-bitstream test or validate a

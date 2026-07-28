@@ -68,6 +68,13 @@ just program c-test-0
 just system c-test-0
 ```
 
+在流水线 SoC 上构建并仿真运行 CoreMark：
+
+```bash
+just program coremark
+just system coremark
+```
+
 查看所有入口：
 
 ```bash
