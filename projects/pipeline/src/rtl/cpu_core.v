@@ -2,6 +2,12 @@
 
 `include "defines.vh"
 
+// Five-stage pipeline: IF, ID, EX, MEM, WB.
+//
+// The stage registers, the forwarding network and the flow-control priority
+// implemented here are the ones enumerated in design/pipeline/*.csv. Both
+// memory interfaces have unbounded latency, so IF and MEM each own one
+// outstanding request and stall the stages above them until it is answered.
 module cpu_core(
     input  wire         cpu_rst,
     input  wire         cpu_clk,
@@ -11,7 +17,7 @@ module cpu_core(
     output wire [31:0]  ifetch_addr  /* verilator public */ ,
     input  wire         ifetch_valid /* verilator public */ ,
     input  wire [31:0]  ifetch_inst,
-    
+
     // Data Access Interface
     output reg  [ 3:0]  daccess_ren,
     output reg  [31:0]  daccess_addr,
@@ -22,14 +28,115 @@ module cpu_core(
     input  wire         daccess_wresp
 );
 
-    // PC and NPC
-    wire [31:0] pc;
-    wire [31:0] npc;
-    wire [31:0] pc4;
-    wire [31:0] npc_offset;
-    wire [31:0] inst;
+    /************************ Stage registers *********************/
+    reg         if_id_valid;
+    reg  [31:0] if_id_pc;
+    reg  [31:0] if_id_inst;
 
-    // Controller
+    reg         id_ex_valid;
+    reg  [31:0] id_ex_pc;
+    reg  [31:0] id_ex_rs1_value;
+    reg  [31:0] id_ex_rs2_value;
+    reg  [31:0] id_ex_imm;
+    reg  [ 4:0] id_ex_rd;
+    reg  [ 4:0] id_ex_rs1;
+    reg  [ 4:0] id_ex_rs2;
+    reg  [ 1:0] id_ex_npc_op;
+    reg  [ 4:0] id_ex_alu_op;
+    reg         id_ex_alua_sel;
+    reg         id_ex_alub_sel;
+    reg         id_ex_is_mul;
+    reg         id_ex_is_div;
+    reg  [ 2:0] id_ex_ram_rop;
+    reg  [ 3:0] id_ex_ram_wop;
+    reg         id_ex_rf_we;
+    reg  [ 1:0] id_ex_rf_wsel;
+
+    reg         ex_mem_valid;
+    reg  [31:0] ex_mem_pc;
+    reg  [31:0] ex_mem_alu_result;
+    reg  [31:0] ex_mem_store_data;
+    reg  [ 4:0] ex_mem_rd;
+    reg         ex_mem_rf_we;
+    reg         ex_mem_wb_from_ram;
+    reg  [ 2:0] ex_mem_ram_rop;
+    reg  [ 3:0] ex_mem_ram_wop;
+
+    reg         mem_wb_valid;
+    reg  [31:0] mem_wb_pc;
+    reg  [31:0] mem_wb_result;
+    reg  [ 4:0] mem_wb_rd;
+    reg         mem_wb_rf_we;
+
+    /********************* Flow control signals *******************/
+    wire        flush;
+    wire [31:0] redirect_pc;
+    wire        mem_stall;
+    wire        md_stall;
+    wire        load_use_stall;
+
+    // design/pipeline/flow_control.csv, highest priority first. A stall in a
+    // later stage always subsumes the stalls above it.
+    wire ex_mem_update = ~mem_stall;
+    wire id_ex_update  = ~mem_stall & ~md_stall;
+    wire if_id_advance = id_ex_update & ~load_use_stall;
+
+    /***************************** IF *****************************/
+    reg  [31:0] pc;
+    reg         fetch_pending;    // one outstanding instruction fetch
+    reg  [31:0] fetch_pc;         // pc that fetch was issued for
+    reg         fetch_discard;    // outstanding fetch belongs to a flushed path
+
+    // IF_ID is free when it holds nothing or is handing its instruction on, so
+    // an issued fetch always has somewhere to land when it returns.
+    wire if_id_free   = ~if_id_valid | if_id_advance;
+    wire fetch_issue  = ~cpu_rst & ~fetch_pending & if_id_free;
+    wire fetch_return = fetch_pending & ifetch_valid;
+    wire fetch_keep   = fetch_return & ~fetch_discard & ~flush;
+
+    assign ifetch_req  = fetch_issue;
+    assign ifetch_addr = pc;
+
+    // Static predict-not-taken: PC walks forward with each issued fetch and is
+    // only redirected when EX resolves a taken transfer.
+    always @(posedge cpu_clk or posedge cpu_rst) begin
+        if (cpu_rst)          pc <= `PC_INIT_VAL;
+        else if (flush)       pc <= redirect_pc;
+        else if (fetch_issue) pc <= pc + 32'h4;
+    end
+
+    always @(posedge cpu_clk or posedge cpu_rst) begin
+        if (cpu_rst) begin
+            fetch_pending <= 1'b0;
+            fetch_pc      <= 32'h0;
+            fetch_discard <= 1'b0;
+        end else begin
+            if (fetch_return) begin
+                fetch_pending <= 1'b0;
+                fetch_discard <= 1'b0;
+            end else if (fetch_issue) begin
+                fetch_pending <= 1'b1;
+                fetch_pc      <= pc;
+                fetch_discard <= 1'b0;
+            end else if (flush & fetch_pending) begin
+                fetch_discard <= 1'b1;
+            end
+        end
+    end
+
+    always @(posedge cpu_clk or posedge cpu_rst) begin
+        if (cpu_rst | flush) begin
+            if_id_valid <= 1'b0;
+        end else if (fetch_keep) begin
+            if_id_valid <= 1'b1;
+            if_id_pc    <= fetch_pc;
+            if_id_inst  <= ifetch_inst;
+        end else if (if_id_advance) begin
+            if_id_valid <= 1'b0;
+        end
+    end
+
+    /***************************** ID *****************************/
     wire [ 1:0] npc_op;
     wire [ 1:0] rf_wsel;
     wire [ 2:0] sext_op;
@@ -37,89 +144,18 @@ module cpu_core(
     wire        alua_sel;
     wire        alub_sel;
     wire [ 2:0] ram_rop;
-    reg  [ 2:0] captured_load_op;
     wire [ 3:0] ram_wop;
     wire        is_mul;
     wire        is_div;
-    wire        mul_div_start;
-    reg         mul_div_pending;
-
-    // Register File
+    wire        rf_we;
     wire [31:0] rf_rd1;
     wire [31:0] rf_rd2;
-    wire        rf_we;
-    wire        commit_rf_we;
-    reg  [ 4:0] captured_rf_waddr;
-    wire [ 4:0] rf_wR;
-    reg  [31:0] rf_wD;
-
-    // Signed Extension
-    wire [31:0] ext;
-
-    // ALU
-    wire [31:0] alu_a;
-    wire [31:0] alu_b;
-    wire [31:0] alu_c;
-    reg  [ 1:0] captured_mem_offset;
-    wire        br;
-    wire        mul_div_busy;
-    
-    // Memory Access
-    wire [ 3:0] da_ren;
-    wire [31:0] da_addr;
-    wire [ 3:0] da_wen;
-    wire [31:0] da_wdata;
-    wire [31:0] ram_ext;
-    wire        mem_start;
-    reg         mem_pending;
-
-    // Completion and commit events. Pending state owns multi-cycle operations;
-    // response and busy inputs only qualify completion while that state is set.
-    wire        normal_done;
-    wire        mem_done;
-    wire        mul_div_done;
-    wire        inst_done;
-    reg         inst_done_r;
-
-    /***************************** IF *****************************/
-    reg rst_r;
-    wire first_req = rst_r & !cpu_rst;
-    always @(posedge cpu_clk) rst_r <= cpu_rst;
-
-    // 复位信号发生边沿变化时首次取指; 当前指令执行完毕后取下一条指令
-    assign ifetch_req  = first_req | inst_done_r;
-    assign ifetch_addr = pc;
-
-    assign npc_offset = (npc_op == `NPC_JALR) ? alu_c : ext;
-
-    NPC U_NPC (
-        .op         (npc_op),
-        .pc         (pc),
-        .offset     (npc_offset),
-        .br         (br),
-        .npc        (npc),
-        .pc4        (pc4)
-    );
-
-    PC U_PC (
-        .clk        (cpu_clk),
-        .rst        (cpu_rst),
-        .npc        (npc),
-        .fetch      (inst_done),
-        .pc         (pc)
-    );
-    
-    /***************************** ID *****************************/
-    // 按照约定的时序，ifetch_inst只在ifetch_valid有效时有效，且它们仅有效1个时钟.
-    // 此处是为了避免ifetch_valid撤销后，ifetch_inst发生变化从而导致指令执行出错.
-    assign inst = ifetch_valid ? ifetch_inst : 32'h13 /* NOP */ ;
+    wire [31:0] imm;
 
     Controller U_CU (
-        // input
-        .opcode         (inst[6:0]),
-        .funct3         (inst[14:12]),
-        .funct7         (inst[31:25]),
-        // output
+        .opcode         (if_id_inst[6:0]),
+        .funct3         (if_id_inst[14:12]),
+        .funct7         (if_id_inst[31:25]),
         .npc_op         (npc_op),
         .sext_op        (sext_op),
         .alu_op         (alu_op),
@@ -135,126 +171,263 @@ module cpu_core(
 
     RF U_RF (
         .clk        (cpu_clk),
-        .rR1        (inst[19:15]),
-        .rR2        (inst[24:20]),
+        .rR1        (if_id_inst[19:15]),
+        .rR2        (if_id_inst[24:20]),
         .rD1        (rf_rd1),
         .rD2        (rf_rd2),
-        .we         (commit_rf_we),
-        .wR         (rf_wR),
-        .wD         (rf_wD)
+        .we         (mem_wb_valid & mem_wb_rf_we),
+        .wR         (mem_wb_rd),
+        .wD         (mem_wb_result)
     );
 
     SEXT U_SEXT (
         .op         (sext_op),
-        .imm        (inst[31:7]),
-        .ext        (ext)
+        .imm        (if_id_inst[31:7]),
+        .ext        (imm)
     );
-    
-    // Memory request state remains owned here until the matching read or write
-    // response completes the single outstanding operation.
-    assign mem_start = (ram_rop != `RAM_EXT_N) | (ram_wop != `RAM_WE_N);
-    always @(posedge cpu_clk or posedge cpu_rst) begin
-        if      (cpu_rst)  mem_pending <= 1'b0;
-        else if (mem_start) mem_pending <= 1'b1;
-        else if (mem_done)  mem_pending <= 1'b0;
-    end
 
-    // Multiply/divide state remains pending until the ALU drops busy.
-    assign mul_div_start = is_mul | is_div;
-    always @(posedge cpu_clk or posedge cpu_rst) begin
-        if      (cpu_rst)      mul_div_pending <= 1'b0;
-        else if (mul_div_start) mul_div_pending <= 1'b1;
-        else if (mul_div_done)  mul_div_pending <= 1'b0;
-    end
+    // Instruction formats that leave rs1/rs2 unencoded still carry immediate
+    // bits in those fields. Reporting x0 instead keeps them out of both the
+    // forwarding comparators and the load-use detector.
+    wire [6:0] opcode = if_id_inst[6:0];
+    wire uses_rs1 = (opcode == 7'b0110011) | (opcode == 7'b0010011)
+                  | (opcode == 7'b0000011) | (opcode == 7'b0100011)
+                  | (opcode == 7'b1100011) | (opcode == 7'b1100111);
+    wire uses_rs2 = (opcode == 7'b0110011) | (opcode == 7'b0100011)
+                  | (opcode == 7'b1100011);
 
-    // Capture values that must survive after ifetch_valid is withdrawn.
-    always @(posedge cpu_clk) begin
-        if (mem_start | mul_div_start) captured_rf_waddr <= inst[11:7];
+    wire [4:0] id_rs1 = uses_rs1 ? if_id_inst[19:15] : 5'h0;
+    wire [4:0] id_rs2 = uses_rs2 ? if_id_inst[24:20] : 5'h0;
+
+    // RF reads are combinational and WB commits on the same edge that ID_EX
+    // latches, so ID has to see the value being written.
+    wire wb_bypass_rs1 = mem_wb_valid & mem_wb_rf_we & (mem_wb_rd != 5'h0)
+                       & (mem_wb_rd == id_rs1);
+    wire wb_bypass_rs2 = mem_wb_valid & mem_wb_rf_we & (mem_wb_rd != 5'h0)
+                       & (mem_wb_rd == id_rs2);
+
+    wire [31:0] id_rs1_value = wb_bypass_rs1 ? mem_wb_result : rf_rd1;
+    wire [31:0] id_rs2_value = wb_bypass_rs2 ? mem_wb_result : rf_rd2;
+
+    // A load result is not available until it reaches MEM/WB, so the consumer
+    // waits one cycle in ID and then takes the ordinary MEM->EX forward.
+    wire id_ex_is_load = id_ex_ram_rop != `RAM_EXT_N;
+    assign load_use_stall = if_id_valid & id_ex_valid & id_ex_is_load
+                          & (id_ex_rd != 5'h0)
+                          & ((id_ex_rd == id_rs1) | (id_ex_rd == id_rs2));
+
+    always @(posedge cpu_clk or posedge cpu_rst) begin
+        if (cpu_rst | flush) begin
+            id_ex_valid <= 1'b0;
+        end else if (id_ex_update) begin
+            id_ex_valid     <= if_id_valid & ~load_use_stall;
+            id_ex_pc        <= if_id_pc;
+            id_ex_rs1_value <= id_rs1_value;
+            id_ex_rs2_value <= id_rs2_value;
+            id_ex_imm       <= imm;
+            id_ex_rd        <= if_id_inst[11:7];
+            id_ex_rs1       <= id_rs1;
+            id_ex_rs2       <= id_rs2;
+            id_ex_npc_op    <= npc_op;
+            id_ex_alu_op    <= alu_op;
+            id_ex_alua_sel  <= alua_sel;
+            id_ex_alub_sel  <= alub_sel;
+            id_ex_is_mul    <= is_mul;
+            id_ex_is_div    <= is_div;
+            id_ex_ram_rop   <= ram_rop;
+            id_ex_ram_wop   <= ram_wop;
+            id_ex_rf_we     <= rf_we;
+            id_ex_rf_wsel   <= rf_wsel;
+        end
     end
 
     /***************************** EX *****************************/
-    assign alu_a = alua_sel ? pc  : rf_rd1;
-    assign alu_b = alub_sel ? ext : rf_rd2;
+    wire [31:0] alu_c;
+    wire        alu_br;
+    wire        mul_div_busy;
+    wire [31:0] mem_result;
+
+    // Forward the newest available result. EX/MEM never holds a pending load
+    // value, because the load-use detector keeps such a consumer in ID until
+    // the load has moved on to MEM/WB.
+    wire fwd_ex_rs1 = ex_mem_valid & ex_mem_rf_we & (ex_mem_rd != 5'h0)
+                    & (ex_mem_rd == id_ex_rs1);
+    wire fwd_ex_rs2 = ex_mem_valid & ex_mem_rf_we & (ex_mem_rd != 5'h0)
+                    & (ex_mem_rd == id_ex_rs2);
+    wire fwd_wb_rs1 = mem_wb_valid & mem_wb_rf_we & (mem_wb_rd != 5'h0)
+                    & (mem_wb_rd == id_ex_rs1);
+    wire fwd_wb_rs2 = mem_wb_valid & mem_wb_rf_we & (mem_wb_rd != 5'h0)
+                    & (mem_wb_rd == id_ex_rs2);
+
+    wire [31:0] ex_rs1 = fwd_ex_rs1 ? ex_mem_alu_result :
+                         fwd_wb_rs1 ? mem_wb_result     : id_ex_rs1_value;
+    wire [31:0] ex_rs2 = fwd_ex_rs2 ? ex_mem_alu_result :
+                         fwd_wb_rs2 ? mem_wb_result     : id_ex_rs2_value;
+
+    // The multiplier and divider start on a level, so the op must be withdrawn
+    // once the unit has been launched or it restarts while EX is still held.
+    reg         md_launched;
+    reg         md_captured;
+    reg  [31:0] md_result;
+
+    wire ex_is_md   = id_ex_valid & (id_ex_is_mul | id_ex_is_div);
+    wire md_present = ex_is_md & ~md_launched & ~md_captured;
+    wire md_capture = md_launched & ~mul_div_busy;
+
+    assign md_stall = ex_is_md & ~md_captured;
+
+    always @(posedge cpu_clk or posedge cpu_rst) begin
+        if (cpu_rst)             md_launched <= 1'b0;
+        else if (md_present)     md_launched <= 1'b1;
+        else if (md_capture)     md_launched <= 1'b0;
+    end
+
+    always @(posedge cpu_clk or posedge cpu_rst) begin
+        if (cpu_rst) begin
+            md_captured <= 1'b0;
+            md_result   <= 32'h0;
+        end else if (md_capture) begin
+            md_captured <= 1'b1;
+            md_result   <= alu_c;
+        end else if (id_ex_update) begin
+            md_captured <= 1'b0;
+        end
+    end
+
+    wire [31:0] alu_a = id_ex_alua_sel ? id_ex_pc  : ex_rs1;
+    wire [31:0] alu_b = id_ex_alub_sel ? id_ex_imm : ex_rs2;
+    wire [ 4:0] alu_op_in = (ex_is_md & ~md_present) ? `ALU_ADD : id_ex_alu_op;
 
     ALU U_ALU (
         .rst        (cpu_rst),
         .clk        (cpu_clk),
-        .op         (alu_op),
+        .op         (alu_op_in),
         .a          (alu_a),
         .b          (alu_b),
-        .br         (br),
+        .br         (alu_br),
         .c          (alu_c),
         .busy       (mul_div_busy)
     );
 
-    /***************************** MEM *****************************/
-    MREQ U_MEM_REQ (
-        .ram_addr   (alu_c),
+    // Branches, jal and jalr all resolve here against the static
+    // predict-not-taken fetch, so any taken transfer discards IF and ID.
+    wire [31:0] npc;
+    wire [31:0] pc4;
+    wire [31:0] npc_offset = (id_ex_npc_op == `NPC_JALR) ? alu_c : id_ex_imm;
 
-        .ram_rop    (ram_rop),
+    NPC U_NPC (
+        .op         (id_ex_npc_op),
+        .pc         (id_ex_pc),
+        .offset     (npc_offset),
+        .br         (alu_br),
+        .npc        (npc),
+        .pc4        (pc4)
+    );
+
+    wire br_taken = id_ex_valid
+                  & ((id_ex_npc_op == `NPC_JMP)
+                   | (id_ex_npc_op == `NPC_JALR)
+                   | ((id_ex_npc_op == `NPC_BRA) & alu_br));
+
+    assign flush       = br_taken & id_ex_update;
+    assign redirect_pc = npc;
+
+    // Every writeback source except a load is already known here.
+    reg [31:0] ex_result;
+    always @(*) begin
+        case (id_ex_rf_wsel)
+            `WB_PC4: ex_result = pc4;
+            `WB_EXT: ex_result = id_ex_imm;
+            default: ex_result = ex_is_md ? md_result : alu_c;
+        endcase
+    end
+
+    always @(posedge cpu_clk or posedge cpu_rst) begin
+        if (cpu_rst) begin
+            ex_mem_valid <= 1'b0;
+        end else if (ex_mem_update) begin
+            ex_mem_valid       <= id_ex_valid & ~md_stall;
+            ex_mem_pc          <= id_ex_pc;
+            ex_mem_alu_result  <= ex_result;
+            ex_mem_store_data  <= ex_rs2;
+            ex_mem_rd          <= id_ex_rd;
+            ex_mem_rf_we       <= id_ex_rf_we;
+            ex_mem_wb_from_ram <= id_ex_rf_wsel == `WB_RAM;
+            ex_mem_ram_rop     <= id_ex_ram_rop;
+            ex_mem_ram_wop     <= id_ex_ram_wop;
+        end
+    end
+
+    /***************************** MEM ****************************/
+    wire [ 3:0] da_ren;
+    wire [31:0] da_addr;
+    wire [ 3:0] da_wen;
+    wire [31:0] da_wdata;
+    wire [31:0] ram_ext;
+
+    MREQ U_MEM_REQ (
+        .ram_addr   (ex_mem_alu_result),
+
+        .ram_rop    (ex_mem_ram_rop),
         .da_ren     (da_ren),
         .da_addr    (da_addr),
 
-        .ram_wop    (ram_wop),
-        .ram_wdata  (rf_rd2),
+        .ram_wop    (ex_mem_ram_wop),
+        .ram_wdata  (ex_mem_store_data),
         .da_wen     (da_wen),
         .da_wdata   (da_wdata)
     );
 
     MEXT U_MEM_EXT (
-        .op             (captured_load_op),
-        .din            (daccess_rdata),
-        .byte_offs      (captured_mem_offset),
-        .ext            (ram_ext)
+        .op         (ex_mem_ram_rop),
+        .din        (daccess_rdata),
+        .byte_offs  (ex_mem_alu_result[1:0]),
+        .ext        (ram_ext)
     );
 
-    always @(posedge cpu_clk) if (mem_start) captured_mem_offset <= alu_c[1:0];
-    always @(posedge cpu_clk) if (mem_start) captured_load_op    <= ram_rop;
+    // One outstanding data access, issued once and held in MEM until the
+    // matching read or write response arrives.
+    reg  mem_issued;
+    wire mem_needs = ex_mem_valid & ((ex_mem_ram_rop != `RAM_EXT_N)
+                                   | (ex_mem_ram_wop != `RAM_WE_N));
+    wire mem_issue = mem_needs & ~mem_issued;
+    wire mem_done  = mem_issued & (daccess_rvalid | daccess_wresp);
 
-    // Interface to Bus
+    assign mem_stall = mem_needs & ~mem_done;
+
     always @(posedge cpu_clk or posedge cpu_rst) begin
         if (cpu_rst) begin
             daccess_ren   <= 4'h0;
             daccess_wen   <= 4'h0;
-        end else begin
+            daccess_addr  <= 32'h0;
+            daccess_wdata <= 32'h0;
+            mem_issued    <= 1'b0;
+        end else if (mem_issue) begin
             daccess_ren   <= da_ren;
             daccess_addr  <= da_addr;
             daccess_wen   <= da_wen;
             daccess_wdata <= da_wdata;
-        end
-    end
-
-    /***************************** WB *****************************/
-    assign normal_done  = ifetch_valid & !mem_start & !mul_div_start;
-    assign mem_done     = mem_pending & (daccess_rvalid | daccess_wresp);
-    assign mul_div_done = mul_div_pending & !mul_div_busy;
-    assign inst_done    = normal_done | mem_done | mul_div_done;
-
-    assign commit_rf_we = normal_done & rf_we |
-                          mem_pending & daccess_rvalid |
-                          mul_div_done;
-
-    assign rf_wR = mem_pending | mul_div_pending
-                 ? captured_rf_waddr : inst[11:7];
-
-    always @(*) begin
-        if (mem_pending) begin
-            rf_wD = ram_ext;
+            mem_issued    <= 1'b1;
         end else begin
-            case (rf_wsel)
-                `WB_ALU:  rf_wD = alu_c;
-                `WB_PC4:  rf_wD = pc4;
-                `WB_EXT:  rf_wD = ext;
-                default:  rf_wD = 32'h0;
-            endcase
+            daccess_ren <= 4'h0;
+            daccess_wen <= 4'h0;
+            if (mem_done) mem_issued <= 1'b0;
         end
     end
+
+    assign mem_result = ex_mem_wb_from_ram ? ram_ext : ex_mem_alu_result;
 
     always @(posedge cpu_clk or posedge cpu_rst) begin
-        inst_done_r <= cpu_rst ? 1'b0 : inst_done;
+        if (cpu_rst) begin
+            mem_wb_valid <= 1'b0;
+        end else begin
+            mem_wb_valid  <= ex_mem_valid & ~mem_stall;
+            mem_wb_pc     <= ex_mem_pc;
+            mem_wb_result <= mem_result;
+            mem_wb_rd     <= ex_mem_rd;
+            mem_wb_rf_we  <= ex_mem_rf_we;
+        end
     end
-
-
 
     /********************* Your CPU ends here *********************/
 
@@ -269,12 +442,12 @@ module cpu_core(
     wire [31:0] debug_mem_waddr /* verilator public */ ;    // MEM阶段写访存时的写地址 (若mem_we为0，此项可为任意值)
     wire [31:0] debug_mem_wdata /* verilator public */ ;    // MEM阶段写访存时的写数据 (若mem_we为0，此项可为任意值)
 
-    assign debug_wb_pc    = pc;
-    assign debug_wb_rf_we = commit_rf_we;
-    assign debug_wb_rf_wR = rf_wR;
-    assign debug_wb_rf_wD = rf_wD;
+    assign debug_wb_pc    = mem_wb_pc;
+    assign debug_wb_rf_we = mem_wb_valid & mem_wb_rf_we;
+    assign debug_wb_rf_wR = mem_wb_rd;
+    assign debug_wb_rf_wD = mem_wb_result;
 
-    assign debug_mem_pc    = pc;
+    assign debug_mem_pc    = ex_mem_pc;
     assign debug_mem_we    = daccess_wen;
     assign debug_mem_waddr = daccess_addr;
     assign debug_mem_wdata = daccess_wdata;
