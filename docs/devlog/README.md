@@ -5,6 +5,9 @@
 
 ## Active Tasks
 
+- [流水线 CPU 与流水线 SoC：`feat/pipeline` 迭代交接](pipeline-cpu-and-soc.md) —
+  Active；五级核、SoC fabric、CoreMark 与 −34.3% 性能优化已关闭，Vivado 物理路径、
+  流水线 SoC 上的 C_TEST 与板级验证未开始。
 - [单周期 SoC 开发](single-cycle-soc.md) — Active；Stage 0～3 已完成，Stage 3
   里程碑为 `single-cycle-soc-stage3`，构建/验证间章与 Stage 4 已完成；Stage 5 Active。
 - [单周期 SoC Stage 5：物理工程与自有板级闭环](single-cycle-soc-stage5.md) — Active；
