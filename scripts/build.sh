@@ -426,7 +426,7 @@ run_gate() {
             git -C "$root" diff --check
             ;;
         single-stage4-auto)
-            just --justfile "$root/Justfile" --fmt --check
+            just --justfile "$root/Justfile" --unstable --fmt --check
             "$root/scripts/doctor.sh"
             while IFS= read -r script; do
                 bash -n "$script"
@@ -446,7 +446,7 @@ run_gate() {
             run_gate closure
             ;;
         closure)
-            just --justfile "$root/Justfile" --fmt --check
+            just --justfile "$root/Justfile" --unstable --fmt --check
             "$root/scripts/doctor.sh"
             unit_cache
             unit_axi_master
