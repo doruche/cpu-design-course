@@ -44,6 +44,7 @@ module cpu_top(
 
     wire        cpu2ic_rreq;
     wire [31:0] cpu2ic_addr;
+    wire        ic2cpu_ready;
     wire        ic2cpu_valid;
     wire [31:0] ic2cpu_inst;
 
@@ -61,6 +62,7 @@ module cpu_top(
         // Instruction Fetch Interface
         .ifetch_req     (cpu2ic_rreq),
         .ifetch_addr    (cpu2ic_addr),
+        .ifetch_ready   (ic2cpu_ready),
         .ifetch_valid   (ic2cpu_valid),
         .ifetch_inst    (ic2cpu_inst),
         // Data Access Interface
@@ -82,6 +84,7 @@ module cpu_top(
         .cpu_rst        (cpu_rst),
         .inst_rreq      (cpu2ic_rreq),
         .inst_addr      (cpu2ic_addr),
+        .inst_ready     (ic2cpu_ready),
         .inst_valid     (ic2cpu_valid),
         .inst_out       (ic2cpu_inst)
     );
@@ -150,6 +153,7 @@ module cpu_top(
         .cpu_rst        (cpu_rst),
         .inst_rreq      (cpu2ic_rreq),
         .inst_addr      (cpu2ic_addr),
+        .inst_ready     (ic2cpu_ready),
         .inst_valid     (ic2cpu_valid),
         .inst_out       (ic2cpu_inst),
         .dev_rrdy       (axi2ic_rrdy),

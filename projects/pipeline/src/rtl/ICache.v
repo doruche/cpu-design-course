@@ -15,6 +15,7 @@ module ICache(
     /* verilator lint_off UNUSEDSIGNAL */
     input  wire [31:0]  inst_addr,
     /* verilator lint_on UNUSEDSIGNAL */
+    output reg          inst_ready,
     output reg          inst_valid,
     output reg  [31:0]  inst_out,
 
@@ -78,7 +79,7 @@ module ICache(
         end else begin
             state <= next_state;
 
-            if (state == STATE_IDLE && inst_rreq) begin
+            if (inst_ready && inst_rreq) begin
                 req_word_addr <= inst_addr[31:2];
             end
 
@@ -106,7 +107,13 @@ module ICache(
                 end
             end
             STATE_LOOKUP: begin
-                next_state = cache_hit ? STATE_IDLE : STATE_REFILL_REQ;
+                if (!cache_hit) begin
+                    next_state = STATE_REFILL_REQ;
+                end else begin
+                    // A hit answers in one cycle, so the next fetch can be
+                    // looked up back to back instead of idling for a cycle.
+                    next_state = inst_rreq ? STATE_LOOKUP : STATE_IDLE;
+                end
             end
             STATE_REFILL_REQ: begin
                 if (dev_rrdy) begin
@@ -115,7 +122,7 @@ module ICache(
             end
             STATE_REFILL_WAIT: begin
                 if (dev_rvalid) begin
-                    next_state = STATE_IDLE;
+                    next_state = inst_rreq ? STATE_LOOKUP : STATE_IDLE;
                 end
             end
             default: next_state = STATE_IDLE;
@@ -123,14 +130,19 @@ module ICache(
     end
 
     always @(*) begin
+        inst_ready = 1'b0;
         inst_valid = 1'b0;
         inst_out = 32'h0;
         cpu_ren = 4'h0;
         cpu_raddr = 32'h0;
 
         case (state)
+            STATE_IDLE: begin
+                inst_ready = 1'b1;
+            end
             STATE_LOOKUP: begin
                 if (cache_hit) begin
+                    inst_ready = 1'b1;
                     inst_valid = 1'b1;
                     inst_out = select_word(cache_data[req_index], req_offset);
                 end
@@ -141,6 +153,7 @@ module ICache(
             end
             STATE_REFILL_WAIT: begin
                 if (dev_rvalid) begin
+                    inst_ready = 1'b1;
                     inst_valid = 1'b1;
                     inst_out = select_word(dev_rdata, req_offset);
                 end
@@ -166,7 +179,7 @@ module ICache(
             req_word_addr <= 30'h0;
         end else begin
             state <= next_state;
-            if (state == STATE_IDLE && inst_rreq) begin
+            if (inst_ready && inst_rreq) begin
                 req_word_addr <= inst_addr[31:2];
             end
         end
@@ -187,7 +200,7 @@ module ICache(
             end
             STATE_BYPASS_WAIT: begin
                 if (dev_rvalid) begin
-                    next_state = STATE_IDLE;
+                    next_state = inst_rreq ? STATE_BYPASS_REQ : STATE_IDLE;
                 end
             end
             default: next_state = STATE_IDLE;
@@ -195,18 +208,23 @@ module ICache(
     end
 
     always @(*) begin
+        inst_ready = 1'b0;
         inst_valid = 1'b0;
         inst_out = 32'h0;
         cpu_ren = 4'h0;
         cpu_raddr = 32'h0;
 
         case (state)
+            STATE_IDLE: begin
+                inst_ready = 1'b1;
+            end
             STATE_BYPASS_REQ: begin
                 cpu_ren = 4'hf;
                 cpu_raddr = {req_word_addr, 2'b00};
             end
             STATE_BYPASS_WAIT: begin
                 if (dev_rvalid) begin
+                    inst_ready = 1'b1;
                     inst_valid = 1'b1;
                     inst_out = dev_rdata[31:0];
                 end

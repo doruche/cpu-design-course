@@ -8,9 +8,14 @@ module Inst_ROM (
     // Interface to CPU
     input  wire         inst_rreq,
     input  wire [31:0]  inst_addr,
+    output wire         inst_ready,
     output reg          inst_valid,
     output wire [31:0]  inst_out
 );
+
+    // The ROM is a registered-output block RAM, so it accepts an address every
+    // cycle and answers one cycle later. It is never busy.
+    assign inst_ready = 1'b1;
 
     always @(posedge cpu_clk or posedge cpu_rst) begin
         inst_valid <= cpu_rst ? 1'b0 : inst_rreq;

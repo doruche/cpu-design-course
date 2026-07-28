@@ -15,6 +15,7 @@ module cpu_core(
     // Instruction Fetch Interface
     output wire         ifetch_req   /* verilator public */ ,
     output wire [31:0]  ifetch_addr  /* verilator public */ ,
+    input  wire         ifetch_ready,
     input  wire         ifetch_valid /* verilator public */ ,
     input  wire [31:0]  ifetch_inst,
 
@@ -87,12 +88,31 @@ module cpu_core(
     reg  [31:0] fetch_pc;         // pc that fetch was issued for
     reg         fetch_discard;    // outstanding fetch belongs to a flushed path
 
-    // IF_ID is free when it holds nothing or is handing its instruction on, so
-    // an issued fetch always has somewhere to land when it returns.
-    wire if_id_free   = ~if_id_valid | if_id_advance;
-    wire fetch_issue  = ~cpu_rst & ~fetch_pending & if_id_free;
-    wire fetch_return = fetch_pending & ifetch_valid;
-    wire fetch_keep   = fetch_return & ~fetch_discard & ~flush;
+    // One-entry skid buffer behind IF_ID. Without it a fetch could only be
+    // issued after the previous one had landed *and* IF_ID had drained, which
+    // caps fetch throughput at one instruction every two cycles even when the
+    // memory answers every cycle.
+    reg         skid_valid;
+    reg  [31:0] skid_pc;
+    reg  [31:0] skid_inst;
+
+    wire if_id_slot_free = ~if_id_valid | if_id_advance;
+    wire fetch_return    = fetch_pending & ifetch_valid;
+    wire fetch_keep      = fetch_return & ~fetch_discard & ~flush;
+
+    // Where the two instruction slots end up this cycle. A fetch may only be
+    // issued while at most one of them will be occupied, so the answer always
+    // has somewhere to land however the pipeline stalls in the meantime.
+    wire if_id_next_valid = flush            ? 1'b0
+                          : if_id_slot_free  ? (skid_valid | fetch_keep)
+                                             : 1'b1;
+    wire skid_next_valid  = flush            ? 1'b0
+                          : if_id_slot_free  ? (skid_valid & fetch_keep)
+                                             : (skid_valid | fetch_keep);
+
+    wire fetch_issue = ~cpu_rst & ~flush & ifetch_ready &
+                       (~fetch_pending | fetch_return) &
+                       ~(if_id_next_valid & skid_next_valid);
 
     assign ifetch_req  = fetch_issue;
     assign ifetch_addr = pc;
@@ -111,12 +131,12 @@ module cpu_core(
             fetch_pc      <= 32'h0;
             fetch_discard <= 1'b0;
         end else begin
-            if (fetch_return) begin
-                fetch_pending <= 1'b0;
-                fetch_discard <= 1'b0;
-            end else if (fetch_issue) begin
+            if (fetch_issue) begin
                 fetch_pending <= 1'b1;
                 fetch_pc      <= pc;
+                fetch_discard <= 1'b0;
+            end else if (fetch_return) begin
+                fetch_pending <= 1'b0;
                 fetch_discard <= 1'b0;
             end else if (flush & fetch_pending) begin
                 fetch_discard <= 1'b1;
@@ -127,12 +147,24 @@ module cpu_core(
     always @(posedge cpu_clk or posedge cpu_rst) begin
         if (cpu_rst | flush) begin
             if_id_valid <= 1'b0;
+            skid_valid  <= 1'b0;
+        end else if (if_id_slot_free) begin
+            if (skid_valid) begin
+                if_id_valid <= 1'b1;
+                if_id_pc    <= skid_pc;
+                if_id_inst  <= skid_inst;
+                skid_valid  <= fetch_keep;
+                skid_pc     <= fetch_pc;
+                skid_inst   <= ifetch_inst;
+            end else begin
+                if_id_valid <= fetch_keep;
+                if_id_pc    <= fetch_pc;
+                if_id_inst  <= ifetch_inst;
+            end
         end else if (fetch_keep) begin
-            if_id_valid <= 1'b1;
-            if_id_pc    <= fetch_pc;
-            if_id_inst  <= ifetch_inst;
-        end else if (if_id_advance) begin
-            if_id_valid <= 1'b0;
+            skid_valid <= 1'b1;
+            skid_pc    <= fetch_pc;
+            skid_inst  <= ifetch_inst;
         end
     end
 
@@ -238,6 +270,13 @@ module cpu_core(
             id_ex_ram_wop   <= ram_wop;
             id_ex_rf_we     <= rf_we;
             id_ex_rf_wsel   <= rf_wsel;
+        end else begin
+            // A held EX must capture the operands it can currently see. Its
+            // producer keeps moving down the pipe while EX waits, so the
+            // forward that satisfies this instruction can disappear before it
+            // is allowed to leave.
+            id_ex_rs1_value <= ex_rs1;
+            id_ex_rs2_value <= ex_rs2;
         end
     end
 
@@ -296,7 +335,13 @@ module cpu_core(
 
     wire [31:0] alu_a = id_ex_alua_sel ? id_ex_pc  : ex_rs1;
     wire [31:0] alu_b = id_ex_alub_sel ? id_ex_imm : ex_rs2;
-    wire [ 4:0] alu_op_in = (ex_is_md & ~md_present) ? `ALU_ADD : id_ex_alu_op;
+    // A bubble still carries the previous instruction's decode, so the op has
+    // to be withdrawn on the id_ex_is_mul/id_ex_is_div fields alone. Gating on
+    // ex_is_md would let an invalid stage restart the unit behind a live
+    // operation and hand back its result.
+    wire ex_holds_md_op = id_ex_is_mul | id_ex_is_div;
+    wire [ 4:0] alu_op_in = (ex_holds_md_op & ~md_present) ? `ALU_ADD
+                                                          : id_ex_alu_op;
 
     ALU U_ALU (
         .rst        (cpu_rst),
@@ -452,5 +497,6 @@ module cpu_core(
     assign debug_mem_waddr = daccess_addr;
     assign debug_mem_wdata = daccess_wdata;
 `endif
+
 
 endmodule
