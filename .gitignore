@@ -42,3 +42,5 @@
 !/projects/*/src/rtl/ip/
 !/projects/*/src/rtl/ip/*/
 !/projects/*/src/rtl/ip/*/*.xci
+
+__pycache__/

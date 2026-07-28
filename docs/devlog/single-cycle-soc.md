@@ -2,11 +2,11 @@
 
 ## 状态
 
-- 状态：Active
+- 状态：Completed（2026-07-28）
 - 建立日期：2026-07-26
 - 基线提交：`87f2f3c`
 - 产品：`projects/single_cycle/`
-- 当前阶段：Stage 5 Active；S5-0～S5-3 完成，S5-U Pending（EGO1 Not Run）
+- 当前阶段：Stage 5 Completed；里程碑 tag `single-cycle-soc-stage5`
 
 本文记录单周期 SoC 开发的总体方向和阶段顺序。课程要求仍以固定版本的指导书、
 Trace 框架和课程验收说明为准；各阶段的具体接口、实现方案和验证安排在进入该阶段
@@ -76,7 +76,7 @@ Trace 框架和课程验收说明为准；各阶段的具体接口、实现方�
 - 增加由 CPU 执行测试程序、同时经过双 Cache、AXI、系统互连、主存和五类 MMIO 的
   自动化 SoC 系统仿真；
 - 本间章已完成；Stage 4 的软件、镜像和自动化已按独立任务书推进到 S4-3，用户证据
-  仍由 S4-U 单独收集。
+  已由 S4-U 单独收集并关闭。
 
 ### Stage 4：C_TEST 软件与自动化联调
 
@@ -115,9 +115,9 @@ Trace 框架和课程验收说明为准；各阶段的具体接口、实现方�
   [独立任务书](build-cli-and-soc-verification.md)。
 - Stage 4：Completed，2026-07-27；详见
   [独立任务书](single-cycle-soc-stage4.md)，S4-1～S4-3 与 S4-U 均已完成。
-- Stage 5：Active，2026-07-27；详见
-  [独立任务书](single-cycle-soc-stage5.md)，S5-0～S5-3 已完成，S5-U EGO1 用户板测
-  Pending。
+- Stage 5：Completed，2026-07-28；详见
+  [独立任务书](single-cycle-soc-stage5.md)，S5-0～S5-4 与 S5-U 均已完成；
+  物理产品里程碑 tag 为 `single-cycle-soc-stage5`。
 
 ## 阶段记录
 
@@ -443,6 +443,16 @@ Stage 3 handoff：Stage 3 与
 [构建系统、CLI 与完整 SoC 验证间章](build-cli-and-soc-verification.md)均已关闭。
 [Stage 4 独立任务书](single-cycle-soc-stage4.md)的自动范围和课程 bitstream 用户验证均已
 完成；[Stage 5 独立任务书](single-cycle-soc-stage5.md)的时钟复位、物理主存、可追溯
-候选入口、自动回归和三套 clean Vivado implementation/bitstream 已完成到 S5-3。
-自己的 EGO1 烧录、串口交互和外设观察仍为 Not Run，由用户在 S5-U 执行；S5-U 完成前
-不进入 S5-4。
+候选入口、自动回归和三套 clean Vivado implementation/bitstream 均已完成。
+2026-07-28，用户在自己的 EGO1 上使用三套指定哈希候选完成 S5-U：
+`c-test-0` 的复位、UART、switch、LED 和数码管，`c-test-1` 的格式化 I/O、
+输入回显、符号 LED 和绝对值数码管，以及 `c-test-2` 的两轮排序、动态内存和
+timer 均与清单预期一致，三套结果均为 **PASS**。
+
+S5-4 在未修改最终 RTL/工程的前提下重跑 `just unit stage5-contract` 和
+`just gate single-stage4-auto`；前者 9/9 通过，后者通过三套 C_TEST、Stage 3
+Unit/Integration、六配置 lint/Trace（45/45）和 SoC smoke。候选源提交
+`f4cf37f0f876f79c83437df7e2684ef665286a09` 之后只有文档变化，因此不重复无变化的
+Vivado implementation；三套 bundle 的 SHA-256 和结构化实现证据重新校验通过。
+两个 submodule 保持固定且未修改，canonical 工程无生成物污染。Stage 5 在
+`single-cycle-soc-stage5` 里程碑关闭；流水线阶段仍未启动。

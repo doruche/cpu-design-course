@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（S5-0～S5-3 完成；S5-U Pending，EGO1 Not Run）
+- 状态：Completed（2026-07-28；S5-0～S5-4 与 S5-U 均已完成）
 - 父任务：[单周期 SoC 开发](single-cycle-soc.md)
 - 基线提交：`6793cf0`
 - 产品：`projects/single_cycle/`
@@ -300,7 +300,7 @@ utilization、power 报告。逐候选复核确认：
 
 ### S5-U：自己的 EGO1 用户板测
 
-状态：Pending（用户负责；EGO1 Not Run）。
+状态：Completed（2026-07-28；用户 EGO1 实板验证）。
 
 本检查点由 agent 准备、用户执行：
 
@@ -313,9 +313,21 @@ utilization、power 报告。逐候选复核确认：
 只有三套自己的 bitstream 均通过，S5-U 才能关闭。课程 bitstream 的既有结果保留为
 软件 oracle，但不计入本检查点 PASS。
 
+2026-07-28 用户使用 115200 baud、8N1、无流控的串口设置，对 S5-3 清单中
+三套确定 bitstream 完成了 EGO1 实板验证。用户确认实际 UART transcript 与
+外设现象全部符合清单预期：
+
+| 候选 | bitstream SHA-256 | 用户实板结果 |
+| --- | --- | --- |
+| `c-test-0` | `f5d28d797dac252e6e2313bf988660cf822e760cb413c9f29404b231f54b2d7f` | 复位可重复；UART 输出/输入、switch 终止、LED 与八位数码管均 PASS |
+| `c-test-1` | `e1f350d23ccc88d23de792768b88607a62a3109def67d3c1fa01cd48a41b9c49` | 格式化输出、输入回显、符号 LED 和绝对值数码管均 PASS |
+| `c-test-2` | `5f17105e014aca873136166773ded5d2e1fcf726196a2d1710c4eb55bd2d86dc` | 固定数组排序、动态数组排序、heap 释放和非零 timer 结果均 PASS |
+
+该证据是用户拥有的物理板会话观察；仓库不提交原始串口日志或 bitstream。
+
 ### S5-4：单周期 SoC 关闭与交接
 
-状态：Not Started；S5-U 完成前不得进入。
+状态：Completed（2026-07-28）。
 
 - 在最终 RTL/工程提交上重跑 Stage 5 自动门禁和必要的 clean Vivado 候选构建；
 - 记录 S5-U 三套用户结果，更新 README、父任务和开发日志索引；
@@ -323,6 +335,25 @@ utilization、power 报告。逐候选复核确认：
 - 保存单周期 SoC 物理产品里程碑 tag，作为后续流水线 SoC merge 的 fabric 基线。
 
 本检查点不创建正式 `artifacts/` 报告，不修改数据通路图，也不生成最终提交 ZIP。
+
+S5-4 关闭证据：
+
+- `just unit stage5-contract` 重跑通过 9/9，物理 BRAM、时钟复位、UART/timer 参数、
+  候选 CLI 和板级同步边界保持成立；
+- `just gate single-stage4-auto` 重跑通过：三套 C_TEST software/System、Stage 3
+  Unit/Integration、六配置 lint/Trace（45/45）和 SoC smoke 均通过；
+- 三套候选均重新运行 `scripts/check_vivado_result.py` 并重算 bitstream SHA-256，
+  结果与 S5-3 清单一致；
+- 候选源提交 `f4cf37f0f876f79c83437df7e2684ef665286a09` 之后只有任务文档变化，
+  最终 RTL/工程与已通过的 clean Vivado implementation 完全相同，因此未重复三次
+  无输入变化的 Vivado 构建；
+- `cdp-tests` 固定于 `50a818278e9a60d304521c4b16980211b0162014`，
+  `materials/instruction-site` 固定于 `e2748d2b7cd765a19146dff1355cc842ac68fe64`，两者均未修改；
+- canonical 工程无生成物污染，S5-4 自身只更新状态文档；关闭提交同时纳入
+  用户明确授权的根 `.gitignore` 缓存规则，物理产品里程碑为 `single-cycle-soc-stage5`。
+
+`artifacts/`、数据通路图、正式报告、最终提交包和流水线工作仍为 **Deferred**；
+S5-4 没有自动进入下一阶段。
 
 ## 自动关闭门禁
 
