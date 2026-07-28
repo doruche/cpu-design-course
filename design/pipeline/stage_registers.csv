@@ -8,15 +8,29 @@ ID_EX,rs1_value,32,ID,EX,0,Decoded source operand or forwarding input
 ID_EX,rs2_value,32,ID,EX,0,Decoded source operand or forwarding input
 ID_EX,imm,32,ID,EX,0,Decoded immediate
 ID_EX,rd,5,ID,EX,0,Destination register number
-ID_EX,control,implementation-defined,ID,EX,0,Document individual controls before RTL
+ID_EX,rs1,5,ID,EX,0,Source register number compared by the EX forwarding unit
+ID_EX,rs2,5,ID,EX,0,Source register number compared by the EX forwarding unit
+ID_EX,npc_op,2,ID,EX,NPC_PC4,Control transfer kind; EX resolves the redirect
+ID_EX,alu_op,5,ID,EX,ALU_ADD,ALU function including the branch comparison
+ID_EX,alua_sel,1,ID,EX,ALU_A_RS1,Selects the forwarded rs1 value or pc for ALU.A
+ID_EX,alub_sel,1,ID,EX,ALU_B_RS2,Selects the forwarded rs2 value or imm for ALU.B
+ID_EX,is_mul,1,ID,EX,0,Starts the multiplier; EX stalls until ALU busy falls
+ID_EX,is_div,1,ID,EX,0,Starts the divider; EX stalls until ALU busy falls
+ID_EX,ram_rop,3,ID,EX,RAM_EXT_N,Load size and extension passed through to MEM
+ID_EX,ram_wop,4,ID,EX,RAM_WE_N,Store byte enables passed through to MEM
+ID_EX,rf_we,1,ID,EX,0,Writeback enable carried to WB
+ID_EX,rf_wsel,2,ID,EX,WB_ALU,Writeback source; EX resolves every source except WB_RAM
 EX_MEM,valid,1,EX,MEM,0,Bubble when clear
 EX_MEM,pc,32,EX,MEM,0,Program counter carried with the instruction
-EX_MEM,alu_result,32,EX,MEM,0,ALU or effective-address result
+EX_MEM,alu_result,32,EX,MEM,0,Effective address for load and store; otherwise the writeback value already selected by rf_wsel in EX
 EX_MEM,store_data,32,EX,MEM,0,Store data after forwarding
 EX_MEM,rd,5,EX,MEM,0,Destination register number
-EX_MEM,control,implementation-defined,EX,MEM,0,Memory and writeback controls
+EX_MEM,rf_we,1,EX,MEM,0,Writeback enable carried to WB
+EX_MEM,wb_from_ram,1,EX,MEM,0,Set when rf_wsel is WB_RAM; selects the MEXT output instead of alu_result
+EX_MEM,ram_rop,3,EX,MEM,RAM_EXT_N,Drives the read request and the MEXT extension; MEXT byte offset is alu_result[1:0]
+EX_MEM,ram_wop,4,EX,MEM,RAM_WE_N,Drives the write byte enables
 MEM_WB,valid,1,MEM,WB,0,Bubble when clear
 MEM_WB,pc,32,MEM,WB,0,Program counter carried with the instruction
 MEM_WB,result,32,MEM,WB,0,ALU result or loaded data
 MEM_WB,rd,5,MEM,WB,0,Destination register number
-MEM_WB,control,implementation-defined,MEM,WB,0,Final writeback controls
+MEM_WB,rf_we,1,MEM,WB,0,Final writeback enable
