@@ -22,6 +22,11 @@ module coremark_system_tb;
     wire tx;
 
     integer cycle_count = 0;
+    integer instruction_count = 0;
+    integer mem_stall_cycles = 0;
+    integer md_stall_cycles = 0;
+    integer load_use_stall_cycles = 0;
+    integer ifetch_stall_cycles = 0;
     integer memory_read_count = 0;
     integer memory_write_count = 0;
     integer mmio_read_count = 0;
@@ -120,6 +125,22 @@ module coremark_system_tb;
             $fatal(1, "coremark_system_tb timed out");
         end
 
+        if (!fpga_rst && dut.U_cpu.U_core.mem_wb_valid) begin
+            instruction_count <= instruction_count + 1;
+        end
+
+        if (!fpga_rst) begin
+            if (dut.U_cpu.U_core.mem_stall) begin
+                mem_stall_cycles <= mem_stall_cycles + 1;
+            end else if (dut.U_cpu.U_core.md_stall) begin
+                md_stall_cycles <= md_stall_cycles + 1;
+            end else if (dut.U_cpu.U_core.load_use_stall) begin
+                load_use_stall_cycles <= load_use_stall_cycles + 1;
+            end else if (!dut.U_cpu.U_core.if_id_valid) begin
+                ifetch_stall_cycles <= ifetch_stall_cycles + 1;
+            end
+        end
+
         if (!fpga_rst && dut.cpu_arvalid && dut.cpu_arready) begin
             if (dut.cpu_araddr[31:16] == 16'hffff) begin
                 check(dut.cpu_arlen == 0,
@@ -201,6 +222,15 @@ module coremark_system_tb;
         $display("  MMIO: reads=%0d writes=%0d, uncached single-beat",
                  mmio_read_count, mmio_write_count);
         $display("  UART: board-level 8N1 TX transcript captured");
+        $display("  Performance: cycles=%0d retired=%0d IPC=%0d.%03d",
+                 cycle_count, instruction_count,
+                 instruction_count / cycle_count,
+                 ((instruction_count * 1000) / cycle_count) % 1000);
+        $display("  Memory refills: instruction+data=%0d writes=%0d",
+                 memory_read_count, memory_write_count);
+        $display("  Stall cycles: mem=%0d md=%0d load-use=%0d ifetch=%0d",
+                 mem_stall_cycles, md_stall_cycles,
+                 load_use_stall_cycles, ifetch_stall_cycles);
         $display("  FPGA/board: NOT RUN (RTL system simulation only)");
         $finish;
     end
