@@ -46,6 +46,31 @@ class StaticHelperTests(unittest.TestCase):
         }
         self.assertEqual(stage5_contract.component_value(document, "Write_Depth_A"), "38400")
 
+    def test_pipeline_failure_baseline_is_frozen(self) -> None:
+        self.assertEqual(
+            stage5_contract.check_static_contract(ROOT, "pipeline"),
+            [
+                "pipeline XPR DesignSrcs missing: "
+                "$PPRDIR/src/coe/stage5-placeholder.coe, "
+                "$PPRDIR/src/rtl/DCache.v, $PPRDIR/src/rtl/ICache.v, "
+                "$PPRDIR/src/rtl/axi_master.v, $PPRDIR/src/rtl/seven_segment.v, "
+                "$PPRDIR/src/rtl/soc_interconnect.v, "
+                "$PPRDIR/src/rtl/soc_peripherals.v, "
+                "$PPRDIR/src/rtl/uart_peripheral.v",
+                "pipeline XPR DesignSrcs stale/unexpected: "
+                "$PPRDIR/src/coe/lw.coe, $PPRDIR/src/coe/mul_div_test.coe",
+                "pipeline XPR BlockSrcs missing: bram_axi",
+                "pipeline XPR BlockSrcs stale/unexpected: DRAM, IROM",
+                "pipeline XPR constraints missing: $PPRDIR/src/xdc/stage5.xdc",
+                "pipeline synth_1 flow is Vivado Synthesis 2018, "
+                "expected Vivado Synthesis 2023",
+                "pipeline impl_1 flow is Vivado Implementation 2018, "
+                "expected Vivado Implementation 2023",
+                "tracked BRAM placeholder COE does not exist: "
+                f"{ROOT}/projects/pipeline/src/coe/stage5-placeholder.coe",
+            ],
+        )
+
 
 class VivadoVerdictTests(unittest.TestCase):
     def good_result(self) -> dict:

@@ -290,12 +290,57 @@ unit_stage5_contract() {
     PYTHONDONTWRITEBYTECODE=1 python3 \
         "$root/scripts/stage5_contract.py" --root "$root" || \
         contract_failed=1
+    if PYTHONDONTWRITEBYTECODE=1 python3 \
+        "$root/scripts/stage5_contract.py" --root "$root" \
+        --product pipeline >"$output/pipeline-contract.log" 2>&1; then
+        cat "$output/pipeline-contract.log"
+        printf 'FAIL: pipeline physical contract unexpectedly closed in PC1\n' >&2
+        contract_failed=1
+    else
+        cat "$output/pipeline-contract.log"
+        printf 'Pipeline contract: expected PC1 failure baseline reproduced\n'
+    fi
     if just --justfile "$root/Justfile" --dry-run \
         vivado-candidate c-test-0 >"$output/candidate-cli.log" 2>&1; then
         printf 'Candidate CLI: explicit c-test-0 selection is available\n'
     else
         cat "$output/candidate-cli.log"
         printf 'FAIL: public Vivado candidate entry is not available\n' >&2
+        contract_failed=1
+    fi
+    if just --justfile "$root/Justfile" --dry-run \
+        vivado-candidate-for pipeline coremark stage \
+        >"$output/pipeline-candidate-cli.log" 2>&1; then
+        printf 'Candidate CLI: explicit pipeline/coremark/stage selection is available\n'
+    else
+        cat "$output/pipeline-candidate-cli.log"
+        printf 'FAIL: product-explicit Vivado candidate entry is not available\n' >&2
+        contract_failed=1
+    fi
+    if "$root/scripts/build.sh" vivado-candidate-for pipeline coremark stage \
+        >"$output/pipeline-candidate-plan.log" 2>&1; then
+        cat "$output/pipeline-candidate-plan.log"
+        printf 'FAIL: pipeline candidate execution unexpectedly passed in PC1\n' >&2
+        contract_failed=1
+    elif [[ $(<"$output/pipeline-candidate-plan.log") == \
+        $'vivado-product: pipeline\nvivado-action: stage\nvivado-candidate: coremark\ncanonical-project: projects/pipeline/miniRV.xpr\nerror: pipeline Vivado candidate execution is pending PC2 product-path repair' ]]; then
+        printf 'Candidate CLI: pipeline selection resolves explicitly and fails closed before PC2\n'
+    else
+        cat "$output/pipeline-candidate-plan.log"
+        printf 'FAIL: pipeline candidate selection resolved unexpectedly\n' >&2
+        contract_failed=1
+    fi
+    if "$root/scripts/build.sh" system pipeline-c-test-0 \
+        >"$output/pipeline-c-test-route.log" 2>&1; then
+        cat "$output/pipeline-c-test-route.log"
+        printf 'FAIL: pipeline C_TEST route unexpectedly exists in PC1\n' >&2
+        contract_failed=1
+    elif [[ $(<"$output/pipeline-c-test-route.log") == \
+        "error: unknown system suite: pipeline-c-test-0 (expected soc-smoke, c-test-0..2, or coremark)" ]]; then
+        printf 'Pipeline C_TEST route: expected PC1 failure baseline reproduced\n'
+    else
+        cat "$output/pipeline-c-test-route.log"
+        printf 'FAIL: pipeline C_TEST route failed for an unexpected reason\n' >&2
         contract_failed=1
     fi
     mapfile -t rtl_sources < <(mapfile_sorted "$single_rtl")
@@ -572,6 +617,36 @@ run_vivado_candidate() {
     PRODUCT=single_cycle "$root/scripts/vivado.sh" "$action" "$program"
 }
 
+run_vivado_candidate_for() {
+    local product=$1 program=$2 action=$3
+    case "$product" in
+        single_cycle|pipeline) ;;
+        *) die "unknown Vivado candidate product: $product (expected single_cycle or pipeline)" ;;
+    esac
+    case "$action" in
+        stage|bitstream) ;;
+        *) die "unknown candidate action: $action (expected stage or bitstream)" ;;
+    esac
+    case "$product:$program" in
+        single_cycle:c-test-0|single_cycle:c-test-1|single_cycle:c-test-2)
+            run_vivado_candidate "$program" "$action"
+            ;;
+        pipeline:c-test-0|pipeline:c-test-1|pipeline:c-test-2|pipeline:coremark)
+            printf 'vivado-product: pipeline\n'
+            printf 'vivado-action: %s\n' "$action"
+            printf 'vivado-candidate: %s\n' "$program"
+            printf 'canonical-project: projects/pipeline/miniRV.xpr\n'
+            die "pipeline Vivado candidate execution is pending PC2 product-path repair"
+            ;;
+        single_cycle:*)
+            die "unknown single-cycle candidate: $program (expected c-test-0..2)"
+            ;;
+        pipeline:*)
+            die "unknown pipeline candidate: $program (expected c-test-0..2 or coremark)"
+            ;;
+    esac
+}
+
 show_status() {
     git -C "$root" status --short --branch
     git -C "$root" submodule status
@@ -585,7 +660,8 @@ show_status() {
     printf '\nBoard programs:\n'
     printf '  c-test-0, c-test-1, c-test-2, coremark\n'
     printf '\nVivado candidates:\n'
-    printf '  c-test-0, c-test-1, c-test-2 (stage or bitstream)\n'
+    printf '  legacy single-cycle: vivado-candidate c-test-0|1|2 {stage|bitstream}\n'
+    printf '  product-explicit: vivado-candidate-for PRODUCT CANDIDATE {stage|bitstream}\n'
 }
 
 clean_outputs() {
@@ -653,6 +729,10 @@ case "$command" in
         [[ $# == 3 ]] || die "usage: $0 vivado-candidate PROGRAM {stage|bitstream}"
         run_vivado_candidate "$2" "$3"
         ;;
+    vivado-candidate-for)
+        [[ $# == 4 ]] || die "usage: $0 vivado-candidate-for PRODUCT PROGRAM {stage|bitstream}"
+        run_vivado_candidate_for "$2" "$3" "$4"
+        ;;
     export-submission)
         [[ $# == 1 ]] || die "usage: $0 export-submission"
         with_trace_lock "$root/scripts/export-submission.sh"
@@ -662,6 +742,6 @@ case "$command" in
         clean_outputs
         ;;
     *)
-        die "usage: $0 {status|show-config|lint|unit|program|integration|trace|trace-all|system|gate|vivado|vivado-candidate|export-submission|clean} ..."
+        die "usage: $0 {status|show-config|lint|unit|program|integration|trace|trace-all|system|gate|vivado|vivado-candidate|vivado-candidate-for|export-submission|clean} ..."
         ;;
 esac

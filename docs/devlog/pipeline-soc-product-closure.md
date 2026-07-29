@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（PC0 已完成；PC1～PC6 与 PC-U Pending，不得自动进入）
+- 状态：Active（PC0～PC1 已完成；PC2～PC6 与 PC-U Pending，不得自动进入）
 - 建立日期：2026-07-30
 - 基线提交：`4581d8dd6ffc792912429f8d176e266070369193`
 - 产品：`projects/pipeline/`
@@ -231,7 +231,7 @@ PC0 只证明任务书和索引一致，不构成 pipeline C_TEST、CoreMark、V
 
 ### PC1：失败基线、owner 审计与机器合同
 
-状态：Pending。
+状态：Completed（2026-07-30；已在进入 PC2 前停止）。
 
 默认 write set：
 
@@ -273,6 +273,87 @@ git diff --check
 - 无法从 canonical XPR/XCI/Tcl 判断实际 source、COE、part 或 run owner；
 - candidate API 需要破坏现有 single-cycle 入口语义；
 - ABI 修复要求替换课程程序、修改 CoreMark 算法或在宿主机引入不可固定的全局环境。
+
+PC1 从 `5cbf6ee` 的 clean `main` 进入，未修改 pipeline/single-cycle RTL、XPR、XCI、
+XDC、COE、Tcl 或 C_TEST/CoreMark 源码。结构化审计确认 canonical owner 可判定，未命中
+本检查点停止条件。修复前基线和 PC2 目标冻结如下。
+
+#### Pipeline 失败基线
+
+`python3 scripts/stage5_contract.py --product pipeline` 以非零状态稳定报告以下八类缺口；
+`tests/stage5/test_contract_tools.py` 对完整错误清单做精确断言，避免缺口被静默改名或漏掉：
+
+1. `sources_1` 缺少 `DCache.v`、`ICache.v`、`axi_master.v`、`seven_segment.v`、
+   `soc_interconnect.v`、`soc_peripherals.v`、`uart_peripheral.v` 和
+   `stage5-placeholder.coe`，同时仍含 `lw.coe` 与 `mul_div_test.coe`；
+2. `BlockSrcs` 缺少 `bram_axi`，同时仍含旧 `DRAM` 与 `IROM` fileset；
+3. `constrs_1` 缺少 `stage5.xdc`；
+4. 主 `synth_1`/`impl_1` 分别仍记录 `Vivado Synthesis 2018` 与
+   `Vivado Implementation 2018`；
+5. pipeline XCI 虽已是 32 bit × 38,400 word（153,600 bytes），`Load_Init_File=true`
+   且 `Coe_File` 是 user parameter，但它指向的 product-local
+   `stage5-placeholder.coe` 不存在；
+6. pipeline `build.tcl` 仍是 `{action, XPR, jobs}` 三参数入口，没有 candidate COE
+   override、实际 COE 回读或 `build_facts.tsv`；
+7. `just system pipeline-c-test-0` 仍以 unknown suite 失败，证明现有 C_TEST 入口只属于
+   single-cycle；
+8. pipeline candidate public entry 在 PC1 只完成选择语义和 fail-closed 边界，实际
+   stage/bitstream 仍明确拒绝并归 PC2 修复，未误用 single-cycle 工程。
+
+XPR 检查使用 XML 元素/属性解析，XCI 检查使用 JSON parameter record；没有用源文本命中
+替代可结构化的工程合同。Tcl 当前三参数事实由其可执行 usage 基线确认，自动门禁不新增
+未固定的宿主 `tclsh` 依赖；candidate override 的机器边界由 product-explicit CLI 在
+PC2 前 fail closed，PC2 后再由 Vivado 回读 facts 证明。
+
+#### Owner 与公开 CLI 冻结
+
+- canonical physical owner 固定为 `projects/<product>/miniRV.xpr` 及同一 product 下的
+  XCI/XDC/COE/Tcl；Windows staging 仍是派生树；
+- 既有 `just vivado-candidate c-test-0|1|2 {stage|bitstream}` 继续严格表示
+  single-cycle，不改变参数和默认 `bitstream`；
+- 新入口固定为
+  `just vivado-candidate-for <single_cycle|pipeline> <candidate> <stage|bitstream>`；
+  single-cycle 只接受 C_TEST 0～2，pipeline 接受 C_TEST 0～2 与 CoreMark；
+- PC1 中 pipeline 新入口会打印 product、action、candidate 与 canonical XPR 后失败，
+  防止在 PC2 接通前把 dry-run 误写成可构建能力；
+- `scripts/vivado.sh` 是 staging/action owner，`scripts/prepare_vivado_candidate.py` 是
+  manifest/COE selection owner，product Tcl 是 Vivado 内实际 COE 与 facts owner，
+  collector/checker 是构建后 evidence/verdict owner。
+
+#### PC2 工程与 evidence 目标
+
+`scripts/stage5_contract.py` 已将 PC2 XPR 目标冻结为：
+
+- `sources_1` 精确包含 product 根目录下 22 个现有 `.v` truth source 和
+  `src/coe/stage5-placeholder.coe`，不含 `lw.coe`/`mul_div_test.coe`；
+- `BlockSrcs` 精确为 product-local `bram_axi` 与 `clk_wiz_0`，不含 `DRAM`/`IROM`；
+- `constrs_1` 精确为 `clock.xdc`、`miniRV_SoC.xdc`、`stage5.xdc`；
+- project、`synth_1`、`impl_1` 均为 `xc7a35tcsg324-1`，top 为 `miniRV_SoC`，主 run
+  分别拥有 `sources_1`/`constrs_1` 与 `synth_1`/`constrs_1`，flow 为 2023；
+- XCI 保持 32 bit × 38,400 word、user-settable COE 和 product-local placeholder；
+  candidate action 必须回读 requested/actual COE 并逐路径一致。
+
+PC2 的 `build_facts.tsv` 至少保持单周期已关闭 schema 的
+`schema/action/vivado_version/part/synth_complete/impl_complete/bram_width_bits/`
+`bram_depth_words/requested_coe/actual_coe`；bitstream 再包含
+`bitstream/drc_error_count/drc_critical_warning_count/`
+`methodology_critical_warning_count`。collector 目标继续输出结构化
+`runs/memory/coe/messages/timing/drc/candidate`，其中 timing 必含 setup WNS/TNS、hold
+WHS/THS 与 unconstrained paths，candidate 必含 source commit、selection、manifest、
+COE 与 bitstream hash；methodology/CDC 报告缺失必须 fail closed。
+
+#### ABI 与验证结果
+
+`scripts/doctor.sh` 不再把工具名存在等同于 ABI 可用：它实际以
+`-march=rv32im -mabi=ilp32 -nostdlib` 编译并链接 repository `start.S`/`link.ld`，强制
+解析 soft-float `__divsf3` 与 64-bit `__udivdi3`，再用 `readelf` 验证 ELF32、RISC-V、
+RV32I+M 属性和 helper symbols。当前宿主 probe 通过，`just program coremark` 也成功生成
+13,337-word candidate；这只证明当前 compile/link ABI，不是 CoreMark RTL system 证据。
+
+PC1 关闭门禁均通过：`just unit stage5-contract`（10 个 Python 用例、single-cycle
+static/board-clock 正例、pipeline expected-failure/CLI/C_TEST baseline）、`just doctor`、
+`just --fmt --check`、shell/Python syntax 与 `git diff --check`。未运行 Vivado、pipeline
+C_TEST/CoreMark system、implementation 或板测，以上继续为 **Not Run**。
 
 ### PC2：Canonical Vivado 产品路径修复
 
@@ -504,7 +585,7 @@ PC6 不创建官方验收对齐任务书，除非用户另行明确授权。
 | Checkpoint | 状态 | 提交 | 验证证据 |
 | --- | --- | --- | --- |
 | PC0 任务书冻结 | Completed | 本提交 | `just --fmt --check`；`just doctor`；`git diff --check`；docs-only |
-| PC1 失败基线与合同 | Pending | — | — |
+| PC1 失败基线与合同 | Completed | 本提交 | `just unit stage5-contract`；`just doctor`；`just --fmt --check`；pipeline expected-failure |
 | PC2 Vivado 产品路径 | Pending | — | — |
 | PC3 Pipeline System | Pending | — | — |
 | PC4 clean 自动回归/综合 | Pending | — | — |
@@ -514,7 +595,14 @@ PC6 不创建官方验收对齐任务书，除非用户另行明确授权。
 
 ## Write Set 扩展记录
 
-当前无扩展。
+PC1 未扩展 write set。
+
+进入 PC2 前有一项拟议扩展待用户确认：将 `scripts/prepare_vivado_candidate.py` 加入 PC2
+write set。原因是 product/candidate/action 合同已包含 pipeline CoreMark，而该文件是
+manifest/COE selection 的现有 owner，当前 allowlist 只接受 C_TEST 0～2；仅修改
+`scripts/vivado.sh` 或 `scripts/build.sh` 不能诚实关闭四候选选择。该扩展不改变 program、
+MMIO 或 single-cycle 外部语义；新增门禁应覆盖四候选 identity/manifest/COE dry-run 和
+既有三个 single-cycle candidate 回归。未获确认前不得在 PC2 修改该文件。
 
 后续扩展必须记录：原 write set 为何不足、拟增加的文件及 owner、是否改变外部合同、需要
 新增或重跑的验证、用户确认结论和日期。

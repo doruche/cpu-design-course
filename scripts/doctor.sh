@@ -44,6 +44,48 @@ verilator --version | sed 's/^/  /'
 g++ --version | sed -n '1s/^/  /p'
 make --version | sed -n '1s/^/  /p'
 
+printf '\nRV32IM/ILP32 runtime ABI:\n'
+if command -v riscv32-unknown-elf-gcc >/dev/null && \
+    command -v riscv32-unknown-elf-readelf >/dev/null; then
+    rv32_probe_elf=$(mktemp /tmp/cpu-design-rv32-abi.XXXXXX)
+    trap 'rm -f "$rv32_probe_elf"' EXIT
+    if printf '%s\n' \
+        'volatile float probe_a = 1.0f;' \
+        'volatile float probe_b = 3.0f;' \
+        'volatile unsigned long long probe_n = 0x100000001ULL;' \
+        'int main(void) {' \
+        '    return (int)(probe_a / probe_b) + (int)(probe_n / 3ULL);' \
+        '}' | \
+        riscv32-unknown-elf-gcc \
+            -march=rv32im -mabi=ilp32 -mno-relax \
+            -ffreestanding -fno-builtin -nostdlib \
+            -Wl,--build-id=none -Wl,--no-relax \
+            -T "$root/programs/c_test/runtime/link.ld" \
+            -x c - \
+            -x assembler-with-cpp "$root/programs/c_test/runtime/start.S" \
+            -x none -lgcc -o "$rv32_probe_elf"; then
+        rv32_probe_header=$(riscv32-unknown-elf-readelf -h "$rv32_probe_elf")
+        rv32_probe_attributes=$(riscv32-unknown-elf-readelf -A "$rv32_probe_elf")
+        rv32_probe_symbols=$(riscv32-unknown-elf-readelf -s "$rv32_probe_elf")
+        if [[ "$rv32_probe_header" == *"Class:                             ELF32"* &&
+              "$rv32_probe_header" == *"Machine:                           RISC-V"* &&
+              "$rv32_probe_attributes" == *'Tag_RISCV_arch: "rv32i'* &&
+              "$rv32_probe_attributes" == *'_m'* &&
+              "$rv32_probe_symbols" == *"__divsf3"* &&
+              "$rv32_probe_symbols" == *"__udivdi3"* ]]; then
+            printf '  [ok] RV32IM/ILP32 compile+link with soft-float and 64-bit libgcc helpers\n'
+        else
+            printf '  [error] linked probe is not the required RV32IM/ILP32 runtime ABI\n'
+            missing=1
+        fi
+    else
+        printf '  [error] RV32IM/ILP32 compile+link probe failed\n'
+        missing=1
+    fi
+else
+    printf '  [not run] required RISC-V compiler/readelf is unavailable\n'
+fi
+
 printf '\nRepository inputs:\n'
 for path in \
     "$root/projects/single_cycle/miniRV.xpr" \

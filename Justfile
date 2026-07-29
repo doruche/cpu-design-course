@@ -56,6 +56,10 @@ vivado product action:
 vivado-candidate program action="bitstream":
     @./scripts/build.sh vivado-candidate "{{ program }}" "{{ action }}"
 
+# Stage or build one candidate under an explicit product owner.
+vivado-candidate-for product program action="bitstream":
+    @./scripts/build.sh vivado-candidate-for "{{ product }}" "{{ program }}" "{{ action }}"
+
 # Export the submission archive using the documented environment variables.
 export-submission:
     @./scripts/build.sh export-submission
