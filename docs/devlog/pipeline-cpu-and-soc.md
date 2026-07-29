@@ -1,17 +1,18 @@
-# 流水线 CPU 与流水线 SoC：`feat/pipeline` 迭代交接
+# 流水线 CPU 与流水线 SoC 状态记录
 
 ## 状态
 
-- 状态：Active（A 线与汇合线自动化范围已关闭；物理与板级范围未开始）
-- 分支：`feat/pipeline`，领先 `main` 39 个提交，落后 0 个（可 fast-forward 合并）
-- 当前提交：`ad6319c`
+- 状态：Merged（A 线与汇合线 RTL 自动化范围已合入 `main`；产品闭环未完成）
+- merge commit：`842d558`
+- 最后一个性能实现提交：`ad6319c`
 - 产品：`projects/pipeline/`
 - 主验证配置：`pipeline-basic`（Trace）、`pipeline-soc-cache`（CoreMark 系统仿真）
 - 目标板：EGO1（XC7A35TCSG324-1）；时钟合同 50 MHz
-- 本文档写作时未重跑任何门禁，下文"已通过"均引用对应提交当时记录的结果
+- 2026-07-29 merge 后评估：十配置 lint 与各 45 项 Trace、unit/integration 和
+  `soc-smoke` 通过；CoreMark 因当前宿主 soft-float/libgcc ABI 不匹配未进入 RTL 仿真
 
-本文是 `feat/pipeline` 的交接件：记录这条分支上已经关闭的范围、可复现的入口、
-性能基线，以及必须由下一位执行者（或用户）接手的缺口。范围划界与三条工作线的
+本文记录已合入 `main` 的流水线实现范围、可复现入口、性能历史，以及后续产品任务
+必须接手的缺口。范围划界与三条工作线的
 定义见 [`materials/lab2-requirements-snapshot.md`](../../materials/lab2-requirements-snapshot.md)，
 本文不复制其正文。
 
@@ -105,18 +106,7 @@ just gate closure                      # 十配置全量扫描，含上述全部
 （"在流水线 SoC 上重新运行 C_TEST"）尚未有任何证据。CoreMark 套件已经参数化到
 `pipeline-soc-cache`，可作为改法参照。
 
-### 3. `projects/pipeline/BASELINE.md` 已失效
-
-该文件仍写着"pipeline RTL has not started"，并以已被移除的 `make lint PRODUCT=…`
-记录验证。它现在会误导接手者，需要改写或删除。
-
-### 4. 里程碑标记缺失
-
-`CLAUDE.md` 约定用 tag 保存里程碑，但仓库当前没有任何 tag——包括 CLAUDE.md 自身
-引用的 `lab1-complete`、`single-cycle-soc-stage3`。A4（流水线 CPU 通过 Basic
-Trace，`63a5bb1`）是本分支上第一个值得冻结的点。
-
-### 5. 时序与 Fmax 未测，性能优化据此暂停
+### 3. 时序与 Fmax 未测，性能优化据此暂停
 
 要求 (10) 给流水线 SoC 设了 50 MHz 下限。剩余停顿预算是 md=335k（30%）与
 mem=258k（23%），两条可用杠杆——radix-4 Booth、组合访存地址通路——都是拿组合延迟
@@ -128,25 +118,33 @@ mem=258k（23%），两条可用杠杆——radix-4 Booth、组合访存地址�
 `programs/c_test/4_coremark/src/coremark/core_portme.c:36` 的 `#define MHZ`，
 否则 CoreMark 计时无效。
 
-### 6. CoreMark 只有仿真证据
+### 4. CoreMark 只有历史仿真证据
 
 `just system coremark` 跑的是单次迭代、无 settling delay 的镜像，校验的是与迭代
 次数无关的三个 CRC，仿真中达到 0.65 CoreMark/MHz。可上报的分数需要板上十秒运行，
 属于用户范围。
 
-### 7. 板级验证与最终交付未开始
+### 5. 板级验证与最终交付未开始
 
 流水线 SoC 的 implementation、bitstream、EGO1 烧录与观察均为 **Not Run**。最终交付
 所需的双产品时序/资源/功耗对比、报告 PDF 和提交目录封版同样未开始（按 Stage 5 的
 划界，这些统一延到两套 SoC 都物理关闭之后）。
 
-## 建议的接手顺序
+## Merge 后维护记录
+
+M1 已将 README、workflow、AGENTS、pipeline design 说明、产品 provenance 和 devlog
+更新到 merge 后事实。现有 tags `upstream-lab1-template`、`lab1-complete`、
+`single-cycle-soc-stage3`、`single-cycle-soc-stage5` 均存在；pipeline milestone tag
+尚未创建。候选点为 A4 的 `63a5bb1` 和自动集成 merge 的 `842d558`，命名与创建需
+后续显式决定。
+
+## 建议的产品接手顺序
 
 1. 修 pipeline 产品的 COE 缺失与 `build.tcl`/XPR/`vivado.sh` 的 Stage 5 对齐，
    使 `just vivado pipeline synth` 成为带证据判定的门禁 → 用户跑一次拿 Fmax。
 2. 把 `system_c_test` 参数化到产品/配置，在 `pipeline-soc-cache` 上重跑 C_TEST 0～2。
 3. 依据 1 的时序结果，决定是否继续要求 (9) 的剩余两条杠杆。
-4. 清理 `BASELINE.md`，为 A4 与流水线 SoC 打 tag，把本分支合入 `main`。
+4. 显式决定并创建 A4 与流水线 SoC 自动里程碑 tag。
 5. 物理关闭（用户）：bitstream、烧录、CoreMark 十秒运行、两产品报告数据。
 
 ## 环境

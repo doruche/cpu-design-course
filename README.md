@@ -16,8 +16,10 @@
 - 指导书已固定到包含 Lab 2-A 和 Lab 2-B 的版本。
 - Vivado 2023.2 的 WSL-to-Windows batch 入口已经配置，Lab 1 综合和实现已在
   Windows 侧完成。Lab 1 不要求下板，本里程碑未做也不声明板级验证。
-- Lab 2 双产品基线已经刷新；`projects/pipeline/` 当前是 2026-07-23 的
-  `projects/single_cycle/` tracked 工程快照，尚未开始流水线 RTL 改造。
+- Lab 2 流水线产品已经从完整单周期基线演化为 IF/ID/EX/MEM/WB 五级核，并接入
+  已验证的 Cache、AXI、主存/MMIO interconnect 和外设 fabric。五个 pipeline 配置的
+  lint 与全部 45 项 Trace 已通过；流水线 C_TEST、Vivado 物理路径、50 MHz 时序、
+  bitstream 和 EGO1 板测仍未关闭。
 - 单周期 SoC Stage 0～3 已完成，里程碑 tag 为 `single-cycle-soc-stage3`。默认产品
   路径已经接入 Cache、AXI 主存/MMIO 互连和五类外设；Stage 3 的完整链路、错误事务、
   子字访问和外设边界均有仓库测试。Stage 4 的 C_TEST 0～2、可审计程序镜像和三套
@@ -26,8 +28,9 @@
   50 MHz clean Vivado implementation、三套可追溯 bitstream 和 EGO1 用户板测均已关闭，
   里程碑 tag 为 `single-cycle-soc-stage5`。正式 artifacts 和数据通路图留到流水线 SoC merge 后。
   历史 ROM/RAM 路径仍由独立 Basic Trace profile 保留。
-- 仓库公开构建与验证 CLI 已统一为根 `Justfile`。六个稳定配置显式区分产品、拓扑、
-  Cache、后端和产物目录；Cache-enabled CPU-driven SoC smoke 已覆盖主存和五类 MMIO。
+- 仓库公开构建与验证 CLI 已统一为根 `Justfile`。十个稳定配置显式区分两个产品、
+  Basic/AXI direct/product SoC 拓扑、Cache、后端和产物目录；Cache-enabled
+  CPU-driven SoC smoke 已覆盖主存和五类 MMIO。
 
 ## 快速开始
 
@@ -112,6 +115,8 @@ just --list
 
 - [项目工作流](docs/workflow.md)
 - [开发任务日志](docs/devlog/README.md)
+- [流水线 merge 后稳定化维护任务书](docs/devlog/pipeline-post-merge-maintenance.md)
+- [流水线 CPU/SoC 状态记录](docs/devlog/pipeline-cpu-and-soc.md)
 - [单周期 SoC Stage 5 任务书](docs/devlog/single-cycle-soc-stage5.md)
 - [官方模板验证基线](docs/baseline.md)
 - [设计产物门禁](design/README.md)

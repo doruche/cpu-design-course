@@ -30,6 +30,7 @@ continue receiving Lab 2 SoC work.
 | Pipeline HDL | `projects/pipeline/src/rtl/` | Trace build, submission export, Windows staging |
 | Board configuration | Product `.xpr`, XCI, XDC, COE, Tcl | Windows staging |
 | Single-cycle design | `design/single_cycle/*.csv` | Milestone-only presentation diagram |
+| Pipeline design | `design/pipeline/*.csv` | Milestone-only presentation diagram |
 | Course behavior | `materials/instruction-site/` submodule | Local links and short decision notes |
 | Golden verification | `cdp-tests/` submodule | Generated executable and waveforms |
 | Board program | `programs/<name>/` source | ELF, BIN, disassembly, COE |
@@ -39,10 +40,11 @@ directory must be fixed in its canonical owner and regenerated.
 
 ## Fast WSL Loop
 
-1. Update both single-cycle CSV tables when the datapath/control contract
-   changes. Complete the relevant instruction rows and cumulative `complete`
-   datapath row under the rules in [`design/README.md`](../design/README.md)
-   before editing RTL.
+1. Update the relevant product design contract before editing RTL. ISA-level
+   datapath/control changes use both single-cycle CSV tables and the cumulative
+   `complete` row; pipeline stage, hazard, or flow-control changes use the three
+   pipeline CSV tables under the rules in
+   [`design/README.md`](../design/README.md).
 2. Edit canonical RTL.
 3. Select an explicit configuration with `just show-config <config>`, then run
    `just lint <config>`.
@@ -95,6 +97,8 @@ product topology or verification configuration.
 - `upstream-lab1-template` identifies the curated official template import.
 - `lab1-complete` identifies the complete Lab 1 CPU after full Trace and Vivado
   synthesis/implementation. Board validation is not part of that Lab 1 tag.
+- `single-cycle-soc-stage3` and `single-cycle-soc-stage5` preserve the closed
+  single-cycle SoC integration and physical-product milestones.
 - Tag later pipeline, SoC, and board milestones independently.
 - Keep the repository private.
 - Update submodule commits explicitly after reviewing their changes; do not

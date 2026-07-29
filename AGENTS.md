@@ -94,15 +94,17 @@ just unit <suite>                 # cache | axi-master | peripherals
                                   # c-test-software | stage5-contract
 just integration <suite>          # fabric-mmio | dcache-mmio
 just system <suite>               # soc-smoke | c-test-0 | c-test-1 | c-test-2
-just program <c-test-0|1|2>       # build + audit a board program image
+                                  # coremark
+just program <c-test-0|1|2|coremark> # build + audit a board program image
 just gate <gate>                  # aggregate gates, see below
 just clean                        # remove generated repo and Trace outputs
 ```
 
 Gates: `single-stage2`, `single-stage3`, `single-stage4-auto`,
 `products-basic`, `closure`. `closure` is the full sweep — `just --fmt --check`,
-doctor, all unit/integration suites, lint + full Trace across all six
-configurations, SoC smoke, `.xpr` XML validation, and `git diff --check`.
+doctor, all unit/integration suites, lint + full Trace across all ten
+configurations, SoC smoke, pipeline CoreMark system simulation, `.xpr` XML
+validation, and `git diff --check`.
 
 Vivado (Windows backend, run from WSL):
 
@@ -121,20 +123,20 @@ Machine-local Vivado settings live in the ignored `local.env` (copy from
 ### Two products, one RTL truth each
 
 Source is organized by final product, not course chronology.
-`projects/single_cycle/` began as the Lab 1 CPU and is evolving into the
-single-cycle SoC; `projects/pipeline/` was forked from it and will become the
-pipeline CPU and then the pipeline SoC. Each product owns exactly one HDL truth
-source at `projects/<product>/src/rtl/`, plus its own `miniRV.xpr`, XDC, XCI,
-COE, and Tcl. Everything else — Trace builds, Windows Vivado staging, and the
-submission export — is generated from those.
+`projects/single_cycle/` began as the Lab 1 CPU and is now the validated
+single-cycle SoC; `projects/pipeline/` was forked from it and now contains the
+five-stage core integrated with the SoC fabric. The pipeline RTL automation is
+closed, while its physical/Vivado and board-product gates remain open. Each
+product owns exactly one HDL truth source at `projects/<product>/src/rtl/`, plus
+its own `miniRV.xpr`, XDC, XCI, COE, and Tcl. Everything else — Trace builds,
+Windows Vivado staging, and the submission export — is generated from those.
 
 ### Configuration matrix drives every build
 
 `config/build-configs.tsv` is the single table of stable configurations. Each
 row fixes `product`, `topology`, `memory_model`, `cache`, `backend`, the
 Verilog `defines`, and an artifact directory. `scripts/build.sh:load_config`
-validates the tuple and rejects invalid combinations (for example, pipeline
-currently supports only the `basic` topology).
+validates each tuple before selecting sources and backend behavior.
 
 | config | product | topology | cache |
 | --- | --- | --- | --- |
@@ -144,6 +146,10 @@ currently supports only the `basic` topology).
 | `single-soc-bypass` | single_cycle | `SOC_TOPOLOGY` + MMIO | bypass |
 | `single-soc-cache` | single_cycle | `SOC_TOPOLOGY` + MMIO | enabled |
 | `pipeline-basic` | pipeline | basic | n/a |
+| `pipeline-axi-direct-bypass` | pipeline | `AXI_DIRECT_TOPOLOGY` | bypass |
+| `pipeline-axi-direct-cache` | pipeline | `AXI_DIRECT_TOPOLOGY` | enabled |
+| `pipeline-soc-bypass` | pipeline | `SOC_TOPOLOGY` + MMIO | bypass |
+| `pipeline-soc-cache` | pipeline | `SOC_TOPOLOGY` + MMIO | enabled |
 
 Topology and cache selection happen through compiler defines, not by editing
 `defines.vh` or forking files. `miniRV_SoC.v` is one file with `ifdef` arms for
@@ -207,7 +213,7 @@ backtick, and side-effect controls (`npc_op`, `rf_we`, `ram_rop`, `ram_wop`,
 
 - Keep `main` integrated; use short task branches rather than long-lived A/B
   branches. Preserve major milestones with tags (`upstream-lab1-template`,
-  `lab1-complete`, `single-cycle-soc-stage3`).
+  `lab1-complete`, `single-cycle-soc-stage3`, `single-cycle-soc-stage5`).
 - Update submodule commits explicitly after reviewing their changes.
 - Do not commit downloaded course archives, waveform dumps, Vivado run
   directories, bitstreams, or caches.

@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（仅 M0 任务书冻结完成；不得自动进入 M1）
+- 状态：Active（M0、M1 已完成；不得自动进入 M2）
 - 建立日期：2026-07-29
 - merge 基线：`842d5589e12c0ddf303a068c48d3b7ecca45e418`
 - 产品：`projects/pipeline/`，以及与双产品共享的仓库维护面
@@ -12,8 +12,8 @@
 指导书和 Trace framework 为准；流水线级间字段、冒险和流控语义仍以
 `design/pipeline/` 三份 CSV 为准；ISA 级语义仍以 `design/single_cycle/` 为准。
 
-本任务书只冻结范围、顺序、写集和验证门禁。M1～M3 均为 Pending；完成本次
-docs-only checkpoint 后不得自动开始实现。
+本任务书冻结范围、顺序、写集和验证门禁。M1 已按 docs-only 边界关闭；M2～M3
+仍为 Pending，未获得后续执行指令时不得自动开始实现。
 
 ## 背景与实施基线
 
@@ -135,7 +135,7 @@ M0 只证明任务书本身结构完整，不构成 RTL、CoreMark、Vivado 或�
 
 ## M1：仓库事实与状态文档对齐
 
-状态：Pending。
+状态：Completed（2026-07-29，docs-only）。
 
 ### 默认 Write set
 
@@ -312,8 +312,8 @@ devcontainer exec --workspace-folder . just system coremark
 
 | Checkpoint | 状态 | 提交 | 验证证据 |
 | --- | --- | --- | --- |
-| M0 任务书冻结 | Completed | 待提交 | `git diff --check`；docs-only |
-| M1 状态对齐 | Pending | — | — |
+| M0 任务书冻结 | Completed | `e4dfb8a` | `git diff --check`；docs-only |
+| M1 状态对齐 | Completed | 待提交 | `just --fmt --check`；`just doctor`；`git diff --check`；过期短语审计 |
 | M2 定向测试 | Pending | — | — |
 | M3 RTL 整理 | Pending | — | — |
 
