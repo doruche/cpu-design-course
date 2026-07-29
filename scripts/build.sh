@@ -315,17 +315,11 @@ unit_stage5_contract() {
         printf 'FAIL: product-explicit Vivado candidate entry is not available\n' >&2
         contract_failed=1
     fi
-    if "$root/scripts/build.sh" system pipeline-c-test-0 \
-        >"$output/pipeline-c-test-route.log" 2>&1; then
-        cat "$output/pipeline-c-test-route.log"
-        printf 'FAIL: pipeline C_TEST route unexpectedly exists in PC1\n' >&2
-        contract_failed=1
-    elif [[ $(<"$output/pipeline-c-test-route.log") == \
-        "error: unknown system suite: pipeline-c-test-0 (expected soc-smoke, c-test-0..2, or coremark)" ]]; then
-        printf 'Pipeline C_TEST route: expected PC1 failure baseline reproduced\n'
+    if "$root/scripts/build.sh" status | rg -Fxq \
+        '  system: soc-smoke, c-test-0, c-test-1, c-test-2, pipeline-c-test-0, pipeline-c-test-1, pipeline-c-test-2, coremark'; then
+        printf 'Pipeline C_TEST route: explicit PC3 suites are published\n'
     else
-        cat "$output/pipeline-c-test-route.log"
-        printf 'FAIL: pipeline C_TEST route failed for an unexpected reason\n' >&2
+        printf 'FAIL: explicit pipeline C_TEST suites are not published\n' >&2
         contract_failed=1
     fi
     mapfile -t rtl_sources < <(mapfile_sorted "$single_rtl")
@@ -401,31 +395,41 @@ run_integration() {
 run_system() {
     case "$1" in
         soc-smoke) system_soc_smoke ;;
-        c-test-0|c-test-1|c-test-2) system_c_test "$1" ;;
+        c-test-0|c-test-1|c-test-2)
+            system_c_test "$1" single-soc-cache "$1"
+            ;;
+        pipeline-c-test-0|pipeline-c-test-1|pipeline-c-test-2)
+            system_c_test "${1#pipeline-}" pipeline-soc-cache "$1"
+            ;;
         coremark) system_coremark ;;
-        *) die "unknown system suite: $1 (expected soc-smoke, c-test-0..2, or coremark)" ;;
+        *) die "unknown system suite: $1 (expected soc-smoke, c-test-0..2, pipeline-c-test-0..2, or coremark)" ;;
     esac
 }
 
 system_c_test() {
     local selector=$1
+    local config=$2
+    local suite=$3
     local test_id=${selector##*-}
-    local output="$cache_root/system/$selector"
+    local output="$cache_root/system/$suite"
     local program="$cache_root/programs/c_test/$selector/$selector.raw.bin"
     local transcript="$output/transcript.txt"
+    local product_rtl
+    local -a defines
     local -a rtl_sources
-    load_config single-soc-cache
+    load_config "$config"
     print_config
-    printf 'system-suite: %s\n' "$selector"
+    printf 'system-suite: %s\n' "$suite"
     printf '  backend: riscv32im-freestanding+iverilog+vvp\n'
-    printf '  artifact-directory: .cache/system/%s\n' "$selector"
+    printf '  artifact-directory: .cache/system/%s\n' "$suite"
     run_program "$selector"
     mkdir -p "$output"
-    mapfile -t rtl_sources < <(mapfile_sorted "$single_rtl")
+    product_rtl=$(rtl_dir)
+    mapfile -t rtl_sources < <(mapfile_sorted "$product_rtl")
+    mapfile -t defines < <(define_args)
     iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
-        -DRUN_TRACE=1 -DSIMULATION_CLOCK=1 -DBEHAVIORAL_MEMORY=1 \
-        -DSOC_TOPOLOGY=1 -DENABLE_ICACHE=1 -DENABLE_DCACHE=1 \
-        -DC_TEST_ID="$test_id" -DPATH="$program" -I"$single_rtl" \
+        "${defines[@]}" -DC_TEST_ID="$test_id" -DPATH="$program" \
+        -I"$product_rtl" \
         -s c_test_system_tb -o "$output/c-test-system" \
         "${rtl_sources[@]}" "$trace_dir/vsrc/bram_axi.v" \
         "$root/tests/c_test/c_test_system_tb.sv"
@@ -527,7 +531,7 @@ run_gate() {
             "$root/scripts/run-c-test-software.sh"
             for program in c-test-0 c-test-1 c-test-2; do
                 run_program "$program"
-                system_c_test "$program"
+                system_c_test "$program" single-soc-cache "$program"
             done
             run_gate closure
             ;;
@@ -641,7 +645,7 @@ show_status() {
     printf '\nVerification suites:\n'
     printf '  unit: cache, axi-master, pipeline-control, peripherals, c-test-software, stage5-contract\n'
     printf '  integration: fabric-mmio, dcache-mmio\n'
-    printf '  system: soc-smoke, c-test-0, c-test-1, c-test-2, coremark\n'
+    printf '  system: soc-smoke, c-test-0, c-test-1, c-test-2, pipeline-c-test-0, pipeline-c-test-1, pipeline-c-test-2, coremark\n'
     printf '  gate: single-stage2, single-stage3, single-stage4-auto, products-basic, closure\n'
     printf '\nBoard programs:\n'
     printf '  c-test-0, c-test-1, c-test-2, coremark\n'

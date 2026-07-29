@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（PC0～PC2 已完成；PC3～PC6 与 PC-U Pending，不得自动进入）
+- 状态：Active（PC0～PC3 已完成；PC4～PC6 与 PC-U Pending，不得自动进入）
 - 建立日期：2026-07-30
 - 基线提交：`4581d8dd6ffc792912429f8d176e266070369193`
 - 产品：`projects/pipeline/`
@@ -441,7 +441,7 @@ timing、bitstream 和板测均未运行或不属于本检查点，继续为 **N
 
 ### PC3：Pipeline C_TEST 与固定工具链 System 证明
 
-状态：Pending。
+状态：Completed（2026-07-30；已在进入 PC4 前停止）。
 
 默认 write set：
 
@@ -484,6 +484,33 @@ git diff --check
 - C_TEST/CoreMark 失败要求修改 ISA、MMIO ABI 或课程程序预期；
 - 只能通过放宽 transcript/CRC、memory bounds 或重复事务断言使测试通过；
 - 固定环境仍不能提供一致的 RV32IM/ILP32 runtime，且需要新的外部工具链 authority。
+
+PC3 从 clean `97123ea` 进入，先稳定复现
+`just system pipeline-c-test-0` 的 unknown-suite 失败基线。实现和证据关闭如下：
+
+- `scripts/build.sh` 新增任务书冻结的 `pipeline-c-test-0`、`pipeline-c-test-1`、
+  `pipeline-c-test-2` 公开 suite；它们分别把既有 C_TEST 0～2 image 显式路由到配置矩阵中的
+  `pipeline-soc-cache`，从该配置解析 product RTL 与 compiler defines，并使用独立的
+  `.cache/system/pipeline-c-test-*` 产物目录；
+- single-cycle 的 `just system c-test-0|1|2` 仍显式路由到 `single-soc-cache`。两种产品
+  共用既有 program manifest、256 KiB simulation memory、UART transcript checker 和
+  peripheral/protocol oracle，没有放宽 transcript、memory bounds、MMIO single-beat、
+  Cache refill 或重复事务断言；
+- 当前工具链为 `riscv32-unknown-elf-gcc 13.2.0-11ubuntu1+12` 与 binutils 2.42；
+  `just doctor` 的实际 compile/link probe 通过 RV32IM/ILP32、soft-float `__divsf3` 和
+  64-bit `__udivdi3` 检查。CoreMark manifest 回读 ELF32、RISC-V、
+  `rv32i2p1_m2p0_zmmul1p0`，并记录 compiler/binutils 版本；用户确认 PC3 不需要 Docker，
+  因此未修改 `.devcontainer/`，也未引入新的工具链 authority；
+- `just program coremark` 在当前主线重建 700-iteration、13,337-word 正式候选；
+  `just system coremark` 的单轮 RTL suite 通过 seed CRC `0xe9f5`、list CRC `0xe714`、
+  matrix CRC `0x1fd7`、state CRC `0x8e3a` 和最终 `FINISH` 检查；
+- PC3 门禁 `just unit c-test-software`、三个 pipeline C_TEST system suite、
+  `just system coremark`、`just unit pipeline-control` 与 `git diff --check` 均通过；三个
+  既有 single-cycle C_TEST suite 和 `just unit stage5-contract` 也通过兼容回归。
+
+PC3 未修改 product RTL、C_TEST/CoreMark 功能源码、System testbench 或 transcript/CRC
+checker，未命中停止条件。PC4 的完整 closure、clean synthesis 及其证据尚未运行，继续为
+**Not Run**；PC4 未开始。
 
 ### PC4：当前主线自动回归与 clean synthesis
 
@@ -620,7 +647,7 @@ PC6 不创建官方验收对齐任务书，除非用户另行明确授权。
 | PC0 任务书冻结 | Completed | 本提交 | `just --fmt --check`；`just doctor`；`git diff --check`；docs-only |
 | PC1 失败基线与合同 | Completed | 本提交 | `just unit stage5-contract`；`just doctor`；`just --fmt --check`；pipeline expected-failure |
 | PC2 Vivado 产品路径 | Completed | 本提交 | contract/lint/Trace/control；七候选 stage；Vivado 2023.2 dirty-source synth |
-| PC3 Pipeline System | Pending | — | — |
+| PC3 Pipeline System | Completed | 本提交 | 固定工具链 ABI/CoreMark build；pipeline C_TEST 0～2；CoreMark CRC；pipeline-control |
 | PC4 clean 自动回归/综合 | Pending | — | — |
 | PC5 implementation/候选 | Pending | — | — |
 | PC-U EGO1 用户板测 | Pending | — | — |
