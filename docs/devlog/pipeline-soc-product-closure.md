@@ -664,5 +664,13 @@ C_TEST 0～2；仅修改 `scripts/vivado.sh` 或 `scripts/build.sh` 不能诚实
 该扩展不改变 program、MMIO 或 single-cycle 外部语义；新增门禁覆盖 pipeline 四候选
 identity/manifest/COE stage 和既有三个 single-cycle candidate 回归，七种组合均通过。
 
+PC4 扩展 write set：用户于 2026-07-30 确认将 `scripts/build.sh` 加入 PC4。预检稳定证明
+既有 `closure` 未调用 `c-test-software`、`stage5-contract` 和 pipeline C_TEST 0～2，因而
+不能满足 PC4 已冻结的“全部共享 unit/integration、XPR/XCI semantic checks 与 pipeline
+C_TEST 纳入 closure”目标。`scripts/build.sh` 是公开 aggregate gate 的现有 owner；本扩展
+只补齐既有 suite 的聚合调用，不改变 suite 名称、测试 oracle、产品 RTL、软件/MMIO ABI、
+Vivado 工程或单周期入口。新增验证为三个 pipeline C_TEST、`stage5-contract`、完整容器
+`closure` 和既有 PC4 clean synthesis 门禁。
+
 后续扩展必须记录：原 write set 为何不足、拟增加的文件及 owner、是否改变外部合同、需要
 新增或重跑的验证、用户确认结论和日期。

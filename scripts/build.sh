@@ -542,6 +542,8 @@ run_gate() {
             unit_axi_master
             unit_pipeline_control
             unit_peripherals
+            "$root/scripts/run-c-test-software.sh"
+            unit_stage5_contract
             integration_fabric_mmio
             integration_dcache_mmio
             while IFS= read -r config; do
@@ -549,6 +551,9 @@ run_gate() {
                 trace_all_for "$config"
             done < <(list_configs)
             system_soc_smoke
+            for suite in pipeline-c-test-0 pipeline-c-test-1 pipeline-c-test-2; do
+                run_system "$suite"
+            done
             system_coremark
             xmllint --noout "$root/projects/single_cycle/miniRV.xpr" \
                 "$root/projects/pipeline/miniRV.xpr"
