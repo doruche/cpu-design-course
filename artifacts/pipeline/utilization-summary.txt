@@ -1,0 +1,13 @@
+Pipeline SoC routed utilization, common to all four PC5 candidates
+Source commit: 14a05572ebb585f20a3c83341fb2abe6fb834b0d
+Vivado: 2023.2
+Part: xc7a35tcsg324-1
+
+Resource             Used    Available    Utilization
+Slice LUTs            4101        20800          19.72%
+Slice Registers       2241        41600           5.39%
+Block RAM Tiles       37.5           50          75.00%
+DSPs                      0           90           0.00%
+Bonded IOBs              60          210          28.57%
+BUFGCTRLs                  2           32           6.25%
+PLLE2_ADVs                 1            5          20.00%

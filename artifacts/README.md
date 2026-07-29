@@ -12,3 +12,9 @@ small, reviewable evidence needed by the final report, such as:
 Use separate `single_cycle/` and `pipeline/` milestone directories when those
 reports exist. Do not commit bitstreams, ILA captures, complete Vivado logs, or
 raw run directories here.
+
+## Evidence index
+
+- `pipeline/`: PC5 clean routed evidence for the four pipeline C_TEST/CoreMark
+  candidates, including hash provenance, timing, utilization, power estimate,
+  and warning review dispositions. EGO1 board observations remain Pending.

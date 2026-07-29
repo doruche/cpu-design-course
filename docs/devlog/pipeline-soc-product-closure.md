@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（PC0～PC4 已完成；PC5～PC6 与 PC-U Pending，不得自动进入）
+- 状态：Active（PC0～PC5 已完成；PC-U 与 PC6 Pending，不得自动进入）
 - 建立日期：2026-07-30
 - 基线提交：`4581d8dd6ffc792912429f8d176e266070369193`
 - 产品：`projects/pipeline/`
@@ -582,7 +582,7 @@ implementation、timing closure、bitstream 或板测；这些仍为 **Not Run**
 
 ### PC5：Clean implementation、四候选与正式工程证据
 
-状态：Pending。
+状态：Completed（2026-07-30；已在进入 PC-U 前停止）。
 
 默认 write set：
 
@@ -621,6 +621,32 @@ git diff --check
 - DRC/CDC/methodology 处理要求修改 CPU、Cache、AXI 或 MMIO 语义；
 - 任一 candidate 不能证明实际消费了对应 COE。
 
+PC5 以 clean `14a05572ebb585f20a3c83341fb2abe6fb834b0d` 为 source 关闭。首先重跑
+`just unit stage5-contract`，12 项通过；随后在固定 devcontainer 中原样运行
+`just gate closure`，十配置 lint 与 450/450 Trace、全部 unit/integration、SoC smoke、
+pipeline C_TEST 0～2 与 CoreMark CRC system suite 全部通过。
+
+同一 source 分别执行四个 canonical Vivado 2023.2 bitstream action。每个候选独立完成
+synthesis、implementation 和 bitstream，且各自的 `stage5_evidence.json` 通过
+`scripts/check_vivado_result.py`。四者均回读 `xc7a35tcsg324-1`、32 bit x 38,400 words、
+实际 requested/consumed COE 一致、setup WNS 3.912 ns/TNS 0、hold WHS 0.031 ns/THS 0、
+unconstrained path 0、DRC error/critical warning 0、methodology critical warning 0。
+
+四候选的 routed utilization 相同：4,101/20,800 LUT（19.72%）、2,241/41,600 register
+（5.39%）、37.5/50 BRAM tile（75%）、0/90 DSP。Vivado vectorless power 为 0.189 W
+total、0.115 W dynamic、0.074 W static，置信度 Low；它只作为实现估算，不是板上实测。
+
+DRC 的 42 个普通 Warning 为 `CHECK-3` x2、`REQP-1839` x20、`REQP-1840` x20，指向
+异步 reset 的 AXI/interconnect address/state register 驱动 BRAM control。reset assertion
+会使事务失效且 release 已同步，因此 PC5 复核为非阻塞。Methodology 的普通 Warning
+为 `LUTAR-1`、`XDCC-1`、`XDCC-7`：产品有意在按键 reset/PLL unlock 时异步 assert、
+同步 release，两个 input clock constraint 均为同一 10 ns。CDC 仅有 17 项 `CDC-3`
+Info 与一项 `CDC-9` Info，对应带标记的 switch/UART 两级同步器和 reset 同步器。
+
+小型正式证据归档在 `artifacts/pipeline/`；bitstream、完整报告和 run 目录继续位于 ignored
+Windows staging。PC5 没有烧录 EGO1，也没有获得任何板上 UART/外设/CoreMark 现象；
+这些继续为 **Not Run**，仅可在用户明确授权后进入 PC-U。
+
 ### PC-U：自己的 Pipeline SoC EGO1 用户板测
 
 状态：Pending；仅在 PC5 四候选准备完成后进入。
@@ -637,6 +663,39 @@ git diff --check
 
 任一失败均回到最小可复现和对应自动层；不得用单周期、其他 candidate、课程 bitstream
 或历史 feature branch 结果替代。
+
+#### PC-U 输入清单（尚未执行）
+
+共同设置：EGO1 pipeline SoC 50 MHz；串口 `115200 8N1`、无硬件/软件流控。每次先按 SHA-256
+核对 `/mnt/z/cpu-design-vivado/candidates/pipeline/<candidate>/miniRV_SoC.bit`，program 后打开
+串口，assert 板级低有效 reset 后 release。保存从首个 banner 到结束标记的 transcript；
+对 C_TEST 0 重复 reset 一次，确认 banner 和交互能够重新开始。
+
+| candidate | COE SHA-256 | bitstream SHA-256 |
+| --- | --- | --- |
+| `c-test-0` | `55f3fefa963822d14e6de832aad05b05605851f0d3bfb6764e7a6dcdaa1b51d2` | `c2875ca08c74869236f222d4106ff5c1b3611052473de789b3fa434f8e302e9e` |
+| `c-test-1` | `e4c35f3b9c5b82ad9a39f5c6091e0461acbe104b5e07dd2ffaa4673a18147844` | `a10e6133db57520afd948a810cac24d2f1439a6a65b5a63b5b741d7a1a0ffa83` |
+| `c-test-2` | `425acd463b481092ceb6c42b4637b6543fe93bb51d91776052b4c9d33de5e0da` | `886da98bffdacca830afbac8c29f34ba50aae6cd39740cd4df2511f37f46d1c7` |
+| `coremark` | `aaf7c184d27c4c2afeacae8c22f807b75fa1ea584295d16bac344bf37671bae3` | `36c3f95eaf4faa6b9bd609e783423057af4bee110343f3bce71a2362ec97c6ab` |
+
+逐候选操作与期望：
+
+1. `c-test-0`：reset 前保持至少一个 switch 为 1；期望 `Test #0`、`Hello World!` 和
+   `Enter a char:`。输入 `A`，期望 UART 回显 `A`，LED 与数码管显示 ASCII `0x41`；换一个
+   字符重复一次。将全部 switch 置 0 后再输入一个字符，期望 `Test ended.`。重新 reset，
+   重复 banner、输入和外设观察。
+2. `c-test-1`：期望 formatted output 包含 `123`、`0x456`、`c`、`Hello World!` 和
+   `98.7654`。输入 `-42 x hello`，期望原值回显、最低 LED 点亮、数码管显示绝对值 42；
+   再输入 `0 q end`，期望 `Test ended.`。
+3. `c-test-2`：固定数组阶段依次输入 `8 7 6 5 4 3 2 1`，期望升序
+   `1 2 3 4 5 6 7 8` 和非负耗时。malloc 阶段输入合法 size（建议 16），保存 generated
+   array，并确认第二个 Sorted array 非降序、打印耗时，最终出现 `malloc released.`。
+4. `coremark`：无需输入。当前候选为默认 700 iterations、100 ms init delay；期望运行
+   至少 10 秒，输出 `seedcrc 0xe9f5`、list `0xe714`、matrix `0x1fd7`、state `0x8e3a`、
+   `Correct operation validated` 和 `FINISH`，且无 `ERROR`/`Errors detected`。记录 total
+   ticks/time、iterations、CoreMark 与 CoreMark/MHz；分数只接受本次 50 MHz 板测输出。
+
+PC-U 当前仍为 Pending。本清单只完成交接，不授权烧录、操作硬件或记录 PASS。
 
 ### PC6：产品关闭与后续验收交接
 
@@ -684,7 +743,7 @@ PC6 不创建官方验收对齐任务书，除非用户另行明确授权。
 | PC2 Vivado 产品路径 | Completed | 本提交 | contract/lint/Trace/control；七候选 stage；Vivado 2023.2 dirty-source synth |
 | PC3 Pipeline System | Completed | 本提交 | 固定工具链 ABI/CoreMark build；pipeline C_TEST 0～2；CoreMark CRC；pipeline-control |
 | PC4 clean 自动回归/综合 | Completed | `3f38166`（验证源）/本提交（记录） | 固定容器 closure；十配置 450/450 Trace；pipeline C_TEST 0～2/CoreMark；Vivado 2023.2 clean synth |
-| PC5 implementation/候选 | Pending | — | — |
+| PC5 implementation/候选 | Completed | `14a05572`（验证源）/本提交（记录） | 固定容器 closure；四候选 Vivado 2023.2 implementation/bitstream；timing/DRC/provenance；正式 artifacts |
 | PC-U EGO1 用户板测 | Pending | — | — |
 | PC6 产品关闭 | Pending | — | — |
 

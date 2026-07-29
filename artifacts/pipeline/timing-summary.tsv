@@ -1,0 +1,5 @@
+candidate	setup_wns_ns	setup_tns_ns	hold_whs_ns	hold_ths_ns	unconstrained_paths	no_input_delay_ports	no_output_delay_ports	false_path_input_ports	false_path_output_ports	drc_errors	drc_critical_warnings	methodology_critical_warnings
+c-test-0	3.912	0.000	0.031	0.000	0	0	0	18	39	0	0	0
+c-test-1	3.912	0.000	0.031	0.000	0	0	0	18	39	0	0	0
+c-test-2	3.912	0.000	0.031	0.000	0	0	0	18	39	0	0	0
+coremark	3.912	0.000	0.031	0.000	0	0	0	18	39	0	0	0
