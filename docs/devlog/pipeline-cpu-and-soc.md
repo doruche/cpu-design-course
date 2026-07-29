@@ -2,7 +2,9 @@
 
 ## 状态
 
-- 状态：Merged（A 线与汇合线 RTL 自动化范围已合入 `main`；产品闭环未完成）
+- 状态：Completed（2026-07-30；A 线与汇合线 RTL 自动化范围已合入 `main`，
+  后续产品闭环已移交）
+- 接手任务：[流水线 SoC 产品闭环](pipeline-soc-product-closure.md)
 - merge commit：`842d558`
 - 最后一个性能实现提交：`ad6319c`
 - 产品：`projects/pipeline/`
@@ -11,8 +13,9 @@
 - 2026-07-29 merge 后评估：十配置 lint 与各 45 项 Trace、unit/integration 和
   `soc-smoke` 通过；CoreMark 因当前宿主 soft-float/libgcc ABI 不匹配未进入 RTL 仿真
 
-本文记录已合入 `main` 的流水线实现范围、可复现入口、性能历史，以及后续产品任务
-必须接手的缺口。范围划界与三条工作线的
+本文记录已合入 `main` 的流水线实现范围、可复现入口、性能历史，以及关闭时移交给后续
+产品任务的缺口。本文至此冻结，不再作为活动 backlog；当前状态与执行顺序以接手任务书
+为准。范围划界与三条工作线的
 定义见 [`materials/lab2-requirements-snapshot.md`](../../materials/lab2-requirements-snapshot.md)，
 本文不复制其正文。
 
@@ -75,9 +78,11 @@ just gate closure                      # 十配置全量扫描，含上述全部
 配置矩阵已从六行扩到十行：`pipeline-basic` 外新增
 `pipeline-axi-direct-{bypass,cache}` 与 `pipeline-soc-{bypass,cache}`。
 
-## 未关闭的缺口
+## 关闭时移交项
 
-按接手成本从低到高排列。前四项是自动化范围，后三项需要用户或 Vivado/板级参与。
+以下内容是本记录关闭时的历史快照。工程与物理产品范围已经由
+[`pipeline-soc-product-closure.md`](pipeline-soc-product-closure.md) 的 PC1～PC6 与
+PC-U 接手；官方 IP、实验报告和最终提交包由该任务明确延期到后续独立任务书。
 
 ### 1. pipeline 产品的 Vivado 路径停留在 Stage 5 之前
 
@@ -138,7 +143,9 @@ M1 已将 README、workflow、AGENTS、pipeline design 说明、产品 provenanc
 尚未创建。候选点为 A4 的 `63a5bb1` 和自动集成 merge 的 `842d558`，命名与创建需
 后续显式决定。
 
-## 建议的产品接手顺序
+## 关闭时的历史接手建议
+
+以下顺序保留原交接背景；实际执行顺序已由接手任务书的 PC1～PC6 与 PC-U 取代。
 
 1. 修 pipeline 产品的 COE 缺失与 `build.tcl`/XPR/`vivado.sh` 的 Stage 5 对齐，
    使 `just vivado pipeline synth` 成为带证据判定的门禁 → 用户跑一次拿 Fmax。

@@ -117,7 +117,7 @@ just --list
 - [开发任务日志](docs/devlog/README.md)
 - [流水线 SoC 产品闭环任务书](docs/devlog/pipeline-soc-product-closure.md)
 - [流水线 merge 后稳定化维护任务书](docs/devlog/pipeline-post-merge-maintenance.md)
-- [流水线 CPU/SoC 状态记录](docs/devlog/pipeline-cpu-and-soc.md)
+- [流水线 CPU/SoC 合并记录](docs/devlog/pipeline-cpu-and-soc.md)
 - [单周期 SoC Stage 5 任务书](docs/devlog/single-cycle-soc-stage5.md)
 - [官方模板验证基线](docs/baseline.md)
 - [设计产物门禁](design/README.md)

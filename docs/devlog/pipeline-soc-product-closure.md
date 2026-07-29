@@ -472,7 +472,6 @@ git diff --check
 - `AGENTS.md`
 - `docs/workflow.md`
 - `docs/devlog/README.md`
-- `docs/devlog/pipeline-cpu-and-soc.md`
 - `projects/pipeline/BASELINE.md`
 - `artifacts/README.md`
 - 本任务书
