@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（PC0～PC1 已完成；PC2～PC6 与 PC-U Pending，不得自动进入）
+- 状态：Active（PC0～PC2 已完成；PC3～PC6 与 PC-U Pending，不得自动进入）
 - 建立日期：2026-07-30
 - 基线提交：`4581d8dd6ffc792912429f8d176e266070369193`
 - 产品：`projects/pipeline/`
@@ -357,7 +357,7 @@ C_TEST/CoreMark system、implementation 或板测，以上继续为 **Not Run**�
 
 ### PC2：Canonical Vivado 产品路径修复
 
-状态：Pending。
+状态：Completed（2026-07-30；已在进入 PC3 前停止）。
 
 默认 write set：
 
@@ -367,6 +367,7 @@ C_TEST/CoreMark system、implementation 或板测，以上继续为 **Not Run**�
 - `projects/pipeline/src/xdc/` 下必要的 Stage 5 约束
 - `projects/pipeline/scripts/build.tcl`
 - `scripts/vivado.sh`
+- `scripts/prepare_vivado_candidate.py`
 - `scripts/collect_vivado_evidence.py`
 - `scripts/check_vivado_result.py`
 - `scripts/build.sh`、`Justfile`
@@ -405,6 +406,38 @@ git diff --check
 - pipeline 需要不同于现有 50 MHz/BRAM/clock-reset 的产品合同；
 - 修复要求迁移到官方 AXI/GPIO/UART IP 拓扑；
 - synthesis 暴露真实时序优化需求或功能错误，超出工程接通范围。
+
+PC2 从 clean `299727e` 进入，未修改 pipeline/single-cycle RTL、XCI 或课程程序；用户在
+进入本检查点前确认把 `scripts/prepare_vivado_candidate.py` 纳入 write set。实现和证据
+关闭如下：
+
+- pipeline XPR 的 `sources_1` 现精确消费 22 个 product RTL 和
+  `stage5-placeholder.coe`；`BlockSrcs` 精确为 `bram_axi`、`clk_wiz_0`，旧 `DRAM`/`IROM`
+  fileset 与 run 已移除；约束精确为 `clock.xdc`、`miniRV_SoC.xdc`、`stage5.xdc`；主 run
+  flow 均为 2023；
+- product-local placeholder 和 Stage 5 约束已加入；既有 pipeline XCI 的 32 bit ×
+  38,400 word、user-settable COE 合同无需修改，static contract 已回读确认；
+- pipeline `build.tcl` 现钉住 Vivado 2023.2、part、BRAM 容量、requested/actual COE，输出
+  与单周期一致的 `build_facts.tsv`，并为后续 bitstream 保留 timing、DRC、methodology、
+  CDC 和 candidate evidence 路径；
+- staging、collector 和 product-explicit candidate 路径已接通 pipeline；既有
+  `vivado-candidate` 仍只表示 single-cycle C_TEST 0～2。候选准备器在 owner 内强制
+  single-cycle 三候选和 pipeline 四候选矩阵，并把 product identity 写入 selection；
+- 使用隔离 staging 对 single-cycle 三候选和 pipeline 的 C_TEST 0～2/CoreMark 共七种
+  组合执行真实 manifest/COE selection，全部通过；pipeline CoreMark 为 13,337 words，
+  COE SHA-256 为 `aaf7c184d27c4c2afeacae8c22f807b75fa1ea584295d16bac344bf37671bae3`；
+- `just vivado pipeline stage` 已从 canonical WSL owner 更新 Windows 派生树；随后以
+  `299727e-dirty` 执行本检查点要求的 dirty-source synthesis，Vivado 2023.2 的
+  `synth_1` 为 `synth_design Complete!`，0 error、0 critical warning；collector 回读
+  `xc7a35tcsg324-1`、32 × 38,400 words、实际
+  `stage5-placeholder.coe` 并输出 `stage5_evidence.json`；
+- PC2 门禁 `just unit stage5-contract`、`just lint pipeline-soc-cache`、
+  `just trace pipeline-soc-cache addi`、`just unit pipeline-control`、stage、synthesis、
+  `xmllint --noout`、格式与 whitespace 检查均通过。
+
+综合日志中的普通 warning 未构成 RTL 功能失败或本检查点时序优化需求；PC2 没有修改 RTL
+来压制 warning。clean synthesis、pipeline C_TEST/CoreMark system、implementation、50 MHz
+timing、bitstream 和板测均未运行或不属于本检查点，继续为 **Not Run**。PC3 未开始。
 
 ### PC3：Pipeline C_TEST 与固定工具链 System 证明
 
@@ -586,7 +619,7 @@ PC6 不创建官方验收对齐任务书，除非用户另行明确授权。
 | --- | --- | --- | --- |
 | PC0 任务书冻结 | Completed | 本提交 | `just --fmt --check`；`just doctor`；`git diff --check`；docs-only |
 | PC1 失败基线与合同 | Completed | 本提交 | `just unit stage5-contract`；`just doctor`；`just --fmt --check`；pipeline expected-failure |
-| PC2 Vivado 产品路径 | Pending | — | — |
+| PC2 Vivado 产品路径 | Completed | 本提交 | contract/lint/Trace/control；七候选 stage；Vivado 2023.2 dirty-source synth |
 | PC3 Pipeline System | Pending | — | — |
 | PC4 clean 自动回归/综合 | Pending | — | — |
 | PC5 implementation/候选 | Pending | — | — |
@@ -597,12 +630,12 @@ PC6 不创建官方验收对齐任务书，除非用户另行明确授权。
 
 PC1 未扩展 write set。
 
-进入 PC2 前有一项拟议扩展待用户确认：将 `scripts/prepare_vivado_candidate.py` 加入 PC2
-write set。原因是 product/candidate/action 合同已包含 pipeline CoreMark，而该文件是
-manifest/COE selection 的现有 owner，当前 allowlist 只接受 C_TEST 0～2；仅修改
-`scripts/vivado.sh` 或 `scripts/build.sh` 不能诚实关闭四候选选择。该扩展不改变 program、
-MMIO 或 single-cycle 外部语义；新增门禁应覆盖四候选 identity/manifest/COE dry-run 和
-既有三个 single-cycle candidate 回归。未获确认前不得在 PC2 修改该文件。
+PC2 扩展 write set：用户于 2026-07-30 确认将
+`scripts/prepare_vivado_candidate.py` 加入 PC2。原因是 product/candidate/action 合同包含
+pipeline CoreMark，而该文件是 manifest/COE selection 的现有 owner，原 allowlist 只接受
+C_TEST 0～2；仅修改 `scripts/vivado.sh` 或 `scripts/build.sh` 不能诚实关闭四候选选择。
+该扩展不改变 program、MMIO 或 single-cycle 外部语义；新增门禁覆盖 pipeline 四候选
+identity/manifest/COE stage 和既有三个 single-cycle candidate 回归，七种组合均通过。
 
 后续扩展必须记录：原 write set 为何不足、拟增加的文件及 owner、是否改变外部合同、需要
 新增或重跑的验证、用户确认结论和日期。

@@ -294,11 +294,9 @@ unit_stage5_contract() {
         "$root/scripts/stage5_contract.py" --root "$root" \
         --product pipeline >"$output/pipeline-contract.log" 2>&1; then
         cat "$output/pipeline-contract.log"
-        printf 'FAIL: pipeline physical contract unexpectedly closed in PC1\n' >&2
-        contract_failed=1
     else
         cat "$output/pipeline-contract.log"
-        printf 'Pipeline contract: expected PC1 failure baseline reproduced\n'
+        contract_failed=1
     fi
     if just --justfile "$root/Justfile" --dry-run \
         vivado-candidate c-test-0 >"$output/candidate-cli.log" 2>&1; then
@@ -315,19 +313,6 @@ unit_stage5_contract() {
     else
         cat "$output/pipeline-candidate-cli.log"
         printf 'FAIL: product-explicit Vivado candidate entry is not available\n' >&2
-        contract_failed=1
-    fi
-    if "$root/scripts/build.sh" vivado-candidate-for pipeline coremark stage \
-        >"$output/pipeline-candidate-plan.log" 2>&1; then
-        cat "$output/pipeline-candidate-plan.log"
-        printf 'FAIL: pipeline candidate execution unexpectedly passed in PC1\n' >&2
-        contract_failed=1
-    elif [[ $(<"$output/pipeline-candidate-plan.log") == \
-        $'vivado-product: pipeline\nvivado-action: stage\nvivado-candidate: coremark\ncanonical-project: projects/pipeline/miniRV.xpr\nerror: pipeline Vivado candidate execution is pending PC2 product-path repair' ]]; then
-        printf 'Candidate CLI: pipeline selection resolves explicitly and fails closed before PC2\n'
-    else
-        cat "$output/pipeline-candidate-plan.log"
-        printf 'FAIL: pipeline candidate selection resolved unexpectedly\n' >&2
         contract_failed=1
     fi
     if "$root/scripts/build.sh" system pipeline-c-test-0 \
@@ -591,8 +576,8 @@ run_vivado() {
     local product=$1 action=$2
     case "$product" in single_cycle|pipeline) ;; *) die "unknown product: $product" ;; esac
     case "$action" in stage|synth|bitstream) ;; *) die "unknown Vivado action: $action" ;; esac
-    if [[ "$product:$action" == single_cycle:bitstream ]]; then
-        die "single-cycle bitstreams require: just vivado-candidate c-test-0|1|2"
+    if [[ "$action" == bitstream ]]; then
+        die "$product bitstreams require: just vivado-candidate-for $product CANDIDATE bitstream"
     fi
     printf 'vivado-product: %s\nvivado-action: %s\ncanonical-project: projects/%s/miniRV.xpr\n' \
         "$product" "$action" "$product"
@@ -632,11 +617,12 @@ run_vivado_candidate_for() {
             run_vivado_candidate "$program" "$action"
             ;;
         pipeline:c-test-0|pipeline:c-test-1|pipeline:c-test-2|pipeline:coremark)
+            run_program "$program"
             printf 'vivado-product: pipeline\n'
             printf 'vivado-action: %s\n' "$action"
             printf 'vivado-candidate: %s\n' "$program"
             printf 'canonical-project: projects/pipeline/miniRV.xpr\n'
-            die "pipeline Vivado candidate execution is pending PC2 product-path repair"
+            PRODUCT=pipeline "$root/scripts/vivado.sh" "$action" "$program"
             ;;
         single_cycle:*)
             die "unknown single-cycle candidate: $program (expected c-test-0..2)"

@@ -12,20 +12,18 @@ source_dir="$root/projects/$product"
 
 case "$action" in
     stage|synth|bitstream) ;;
-    *) echo "usage: $0 {stage|synth|bitstream} [c-test-0|1|2]" >&2; exit 2 ;;
+    *) echo "usage: $0 {stage|synth|bitstream} [c-test-0|1|2|coremark]" >&2; exit 2 ;;
 esac
 
 if [[ -n "$candidate" ]]; then
-    [[ "$product" == single_cycle ]] || {
-        echo "board candidates are only valid for single_cycle" >&2
-        exit 2
-    }
-    case "$candidate" in c-test-0|c-test-1|c-test-2) ;;
-        *) echo "unknown board candidate: $candidate" >&2; exit 2 ;;
+    case "$product:$candidate" in
+        single_cycle:c-test-0|single_cycle:c-test-1|single_cycle:c-test-2) ;;
+        pipeline:c-test-0|pipeline:c-test-1|pipeline:c-test-2|pipeline:coremark) ;;
+        *) echo "unknown board candidate: $product/$candidate" >&2; exit 2 ;;
     esac
 fi
-if [[ "$product:$action" == single_cycle:bitstream && -z "$candidate" ]]; then
-    echo "single-cycle bitstreams require an explicit C_TEST candidate" >&2
+if [[ "$action" == bitstream && -z "$candidate" ]]; then
+    echo "$product bitstreams require an explicit candidate" >&2
     exit 2
 fi
 
@@ -86,6 +84,7 @@ if [[ -n "$candidate" ]]; then
     candidate_args=(
         --root "$root"
         --stage-dir "$stage_dir"
+        --product "$product"
         --program "$candidate"
     )
     if [[ "$action" == bitstream ]]; then
@@ -120,24 +119,15 @@ fi
 jobs=${VIVADO_JOBS:-8}
 touch "$stage_dir/.build-start"
 
-if [[ "$product" == single_cycle ]]; then
-    (
-        cd "$stage_dir"
-        cmd.exe /d /s /c call "$vivado_win" \
-            -mode batch -source "$tcl_win" \
-            -tclargs "$action" "$project_win" "$jobs" "$candidate_coe_win"
-    )
-    PYTHONDONTWRITEBYTECODE=1 python3 \
-        "$root/scripts/collect_vivado_evidence.py" \
-        --stage-dir "$stage_dir" --action "$action"
-else
-    (
-        cd "$stage_dir"
-        cmd.exe /d /s /c call "$vivado_win" \
-            -mode batch -source "$tcl_win" \
-            -tclargs "$action" "$project_win" "$jobs"
-    )
-fi
+(
+    cd "$stage_dir"
+    cmd.exe /d /s /c call "$vivado_win" \
+        -mode batch -source "$tcl_win" \
+        -tclargs "$action" "$project_win" "$jobs" "$candidate_coe_win"
+)
+PYTHONDONTWRITEBYTECODE=1 python3 \
+    "$root/scripts/collect_vivado_evidence.py" \
+    --stage-dir "$stage_dir" --action "$action"
 
 if [[ -n "$candidate" ]]; then
     candidate_output="$stage_root/candidates/$product/$candidate"
