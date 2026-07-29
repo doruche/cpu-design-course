@@ -672,5 +672,14 @@ C_TEST 纳入 closure”目标。`scripts/build.sh` 是公开 aggregate gate 的
 Vivado 工程或单周期入口。新增验证为三个 pipeline C_TEST、`stage5-contract`、完整容器
 `closure` 和既有 PC4 clean synthesis 门禁。
 
+PC4 第二次扩展 write set：用户于 2026-07-30 确认将
+`.devcontainer/devcontainer.json` 加入 PC4。固定镜像首次成功构建后，公开命令
+`devcontainer exec --workspace-folder . just gate closure` 在测试启动前稳定失败：Docker
+把仓库 bind mount 到 `/workspaces/cpu-design`，而固定 `workspaceFolder` 要求不存在的
+`/workspaces/cpu-design-course`。该文件是容器工作目录的现有 owner；修复仅改用
+`/workspaces/${localWorkspaceFolderBasename}` 与 CLI 的实际 mount 规则对齐，不改变镜像、
+Verilator/Just/RISC-V 工具链、测试 oracle、产品或外部 ABI。新增验证为重新执行
+`devcontainer up` 后原样运行 PC4 的公开 closure 命令。
+
 后续扩展必须记录：原 write set 为何不足、拟增加的文件及 owner、是否改变外部合同、需要
 新增或重跑的验证、用户确认结论和日期。
