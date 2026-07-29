@@ -5,15 +5,15 @@
 
 ## Active Tasks
 
-- [流水线 merge 后稳定化维护](pipeline-post-merge-maintenance.md) — Active；仅 M0
-  docs-only 范围冻结和 M1 状态对齐已完成；M2 定向测试与 M3 行为保持型整理仍为
-  Pending，且不得自动进入下一 checkpoint。
 - [流水线 CPU 与流水线 SoC 状态记录](pipeline-cpu-and-soc.md) — Merged；五级核、
   SoC fabric、十配置 Trace 与 CoreMark 历史仿真范围已有记录，pipeline C_TEST、
   Vivado 物理路径、50 MHz、bitstream 和板级验证仍未关闭。
 
 ## Completed Tasks
 
+- [流水线 merge 后稳定化维护](pipeline-post-merge-maintenance.md) — Completed，
+  2026-07-29；M0～M2 已完成，M3 经只读预检未发现有证据支持的 RTL 整理目标并由用户
+  确认跳过；产品 RTL 未修改，pipeline 产品闭环缺口继续由独立任务接手。
 - [单周期 SoC 开发](single-cycle-soc.md) — Completed，2026-07-28；Stage 0～5、
   自有 bitstream 与 EGO1 板测均已关闭，里程碑为 `single-cycle-soc-stage5`。
 - [单周期 SoC Stage 5：物理工程与自有板级闭环](single-cycle-soc-stage5.md) —

@@ -2,8 +2,9 @@
 
 ## 状态
 
-- 状态：Active（M0～M2 已完成；M3 Pending，不得自动进入）
+- 状态：Completed（2026-07-29；M0～M2 已完成，M3 经只读预检后跳过）
 - 建立日期：2026-07-29
+- 完成日期：2026-07-29
 - merge 基线：`842d5589e12c0ddf303a068c48d3b7ecca45e418`
 - 产品：`projects/pipeline/`，以及与双产品共享的仓库维护面
 - 性质：行为保持型维护；不是流水线 SoC 产品关闭任务
@@ -13,7 +14,8 @@
 `design/pipeline/` 三份 CSV 为准；ISA 级语义仍以 `design/single_cycle/` 为准。
 
 本任务书冻结范围、顺序、写集和验证门禁。M1 已按 docs-only 边界关闭，M2 已以
-characterization tests 关闭；M3 仍为 Pending，未获得后续执行指令时不得自动开始。
+characterization tests 关闭；M3 经只读预检未发现有证据支持的整理目标，并经用户确认
+跳过。本任务书至此关闭，不延伸到流水线 SoC 产品闭环。
 
 ## 背景与实施基线
 
@@ -238,7 +240,22 @@ git diff --check
 
 ## M3：Pipeline 核心行为保持型整理
 
-状态：Pending；只有 M2 关闭后才可进入。
+状态：Skipped（2026-07-29；只读预检后经用户确认不实施 RTL 整理）。
+
+### 跳过依据
+
+- M2 未暴露 pipeline merge 基线的正确性问题，新增 characterization tests 与五个
+  pipeline 配置回归均通过；
+- live `cpu_core.v` 已集中表达 stage update、fetch issue/return/discard、mul/div
+  capture 和 memory issue/completion，并明确记录各 owner 的单在途生命周期；
+- 只读审计未发现可由当前 lint 或 M2 证据支持的死状态、重复条件、过期注释或失效
+  pipeline waiver；
+- 在没有具体问题和预期收益的情况下，仅为执行 checkpoint 而改写握手或流控表达会增加
+  周期级回归风险，不增加产品关闭证据。
+
+本决定未修改 M3 默认 write set 中的 RTL 或 waiver。由于不存在 M3 RTL 差异，本节原定的
+整理后回归和固定 devcontainer CoreMark 门禁未运行，也不据此声明 CoreMark、Vivado、
+bitstream 或板级结果；这些证据边界继续由独立流水线 SoC 产品任务接手。
 
 ### 默认 Write set
 
@@ -305,11 +322,12 @@ devcontainer exec --workspace-folder . just system coremark
 
 ## 总体验收
 
-- M1、M2、M3 各自以独立、聚焦提交完成，并填写提交和证据；
+- M1、M2 各自以独立、聚焦提交完成；M3 经只读预检和用户确认后明确跳过；
 - merge 后状态文档不存在已知事实矛盾，且未把产品缺口写成完成；
-- pipeline-control suite 在原始 merge 基线和整理后 RTL 上均通过；
-- 五个 pipeline 配置 lint 与各 45 项 Trace 全部通过；
-- 固定 devcontainer 的 CoreMark system suite 通过，或任务保持未关闭；
+- pipeline-control suite 在未修改产品 RTL 的 merge 基线上通过；
+- 五个 pipeline 配置 lint 与各 45 项 Trace 在 M2 全部通过；
+- M3 未产生 RTL 差异，因此不把未运行的整理后回归或固定 devcontainer CoreMark 计作
+  任务关闭证据；
 - Trace/复位/流水线/Cache/AXI/MMIO 合同、单周期产品和两个 submodule 均未改变；
 - pipeline C_TEST、Vivado Stage 5、bitstream、板测和最终报告继续由独立任务接手。
 
@@ -319,8 +337,8 @@ devcontainer exec --workspace-folder . just system coremark
 | --- | --- | --- | --- |
 | M0 任务书冻结 | Completed | `e4dfb8a` | `git diff --check`；docs-only |
 | M1 状态对齐 | Completed | `91837da` | `just --fmt --check`；`just doctor`；`git diff --check`；过期短语审计 |
-| M2 定向测试 | Completed | 本提交 | `just unit pipeline-control`；五配置 lint；五配置各 45 项 Trace；格式与 whitespace 检查 |
-| M3 RTL 整理 | Pending | — | — |
+| M2 定向测试 | Completed | `5dce92d` | `just unit pipeline-control`；五配置 lint；五配置各 45 项 Trace；格式与 whitespace 检查 |
+| M3 RTL 整理 | Skipped | — | 只读预检；用户确认不实施；无 RTL 差异，M3 回归与 CoreMark Not Run |
 
 ## Write Set 扩展记录
 
