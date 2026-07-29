@@ -5,6 +5,10 @@
 
 ## Active Tasks
 
+- [流水线 SoC 产品闭环](pipeline-soc-product-closure.md) — Active，2026-07-30；
+  PC0 任务书冻结已完成，PC1～PC6 与 PC-U Pending，不得自动进入；范围限于 pipeline
+  C_TEST、canonical Vivado、50 MHz implementation、四候选 bitstream、EGO1 板测与工程
+  证据，官方 IP/报告/提交对齐由后续独立任务接手。
 - [流水线 CPU 与流水线 SoC 状态记录](pipeline-cpu-and-soc.md) — Merged；五级核、
   SoC fabric、十配置 Trace 与 CoreMark 历史仿真范围已有记录，pipeline C_TEST、
   Vivado 物理路径、50 MHz、bitstream 和板级验证仍未关闭。
