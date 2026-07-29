@@ -5,6 +5,9 @@
 
 ## Active Tasks
 
+- [流水线 merge 后稳定化维护](pipeline-post-merge-maintenance.md) — Active；仅 M0
+  docs-only 范围冻结完成，M1 状态对齐、M2 定向测试和 M3 行为保持型整理均为
+  Pending，且不得自动进入下一 checkpoint。
 - [流水线 CPU 与流水线 SoC：`feat/pipeline` 迭代交接](pipeline-cpu-and-soc.md) —
   Active；五级核、SoC fabric、CoreMark 与 −34.3% 性能优化已关闭，Vivado 物理路径、
   流水线 SoC 上的 C_TEST 与板级验证未开始。
