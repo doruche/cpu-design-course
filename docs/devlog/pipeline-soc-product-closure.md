@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（PC0～PC3 已完成；PC4～PC6 与 PC-U Pending，不得自动进入）
+- 状态：Active（PC0～PC4 已完成；PC5～PC6 与 PC-U Pending，不得自动进入）
 - 建立日期：2026-07-30
 - 基线提交：`4581d8dd6ffc792912429f8d176e266070369193`
 - 产品：`projects/pipeline/`
@@ -514,7 +514,7 @@ checker，未命中停止条件。PC4 的完整 closure、clean synthesis 及其
 
 ### PC4：当前主线自动回归与 clean synthesis
 
-状态：Pending。
+状态：Completed（2026-07-30；已在进入 PC5 前停止）。
 
 默认 write set：本任务书执行记录。PC4 默认不修改源文件。
 
@@ -544,6 +544,41 @@ git diff --check
 - closure 失败指向未授权的产品语义修改；
 - clean synthesis 与 PC2 dirty-source 结果不一致；
 - source commit、staging 内容或 Vivado version 不能一一对应。
+
+PC4 以 clean `3f381660788c79d3f898f449a6b0a02a0037d9e5` 为验证源关闭。进入完整
+回归前先修复并独立提交了两项仅属于 gate/fixture 的缺口：`closure` 原先未聚合
+`c-test-software`、`stage5-contract` 与 pipeline C_TEST 0～2；devcontainer 的固定
+`workspaceFolder` 与 CLI 实际 bind mount 不一致。两次 write set 扩展均由用户确认，
+没有修改产品 RTL、测试 oracle、软件/MMIO ABI、XPR/XCI/XDC/COE 或课程 submodule。
+
+自动回归使用仓库 `.devcontainer/Dockerfile` 构建的 base image
+`sha256:0af594b2a8eeea124ad4304d696d344db94f18419c89861ef24147c7f48ec6be`，实际运行
+devcontainer 的 UID-adjusted image 为
+`sha256:1c95aeb4c045765912d03ccb9c13400022a00ed9d58af89d8be6009f346b2115`；原样执行
+`devcontainer exec --workspace-folder . just gate closure` 并以零状态结束：
+
+- doctor 通过固定 Verilator `dde8de0`、Just 1.42.4 与 RV32IM/ILP32 compile/link runtime
+  probe；两个 submodule 与 parent pin 一致；
+- cache、axi-master、pipeline-control、peripherals、c-test-software、stage5-contract 六项
+  unit，以及 fabric-mmio、dcache-mmio 两项 integration 全部通过；两产品 XPR/XCI、
+  50 MHz clock、153,600-byte BRAM、115200 baud 与 board clock/reset semantic checks 通过；
+- 十个配置均通过 lint 和各 45 项 Trace，共 450/450，包含 `start`；
+- SoC smoke、pipeline C_TEST 0～2 的 CPU/Cache/AXI/MMIO/UART transcript 与 CoreMark CRC
+  system suite 全部通过。CoreMark 单轮证据为 1,112,667 cycles、326,694 retired、
+  IPC 0.293；自动 suite 继续明确标记 FPGA/board **Not Run**；
+- XPR XML、无根 Makefile、README/workflow public CLI 与 whitespace closure checks 通过。
+
+随后先执行 canonical `just vivado pipeline stage`，确认派生 staging 中旧 `.Xil`、run、
+cache、generated、artifact 与日志均被清除，且 `.source-revision` 精确为上述 clean commit；
+再从该 staging 执行 `just vivado pipeline synth`。结构化 facts/evidence 回读 Vivado 2023.2、
+`xc7a35tcsg324-1`、`synth_design Complete!`、32 bit × 38,400 words（153,600 bytes）、实际
+`stage5-placeholder.coe`、100 MHz 输入/50 MHz BUFG 输出和 synth critical warning 0。
+综合为 0 error、0 critical warning，与 PC2 dirty-source 结果一致；普通 synthesis warning
+未要求产品语义修复，不构成停止条件。
+
+关闭审计确认两个 submodule 无 tracked 修改，canonical `projects/pipeline/` 没有 `.Xil`、
+run/cache/generated/log/bitstream 污染，工作树与 whitespace checks 通过。PC4 未运行
+implementation、timing closure、bitstream 或板测；这些仍为 **Not Run**。PC5 未开始。
 
 ### PC5：Clean implementation、四候选与正式工程证据
 
@@ -648,7 +683,7 @@ PC6 不创建官方验收对齐任务书，除非用户另行明确授权。
 | PC1 失败基线与合同 | Completed | 本提交 | `just unit stage5-contract`；`just doctor`；`just --fmt --check`；pipeline expected-failure |
 | PC2 Vivado 产品路径 | Completed | 本提交 | contract/lint/Trace/control；七候选 stage；Vivado 2023.2 dirty-source synth |
 | PC3 Pipeline System | Completed | 本提交 | 固定工具链 ABI/CoreMark build；pipeline C_TEST 0～2；CoreMark CRC；pipeline-control |
-| PC4 clean 自动回归/综合 | Pending | — | — |
+| PC4 clean 自动回归/综合 | Completed | `3f38166`（验证源）/本提交（记录） | 固定容器 closure；十配置 450/450 Trace；pipeline C_TEST 0～2/CoreMark；Vivado 2023.2 clean synth |
 | PC5 implementation/候选 | Pending | — | — |
 | PC-U EGO1 用户板测 | Pending | — | — |
 | PC6 产品关闭 | Pending | — | — |
