@@ -5,6 +5,7 @@ root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 config_file="$root/config/build-configs.tsv"
 trace_dir="$root/cdp-tests"
 single_rtl="$root/projects/single_cycle/src/rtl"
+pipeline_rtl="$root/projects/pipeline/src/rtl"
 cache_root="$root/.cache"
 export CCACHE_DIR="${CCACHE_DIR:-$cache_root/ccache}"
 
@@ -226,6 +227,28 @@ unit_axi_master() {
     vvp "$output/axi-cache"
 }
 
+unit_pipeline_control() {
+    local output="$cache_root/unit/pipeline-control"
+    printf 'unit-suite: pipeline-control\n'
+    printf '  backend: iverilog+vvp\n'
+    printf '  artifact-directory: .cache/unit/pipeline-control\n'
+    mkdir -p "$output"
+    iverilog -g2012 -Wall -DRUN_TRACE=1 -I"$pipeline_rtl" \
+        -s pipeline_control_tb -o "$output/test" \
+        "$pipeline_rtl/ALU.v" \
+        "$pipeline_rtl/Controller.v" \
+        "$pipeline_rtl/MEXT.v" \
+        "$pipeline_rtl/MREQ.v" \
+        "$pipeline_rtl/NPC.v" \
+        "$pipeline_rtl/RF.v" \
+        "$pipeline_rtl/SEXT.v" \
+        "$pipeline_rtl/divider.v" \
+        "$pipeline_rtl/multiplier.v" \
+        "$pipeline_rtl/cpu_core.v" \
+        "$root/tests/pipeline/pipeline_control_tb.sv"
+    vvp "$output/test"
+}
+
 lint_fabric() {
     verilator --lint-only --Wall --top-module soc_interconnect \
         "$single_rtl/soc_interconnect.v"
@@ -321,10 +344,11 @@ run_unit() {
     case "$1" in
         cache) unit_cache ;;
         axi-master) unit_axi_master ;;
+        pipeline-control) unit_pipeline_control ;;
         peripherals) unit_peripherals ;;
         c-test-software) "$root/scripts/run-c-test-software.sh" ;;
         stage5-contract) unit_stage5_contract ;;
-        *) die "unknown unit suite: $1 (expected cache, axi-master, peripherals, c-test-software, or stage5-contract)" ;;
+        *) die "unknown unit suite: $1 (expected cache, axi-master, pipeline-control, peripherals, c-test-software, or stage5-contract)" ;;
     esac
 }
 
@@ -482,6 +506,7 @@ run_gate() {
             "$root/scripts/doctor.sh"
             unit_cache
             unit_axi_master
+            unit_pipeline_control
             unit_peripherals
             integration_fabric_mmio
             integration_dcache_mmio
@@ -553,7 +578,7 @@ show_status() {
     printf '\nStable configurations:\n'
     list_configs | sed 's/^/  /'
     printf '\nVerification suites:\n'
-    printf '  unit: cache, axi-master, peripherals, c-test-software, stage5-contract\n'
+    printf '  unit: cache, axi-master, pipeline-control, peripherals, c-test-software, stage5-contract\n'
     printf '  integration: fabric-mmio, dcache-mmio\n'
     printf '  system: soc-smoke, c-test-0, c-test-1, c-test-2, coremark\n'
     printf '  gate: single-stage2, single-stage3, single-stage4-auto, products-basic, closure\n'

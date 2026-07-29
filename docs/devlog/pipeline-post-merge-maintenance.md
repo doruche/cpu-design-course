@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（M0、M1 已完成；不得自动进入 M2）
+- 状态：Active（M0～M2 已完成；M3 Pending，不得自动进入）
 - 建立日期：2026-07-29
 - merge 基线：`842d5589e12c0ddf303a068c48d3b7ecca45e418`
 - 产品：`projects/pipeline/`，以及与双产品共享的仓库维护面
@@ -12,8 +12,8 @@
 指导书和 Trace framework 为准；流水线级间字段、冒险和流控语义仍以
 `design/pipeline/` 三份 CSV 为准；ISA 级语义仍以 `design/single_cycle/` 为准。
 
-本任务书冻结范围、顺序、写集和验证门禁。M1 已按 docs-only 边界关闭；M2～M3
-仍为 Pending，未获得后续执行指令时不得自动开始实现。
+本任务书冻结范围、顺序、写集和验证门禁。M1 已按 docs-only 边界关闭，M2 已以
+characterization tests 关闭；M3 仍为 Pending，未获得后续执行指令时不得自动开始。
 
 ## 背景与实施基线
 
@@ -178,7 +178,7 @@ git diff --check
 
 ## M2：Pipeline 定向 characterization tests
 
-状态：Pending。
+状态：Completed（2026-07-29；仅新增测试与稳定 suite 路由，未修改产品 RTL）。
 
 ### 默认 Write set
 
@@ -223,6 +223,11 @@ git diff --check
 
 关闭 M2 前，再对另外三个 pipeline 配置执行 lint 和 45 项 Trace：
 `pipeline-axi-direct-bypass`、`pipeline-axi-direct-cache`、`pipeline-soc-bypass`。
+
+执行结果：`pipeline-control` 的 6 个场景覆盖上述 7 组合同并全部通过；五个 pipeline
+配置的 lint 均通过，各自 Trace 均为 `Passed (45), Failed (0)`；
+`just --fmt --check` 与 `git diff --check` 通过。M2 未修改产品 RTL、设计 CSV、稳定配置
+语义或 submodule。
 
 ### 停止条件
 
@@ -313,8 +318,8 @@ devcontainer exec --workspace-folder . just system coremark
 | Checkpoint | 状态 | 提交 | 验证证据 |
 | --- | --- | --- | --- |
 | M0 任务书冻结 | Completed | `e4dfb8a` | `git diff --check`；docs-only |
-| M1 状态对齐 | Completed | 待提交 | `just --fmt --check`；`just doctor`；`git diff --check`；过期短语审计 |
-| M2 定向测试 | Pending | — | — |
+| M1 状态对齐 | Completed | `91837da` | `just --fmt --check`；`just doctor`；`git diff --check`；过期短语审计 |
+| M2 定向测试 | Completed | 本提交 | `just unit pipeline-control`；五配置 lint；五配置各 45 项 Trace；格式与 whitespace 检查 |
 | M3 RTL 整理 | Pending | — | — |
 
 ## Write Set 扩展记录

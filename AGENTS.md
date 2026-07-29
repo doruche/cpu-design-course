@@ -90,8 +90,8 @@ Verification entry points (`<config>` is always explicit, never defaulted):
 just lint <config>                # verilator --lint-only --Wall, top miniRV_SoC
 just trace <config> <case>        # one official Trace case, e.g. addi
 just trace-all <config>           # all 45 Trace cases, serialized
-just unit <suite>                 # cache | axi-master | peripherals
-                                  # c-test-software | stage5-contract
+just unit <suite>                 # cache | axi-master | pipeline-control
+                                  # peripherals | c-test-software | stage5-contract
 just integration <suite>          # fabric-mmio | dcache-mmio
 just system <suite>               # soc-smoke | c-test-0 | c-test-1 | c-test-2
                                   # coremark
