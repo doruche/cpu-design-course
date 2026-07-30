@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（PC0～PC5 已完成；PC-U 与 PC6 Pending，不得自动进入）
+- 状态：Active（PC0～PC-U 已完成；PC6 Pending，不得自动进入）
 - 建立日期：2026-07-30
 - 基线提交：`4581d8dd6ffc792912429f8d176e266070369193`
 - 产品：`projects/pipeline/`
@@ -649,7 +649,7 @@ Windows staging。PC5 没有烧录 EGO1，也没有获得任何板上 UART/外�
 
 ### PC-U：自己的 Pipeline SoC EGO1 用户板测
 
-状态：Pending；仅在 PC5 四候选准备完成后进入。
+状态：Completed（2026-07-30；用户完成四候选 EGO1 板测，已在进入 PC6 前停止）。
 
 默认 write set：本任务书执行记录。用户不修改 repository source。
 
@@ -664,7 +664,7 @@ Windows staging。PC5 没有烧录 EGO1，也没有获得任何板上 UART/外�
 任一失败均回到最小可复现和对应自动层；不得用单周期、其他 candidate、课程 bitstream
 或历史 feature branch 结果替代。
 
-#### PC-U 输入清单（尚未执行）
+#### PC-U 输入清单
 
 共同设置：EGO1 pipeline SoC 50 MHz；串口 `115200 8N1`、无硬件/软件流控。每次先按 SHA-256
 核对 `/mnt/z/cpu-design-vivado/candidates/pipeline/<candidate>/miniRV_SoC.bit`，program 后打开
@@ -695,7 +695,26 @@ Windows staging。PC5 没有烧录 EGO1，也没有获得任何板上 UART/外�
    `Correct operation validated` 和 `FINISH`，且无 `ERROR`/`Errors detected`。记录 total
    ticks/time、iterations、CoreMark 与 CoreMark/MHz；分数只接受本次 50 MHz 板测输出。
 
-PC-U 当前仍为 Pending。本清单只完成交接，不授权烧录、操作硬件或记录 PASS。
+#### PC-U 执行结果
+
+用户于 2026-07-30 明确进入 PC-U，并确认使用上表四个 bitstream SHA-256，按冻结顺序和
+`115200 8N1`、无流控设置完成自己的 EGO1 板测。结果如下：
+
+- `c-test-0`：两次 reset 均重新出现完整 banner 和交互；UART 收发、switch 继续/结束、
+  LED 与八位十六进制数码管的 ASCII 显示均符合输入，PASS；
+- `c-test-1`：固定 formatted output、两组输入回显和结束路径正确；负数输入使最低 LED
+  点亮，绝对值 42 由十六进制数码管显示为 `0000002A`，PASS；
+- `c-test-2`：固定数组得到 `1 2 3 4 5 6 7 8`；动态数组排序为原数组的非降序排列，
+  两段计时均为正并最终输出 `malloc released.`，PASS；
+- `coremark`：700 iterations 在 50 MHz 下完成；`Total ticks` 为 `703945188`，对应精确
+  计时 `14.07890376 s`，整数秒输出为 `14`，`Iterations/Sec` 为 `50`；seed/list/matrix/
+  state CRC 分别为 `0xe9f5`/`0xe714`/`0x1fd7`/`0x8e3a`，累计 `crcfinal` 为 `0x65c5`；
+  输出 `Correct operation validated` 和 `FINISH`，无 `ERROR`/`Errors detected`；实测
+  `CoreMark 1.0` 为 `49.7197`，`CoreMark/MHz` 为 `0.9943`，PASS。
+
+`crcfinal` 是跨全部 iteration 累计的结果，不属于固定的单轮算法 CRC；本次固定验收值是
+seed、list、matrix 和 state 四项。PC-U 只记录用户拥有的板级结果，没有修改 repository
+source，也没有用单周期、课程或其他候选 bitstream 替代。PC6 尚未开始。
 
 ### PC6：产品关闭与后续验收交接
 
@@ -744,7 +763,7 @@ PC6 不创建官方验收对齐任务书，除非用户另行明确授权。
 | PC3 Pipeline System | Completed | 本提交 | 固定工具链 ABI/CoreMark build；pipeline C_TEST 0～2；CoreMark CRC；pipeline-control |
 | PC4 clean 自动回归/综合 | Completed | `3f38166`（验证源）/本提交（记录） | 固定容器 closure；十配置 450/450 Trace；pipeline C_TEST 0～2/CoreMark；Vivado 2023.2 clean synth |
 | PC5 implementation/候选 | Completed | `14a05572`（验证源）/本提交（记录） | 固定容器 closure；四候选 Vivado 2023.2 implementation/bitstream；timing/DRC/provenance；正式 artifacts |
-| PC-U EGO1 用户板测 | Pending | — | — |
+| PC-U EGO1 用户板测 | Completed | 本提交 | 四候选 hash；C_TEST 0～2 UART/外设/排序用户确认；CoreMark 700 iterations、14.07890376 s、CRC、49.7197 |
 | PC6 产品关闭 | Pending | — | — |
 
 ## Write Set 扩展记录
