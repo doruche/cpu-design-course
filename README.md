@@ -39,12 +39,20 @@
 
 ## 快速开始
 
-首次取得仓库后初始化依赖：
+环境 owner、可选宿主能力和缺失影响见[开发环境与本地依赖](docs/environment.md)。日常开发在
+Linux devcontainer 中进行；Windows Vivado、受限材料和物理设备不是这条路径的隐式依赖。
+
+### Container 内的日常开发
+
+首次在 container 中打开仓库后初始化 pinned 输入并检查核心工具链：
 
 ```bash
 git submodule update --init --recursive
 just doctor
 ```
+
+`just doctor` 的 Required tools、RV32IM/ILP32 runtime ABI 和 Repository inputs 必须通过。
+它显示的材料或 Vivado `[not ...]` 状态是可选能力提示，不是 RTL 或产品失败。
 
 运行单个 AXI Trace 测试（Cache 旁路）：
 
@@ -90,6 +98,27 @@ just system coremark
 just --list
 ```
 
+### WSL/Windows Vivado 后端
+
+Vivado 不在 container 中安装或模拟。仅在 WSL 已能调用 Windows Vivado 2023.2 时，复制
+`local.env.example` 为 ignored 的 `local.env`，填写严格的三个 `VIVADO_*` 键，并使用公开入口：
+
+```bash
+just vivado pipeline stage
+just vivado-candidate-for pipeline coremark bitstream
+```
+
+`VIVADO_STAGE_ROOT` 必须是 Windows 可见的 disposable staging 根目录，不能是 canonical
+project；完整前提、环境变量优先级和 fail-closed 行为见[环境合同](docs/environment.md)。这些命令不等同于容器内的 lint/Trace/system 验证。
+
+### 受限材料与物理操作
+
+`materials/lab1/` 和 `materials/lab2/` 是 ignored 的个人输入，其 provenance/hash 清单在
+[`materials/MANIFEST.md`](materials/MANIFEST.md)。不要自动下载或把它们放入镜像；日常回归
+不依赖它们。烧录、串口和板上观察由用户完成；`just program` 与 `just system` 不替代物理
+验证。最终导出所需的身份和文件路径通过 `just export-submission` 的显式环境变量提供，不写入
+`local.env`。
+
 ## 目录边界
 
 ```text
@@ -119,6 +148,7 @@ just --list
 ## 文档入口
 
 - [项目工作流](docs/workflow.md)
+- [开发环境与本地依赖](docs/environment.md)
 - [开发任务日志](docs/devlog/README.md)
 - [课程现场验收准备与官方材料采集任务书](docs/devlog/course-acceptance-readiness.md)
 - [流水线 SoC 产品闭环任务书](docs/devlog/pipeline-soc-product-closure.md)

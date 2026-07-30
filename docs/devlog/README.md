@@ -9,6 +9,10 @@
 
 ## Completed Tasks
 
+- [开发环境与本地依赖整理](development-environment-local-dependencies.md) — Completed，
+  2026-07-30；E0～E3 已关闭。container 核心工具链、受限本地材料、WSL/Windows Vivado
+  后端与用户物理操作的 owner/前提/失败边界已整理；未修改 RTL、Vivado 产品路径或课程
+  材料位置，也未产生新的 Vivado/板级证据。
 - [课程现场验收准备与官方材料采集](course-acceptance-readiness.md) — Completed，
   2026-07-30；AR0～AR5、AR-R 均已关闭，用户确认当前现场验收完成。任务仅覆盖流水线
   实验二的截图、provenance 材料与现场准备；报告正文/PDF、最终 ZIP 和上传仍由外部 owner

@@ -20,6 +20,8 @@ Before changing RTL or workflow code, read:
 3. The active task book under `docs/devlog/`
 4. The relevant section under `materials/instruction-site/docs/`
 5. The relevant source and tests under `cdp-tests/`
+6. `docs/environment.md` before changing environment, host-backend, local-input,
+   or workflow behavior
 
 The guide and Trace framework are pinned submodules. Treat their live source as
 the course contract; do not copy their prose into local documentation.

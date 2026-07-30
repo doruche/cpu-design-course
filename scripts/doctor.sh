@@ -3,12 +3,15 @@ set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 source "$root/scripts/local-settings.sh"
-load_local_settings "$root/local.env"
+local_settings_ok=1
+if ! load_local_settings "$root/local.env"; then
+    local_settings_ok=0
+fi
 
 required=(git just make cc verilator g++ python3 iverilog vvp flock rg rsync unzip xmllint \
     riscv32-unknown-elf-gcc riscv32-unknown-elf-objcopy \
     riscv32-unknown-elf-objdump riscv32-unknown-elf-readelf)
-optional=(gtkwave riscv64-unknown-elf-gcc cmd.exe powershell.exe wslpath)
+optional=(gtkwave riscv64-unknown-elf-gcc)
 missing=0
 
 printf 'Required tools:\n'
@@ -113,11 +116,57 @@ else
     printf '  [ok] submodules match the parent repository\n'
 fi
 
-printf '\nVivado batch access:\n'
-if [[ -n "${VIVADO_BIN:-}" && -f "${VIVADO_BIN}" ]]; then
-    printf '  [ok] %s\n' "$VIVADO_BIN"
+printf '\nRestricted local materials (optional):\n'
+for material_dir in materials/lab1 materials/lab2; do
+    if [[ -d "$root/$material_dir" ]]; then
+        printf '  [provided] %s (ignored; provenance/hash are in materials/MANIFEST.md)\n' \
+            "$material_dir"
+    else
+        printf '  [not provided] %s (ignored; not required for daily verification)\n' \
+            "$material_dir"
+    fi
+done
+
+printf '\nWSL/Windows Vivado backend (optional):\n'
+if (( ! local_settings_ok )); then
+    printf '  [misconfigured] local.env is invalid; Vivado commands will fail closed\n'
+elif [[ -z "${VIVADO_STAGE_ROOT:-}" ]]; then
+    printf '  [not configured] VIVADO_STAGE_ROOT is required by just vivado ... stage\n'
 else
-    printf '  [not configured] copy local.env.example to local.env after installing Vivado 2023.2\n'
+    printf '  [configured] VIVADO_STAGE_ROOT=%s (must be Windows-visible and disposable)\n' \
+        "$VIVADO_STAGE_ROOT"
+fi
+
+if ((local_settings_ok)); then
+    if [[ -n "${VIVADO_BIN:-}" && -f "${VIVADO_BIN}" ]]; then
+        printf '  [configured] VIVADO_BIN=%s\n' "$VIVADO_BIN"
+    else
+        printf '  [not configured] VIVADO_BIN must name Windows Vivado 2023.2 vivado.bat\n'
+    fi
+
+    if [[ -n "${VIVADO_JOBS:-}" ]]; then
+        printf '  [configured] VIVADO_JOBS=%s\n' "$VIVADO_JOBS"
+    else
+        printf '  [default] VIVADO_JOBS=8\n'
+    fi
+
+    vivado_bridge_missing=0
+    for tool in cmd.exe wslpath; do
+        if path=$(command -v "$tool" 2>/dev/null); then
+            printf '  [ok] %-28s %s\n' "$tool" "$path"
+        else
+            printf '  [not available] %s is required for Vivado synth and bitstream\n' \
+                "$tool"
+            vivado_bridge_missing=1
+        fi
+    done
+
+    if [[ -n "${VIVADO_STAGE_ROOT:-}" && -n "${VIVADO_BIN:-}" && \
+          -f "${VIVADO_BIN}" && $vivado_bridge_missing == 0 ]]; then
+        printf '  [ready] configured for Vivado staging and batch actions; no action was run\n'
+    else
+        printf '  [not ready] configure the missing optional Vivado prerequisites above\n'
+    fi
 fi
 
 if ((missing)); then

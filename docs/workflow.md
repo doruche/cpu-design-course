@@ -46,6 +46,17 @@ The datapath diagram and report authoring remain externally owned.
 Copies are allowed only as generated outputs. A failure discovered in a derived
 directory must be fixed in its canonical owner and regenerated.
 
+## Environment Contract
+
+[开发环境与本地依赖](environment.md) 是 container 核心工具链、受限本地材料、WSL/Windows
+Vivado 后端和用户物理操作的唯一环境合同入口。它定义每项能力的 owner、前提、公开入口和
+缺失影响；本文不重复该配置清单。
+
+日常 lint、Trace、unit、integration、system 和 closure 在 Linux devcontainer 中运行，并依赖
+tracked 源与已初始化的 pinned submodule。`materials/lab1/`、`materials/lab2/`、Windows
+路径、Vivado 安装和物理设备均不是这条路径的隐式依赖。宿主能力未配置时应只影响其对应的
+公开动作，不应被表述为 RTL 或产品失败。
+
 ## Fast WSL Loop
 
 1. Update the relevant product design contract before editing RTL. ISA-level
@@ -91,11 +102,10 @@ problem.
 The public entry is `just vivado <product> <stage|synth|bitstream>`. Physical
 implementation and bitstream actions remain separate from RTL simulation gates.
 
-Machine-local Vivado paths and job count belong in the ignored `local.env`,
-created from `local.env.example`. It accepts only `VIVADO_BIN`,
-`VIVADO_STAGE_ROOT`, and `VIVADO_JOBS` as literal `KEY=VALUE` entries; exported
-environment variables take precedence. These host settings do not select a
-product topology or verification configuration.
+Machine-local Vivado paths and job count belong in the ignored `local.env`.
+The exact three-key format, environment-variable precedence and Windows-visible
+disposable staging requirement are defined by the [environment contract](environment.md).
+These host settings do not select a product topology or verification configuration.
 
 ## Git Workflow
 
