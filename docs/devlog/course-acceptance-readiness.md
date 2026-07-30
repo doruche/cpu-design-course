@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（AR0～AR4 已完成；AR5 Pending，不得自动进入）
+- 状态：Active（AR0～AR4、AR-R 已完成；AR5 Pending，不得自动进入）
 - 建立日期：2026-07-30
 - 基线提交：`8518ff3c1af0b4836058c5b1d44d061cbbb1aa7f`
 - 产品里程碑：`pipeline-soc-stage5`
@@ -165,8 +165,8 @@ Post-Implementation 截图；实验一材料和单周期截图不再需要。现
 
 ## 执行规则
 
-1. 严格按 AR0、AR1、AR2、AR4、AR5 顺序执行，前一检查点未关闭不得自动进入下一项；
-   AR3 与 AR-U 已按用户范围决定退役。
+1. 严格按 AR0、AR1、AR2、AR4、AR-R、AR5 顺序执行，前一检查点未关闭不得自动进入
+   下一项；AR3 与 AR-U 已按用户范围决定退役。
 2. AR0、AR1、AR2 默认是 docs/audit 范围；文档通过不能写成 RTL、Vivado 或板级新证据。
 3. 证据合同、截图材料和最终关闭独立提交，不混成一个不可审计提交。
 4. 需要扩展 write set 时先记录 owner、原因、验收影响和新增门禁，获得用户确认后继续。
@@ -389,6 +389,50 @@ AR4 不得关闭。
   `docs/acceptance/evidence-handoff.md` 记录交给报告 owner 的事实、限制和路径；
 - evidence checker、raw report hash、PNG 格式/尺寸、manifest hash、文档格式和 diff
   门禁均通过；AR4 没有重跑 Vivado、修改 staging、撰写报告或自动进入 AR5。
+
+### AR-R：源码口试参考答案
+
+状态：Completed（2026-07-30；答案材料已就绪，用户复习与随机口试仍 Pending，未进入
+AR5）。
+
+默认 write set：
+
+- `docs/acceptance/oral-review.md`
+- 本任务书执行记录
+
+产品源码、测试、脚本、Vivado 工程、artifacts 和 submodule 只读。
+
+工作：
+
+- 对 AR1 冻结的 P/S、C、A、M、U、E 共 26 个问题逐题补充参考回答；
+- 每题回指当前 live source 或已冻结 evidence，并单列容易混淆的边界；
+- 保持答案材料状态与用户理解状态分离，不把文档完成写成复习、随机复核或现场口试
+  `Pass`；
+- 不改变 RTL、产品合同、验收截图或 AR5 的外部材料确认边界。
+
+验证门禁：
+
+```bash
+just --fmt --check
+git diff --check
+git status --short
+```
+
+执行记录：
+
+- `docs/acceptance/oral-review.md` 的 26 题均已有基于当前实现的参考回答和易错点，覆盖
+  pipeline/single-cycle completion、Cache、AXI/MMIO、乘除法、五外设和证据边界；
+- 逐题台账统一记录为 `Answer ready / review Pending`，没有填写用户 `Pass`，随机复核
+  R1 仍保持 Pending；
+- 本检查点只证明复习材料完整，不证明用户已掌握，不构成新的 RTL、Vivado、板级或教师
+  验收证据；
+- AR-R 到此关闭，没有自动进入 AR5。
+
+停止条件：
+
+- 参考回答无法回指 live source 或冻结 evidence；
+- 回读发现真实 RTL/协议缺陷，而不是理解或表达问题；
+- 补答案需要改变产品合同、测试、Vivado 工程或验收范围。
 
 ### AR5：材料交接关闭
 
