@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（AR0～AR2 已完成；AR4 Pending，不得自动进入）
+- 状态：Active（AR0～AR4 已完成；AR5 Pending，不得自动进入）
 - 建立日期：2026-07-30
 - 基线提交：`8518ff3c1af0b4836058c5b1d44d061cbbb1aa7f`
 - 产品里程碑：`pipeline-soc-stage5`
@@ -340,12 +340,14 @@ git status --short
 
 ### AR4：官方截图、原始报告与材料 manifest
 
-状态：Pending。
+状态：Completed（2026-07-30；截图与 manifest，不构成报告或教师验收）。
 
 默认 write set：
 
 - `artifacts/acceptance/` 下三张流水线截图与交接 manifest；
 - `docs/acceptance/evidence-handoff.md`
+- `docs/acceptance/evidence-contract.md`，仅记录用户确认的 Vivado 零 DSP 行 GUI 省略及
+  raw-report 补充判据；该最小扩展不改变数值、run 或交付数量；
 - 本任务书执行记录
 
 工作：
@@ -368,6 +370,25 @@ git status --short
 
 截图无法绑定到指定 run、功耗缺少 confidence、原始报告与摘要不一致或材料 hash 漂移时，
 AR4 不得关闭。
+
+执行记录：
+
+- 用户在 Vivado 2023.2 中从 `Z:\\cpu-design-vivado\\pipeline\\miniRV.xpr` 的 routed
+  `impl_1` 采集三张 2232×1416 PNG，并额外提供一张 Project Overview 来源辅助图；
+- Utilization 图显示 Project Summary 的 Post-Implementation Table：LUT
+  4101/20800、FF 2241/41600、BRAM 37.50/50。用户确认 GUI 不显示利用量为零的 DSP 行；
+  同 run `utilization.rpt` 明确给出 DSPs 0/90（0.00%），且 LUT/FF/BRAM 数值一致，因此
+  采用“官方 GUI 截图 + raw report”联合证明，不修改或伪造截图；
+- Power 图显示 Total On-Chip Power 0.189 W、Dynamic 0.115 W、Device Static 0.074 W、
+  各部分占比和 confidence `Low`；只作为 routed vectorless estimate；
+- Timing 图显示 WNS 3.912 ns、TNS 0.000 ns、WHS 0.031 ns、THS 0.000 ns，setup/hold
+  failing endpoints 均为 0，并显示所有用户时序约束满足；
+- 三张必交截图归档到 `artifacts/acceptance/screenshots/`；辅助 Overview 同目录保留但在
+  manifest 中标记为 non-required；
+- `artifacts/acceptance/manifest.tsv` 绑定截图与五个外部 raw evidence 的 SHA-256，
+  `docs/acceptance/evidence-handoff.md` 记录交给报告 owner 的事实、限制和路径；
+- evidence checker、raw report hash、PNG 格式/尺寸、manifest hash、文档格式和 diff
+  门禁均通过；AR4 没有重跑 Vivado、修改 staging、撰写报告或自动进入 AR5。
 
 ### AR5：材料交接关闭
 

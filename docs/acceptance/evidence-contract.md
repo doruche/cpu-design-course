@@ -43,7 +43,7 @@ source commit、报告和 hash 必须作为新 run 重新审核，不能沿用�
 
 | 文件名 | Vivado 页面 | 画面必须包含 | 与 raw report 核对值 |
 | --- | --- | --- | --- |
-| `pipeline-post-impl-utilization.png` | Open Implemented Design → Reports → Report Utilization | Slice LUTs、Slice Registers、Block RAM Tiles、DSPs 汇总表 | 4101 / 20800（19.72%）；2241 / 41600（5.39%）；37.5 / 50（75.00%）；0 / 90（0.00%） |
+| `pipeline-post-impl-utilization.png` | Project Summary → Utilization → Post-Implementation → Table，或 Open Implemented Design → Report Utilization Summary | GUI 汇总表中的 LUT、FF、BRAM；若 GUI 显示 DSP，则必须一并包含 | 4101 / 20800（19.72%）；2241 / 41600（5.39%）；37.5 / 50（75.00%）；DSP 0 / 90（0.00%）由同 run raw report 补充 |
 | `pipeline-post-impl-power.png` | 同一 Implemented Design → Reports → Report Power | Total On-Chip Power、Dynamic、Device Static 及 On-Chip Components 各部分 | 0.189 W total；0.115 W dynamic；0.074 W static；overall confidence `Low` |
 | `pipeline-post-impl-timing.png` | 同一 Implemented Design → Reports → Timing → Report Timing Summary | Design Timing Summary 的 WNS、TNS、WHS、THS、failing endpoints 和约束满足结论 | WNS 3.912 ns；TNS 0.000 ns；WHS 0.031 ns；THS 0.000 ns；setup/hold failing endpoints 均为 0 |
 
@@ -51,6 +51,12 @@ Timing 图必须能看出 setup 与 hold slack 均为正、TNS/THS 为 0，并�
 `All user specified timing constraints are met` 或同义的无违例结论。Power 图若一个视图
 无法同时容纳 Summary、On-Chip Components 和 Confidence，可在不改变文件名和来源 run
 的前提下扩大报告区域；Low confidence 至少必须记录在 AR4 manifest 和交接说明中。
+
+Vivado 2023.2 的 Project Summary 和 Report Utilization Summary 会省略利用量为零的资源
+行。当前完整 Post-Implementation GUI 表从 LUT 显示到 PLL，但不生成 DSP 行；用户已确认
+GUI 中没有可展开的零 DSP 行。因此 DSP 不从截图缺席本身推导，而由同一 `impl_1` 的
+`utilization.rpt` 明确记录的 `DSPs = 0 / 90 / 0.00%` 补充。只有 GUI 表与该 raw report 的
+其他数值、run 和 hash 全部一致时才接受此例外；不得编辑截图添加 DSP 行。
 
 ## 原始证据绑定
 
@@ -68,7 +74,8 @@ Timing 图必须能看出 setup 与 hold slack 均为正、TNS/THS 为 0，并�
 
 ## AR4 接收判据
 
-- 三个 PNG 文件名、来源 run 和必需字段全部符合本合同；
+- 三个 PNG 文件名、来源 run 和必需字段全部符合本合同；Utilization 的零 DSP 行按上述
+  GUI 省略规则由 raw report 补充；
 - 截图数值与上述 raw report、evidence JSON 和仓库精选摘要一致；
 - Timing 无违例，Power 明确作为 routed vectorless estimate 且 confidence 为 Low；
 - AR4 manifest 记录三个 PNG 和五个 raw evidence 文件的 SHA-256、owner、用途和来源；
