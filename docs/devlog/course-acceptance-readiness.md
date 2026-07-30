@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：Active（AR0 已完成；AR1 Pending，不得自动进入）
+- 状态：Active（AR0～AR1 已完成；AR2 Pending，不得自动进入）
 - 建立日期：2026-07-30
 - 基线提交：`8518ff3c1af0b4836058c5b1d44d061cbbb1aa7f`
 - 产品里程碑：`single-cycle-soc-stage5`、`pipeline-soc-stage5`
@@ -210,7 +210,7 @@ AR0 只证明任务书与索引一致，不构成现场口试、Vivado 截图、
 
 ### AR1：验收矩阵、演示 runbook 与源码口试准备
 
-状态：Pending。
+状态：Completed（2026-07-30；docs/audit，用户口头复核保留 Pending，不阻塞本检查点）。
 
 默认 write set：
 
@@ -218,6 +218,9 @@ AR0 只证明任务书与索引一致，不构成现场口试、Vivado 截图、
 - `docs/acceptance/demo-runbook.md`
 - `docs/acceptance/oral-review.md`
 - 本任务书执行记录
+- `docs/devlog/README.md`，仅同步 active checkpoint 索引。该最小扩展由用户
+  2026-07-30“后续针对性复习，不阻塞当前工程”的决定授权；不改变产品或验收口径，
+  仍使用 AR1 文档门禁。
 
 产品源码、脚本、程序、Vivado 工程和 artifacts 只读。
 
@@ -229,7 +232,8 @@ AR0 只证明任务书与索引一致，不构成现场口试、Vivado 截图、
 - 只基于 live source 整理 CPU/pipeline、Cache、AXI、多周期访存、乘除法、MMIO、UART
   和五外设的模块图、关键事件、常见追问与源码位置；
 - 明确哪些结论可由自动证据回答，哪些必须由用户根据理解现场解释；
-- 由用户完成至少一轮随机顺序口头复核；未理解项回到源码，不把背诵文档记为通过。
+- 冻结逐题复习台账；实际口头复核由用户后续针对性完成，结果继续标记 Pending，不把
+  问题库或背诵文档记为用户理解 PASS。
 
 验证门禁：
 
@@ -242,6 +246,24 @@ git diff --check
 ```
 
 AR1 不复跑产品 closure 或 Vivado，不修改产品行为。
+
+执行记录：
+
+- 新建 `docs/acceptance/acceptance-matrix.md`，将现场登记项映射到 live source、既有自动
+  证据、Vivado candidate 和用户板测记录，并区分自动结论与用户解释边界；
+- 新建 `docs/acceptance/demo-runbook.md`，冻结 pipeline CoreMark source/COE/manifest/
+  selection/bitstream hash、串口设置、reset/运行步骤、期望 transcript 和失败判据；
+- 新建 `docs/acceptance/oral-review.md`，从 live source 整理 product owner map、关键事件
+  链、常见追问和逐项源码位置，不作为背诵答案或外部数据通路图；
+- 只读核对候选目录中的四项 hash 与 `stage5_evidence.json` 一致，并确认从候选 source
+  `14a05572ebb585f20a3c83341fb2abe6fb834b0d` 到 AR1 开始时的主线，pipeline RTL、工程、
+  程序、脚本、测试、配置和 `Justfile` 无差异；
+- 当前未发现候选 provenance 断裂、无法回指 source 的解释、RTL/协议缺陷或教师新增硬件
+  形态要求；AR1 停止条件未触发；
+- 用户决定先记录完整问题库，此后再针对性复习；`oral-review.md` 已建立 P/S、C、A、M、
+  U、E 共 26 项逐题 Pending 台账。该用户-owned 复习不再阻塞 AR1 工程关闭，仍属于
+  总体验收与 AR-U 要求，不能推导为用户理解 PASS；
+- AR1 到此关闭；没有自动进入 AR2，没有产生新的 RTL、Vivado 或板级证据。
 
 停止条件：
 
@@ -336,7 +358,8 @@ COE”。
   记录可见结果；
 - 用户使用既有 pipeline CoreMark 候选完成一次现场顺序演练，确认 bitstream 可取得、串口
   设置、复位、运行时间和 transcript 判据；
-- 按随机顺序完成一次源码口试演练，记录仍需回读源码的问题；
+- 按 AR1 问题台账完成针对性复习，再按随机顺序完成一次源码口试演练，记录仍需回读
+  源码的问题；
 - 核对现场设备、JTAG、UART 端口、开发板借还和出勤安排；
 - 只记录用户实际观察，不把 agent 的预期输出写成用户 PASS。
 

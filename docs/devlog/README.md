@@ -6,7 +6,8 @@
 ## Active Tasks
 
 - [课程现场验收准备与官方材料采集](course-acceptance-readiness.md) — Active，
-  2026-07-30；AR0 已完成，AR1 Pending，不得自动进入。范围只包含现场验收能力、最终
+  2026-07-30；AR0～AR1 已完成，AR2 Pending，不得自动进入。源码口试问题库已冻结，
+  用户针对性复习继续为 Pending，但不阻塞 AR1 工程关闭。范围只包含现场验收能力、最终
   实验一程序的双产品证明和官方截图/报告数据/provenance 材料采集；数据通路图由外部
   owner 负责，报告正文/PDF 由队友负责，当前验收口径不要求迁移 Vendor IP。
 
