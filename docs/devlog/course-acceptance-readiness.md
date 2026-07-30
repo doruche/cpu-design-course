@@ -2,16 +2,16 @@
 
 ## 状态
 
-- 状态：Active（AR0～AR1 已完成；AR2 Pending，不得自动进入）
+- 状态：Active（AR0～AR2 已完成；AR4 Pending，不得自动进入）
 - 建立日期：2026-07-30
 - 基线提交：`8518ff3c1af0b4836058c5b1d44d061cbbb1aa7f`
-- 产品里程碑：`single-cycle-soc-stage5`、`pipeline-soc-stage5`
+- 产品里程碑：`pipeline-soc-stage5`
 - 现场最高完成度目标：流水线 SoC 在 EGO1 上运行 CoreMark
 - 性质：现场验收能力与官方材料采集；不是产品重构、报告撰写或最终提交封版
 
-本任务接手已经关闭的单周期和流水线 SoC 产品，不重新证明 CPU/SoC 是否具备基本
-功能。目标是把已有能力整理成可现场演示、可回答设计与代码追问的验收路径，并按官方
-流程采集可追溯材料，交给报告 owner 使用。
+本任务接手已经关闭的流水线 SoC 产品，不重新证明 CPU/SoC 是否具备基本功能。目标是
+把已有能力整理成可现场演示、可回答设计与代码追问的验收路径，并按当前验收口径采集
+可追溯材料，交给报告 owner 使用。
 
 本任务的交付不是实验报告正文、最终 PDF 或提交 ZIP。材料交接完成也不能写成报告已经
 完成、作业已经提交或教师已经验收。
@@ -37,9 +37,10 @@
 - 当前快照没有把 AXI Crossbar、AXI GPIO、Protocol Converter 或 AXI Uartlite 列为
   独立检查项。
 
-固定版本指导书仍提供功能、频率、无时序违例、报告截图和提交目录要求。现场快照和
-指导书发生冲突或教师给出新口径时，停止当前检查点并更新本任务书，不自行选择更宽松的
-解释。
+固定版本指导书仍提供功能、频率、无时序违例和报告截图要求。用户于 2026-07-30
+进一步确认：当前验收只看实验二，现阶段唯一待补材料是流水线 SoC 的三张
+Post-Implementation 截图；实验一材料和单周期截图不再需要。现场快照、该确认和指导书
+发生冲突或教师给出新口径时，停止当前检查点并更新本任务书，不自行选择更宽松的解释。
 
 ### 当前产品证据
 
@@ -50,13 +51,24 @@
   `0.9943 CoreMark/MHz`，并有 bitstream/source/COE hash；
 - pipeline 四候选实现后 setup/hold 均无违例、未约束路径为零，精选 timing、utilization、
   power 与 provenance 已在 `artifacts/pipeline/`；
-- 单周期产品已有 50 MHz clean implementation、三候选 bitstream 和用户 C_TEST 0～2
-  板测；原始 timing、utilization、power 和 evidence 仍在 Windows staging，但尚未整理为
-  与 pipeline 对称的正式材料；
-- `scripts/export-submission.sh` 能平铺两套产品 RTL 并运行两套完整 Trace，但最终报告、
-  实验一 ASM/COE 和身份输入尚未冻结，因此不能把该入口写成最终提交已完成。
+- 当前指定的 pipeline CoreMark run 已有 `stage5_evidence.json`、原始
+  timing/utilization/power 报告和可打开的 `impl_1`；三张 GUI 截图尚未采集。
 
 ## 已确认的范围决定
+
+### 当前只交付实验二流水线截图
+
+用户于 2026-07-30 明确收缩当前验收材料范围：
+
+- 只需要流水线 SoC 的 Post-Implementation Utilization、Power、Timing 三张截图；
+- 实验一 ASM/COE、实验一程序构建与双产品证明退出当前任务；
+- 单周期截图与单周期材料退出当前任务；
+- 已完成的 AR1 现场准备材料保留历史状态，但本轮不再扩写；
+- 报告正文/PDF、最终提交目录、ZIP 和上传仍不由本任务拥有。
+
+因此原 AR3“最终实验一程序、双产品候选与自动证明”和 AR-U“用户物理验证与现场演练”
+退役，不执行也不作为本任务关闭条件。截图采集仍由用户在 Vivado GUI 中完成，Agent 只
+冻结来源并校验截图与 raw evidence 一致。
 
 ### 保留当前物理拓扑
 
@@ -81,12 +93,9 @@
 
 队友拥有报告模板、正文、图表叙事、排版和最终 PDF。本任务只交付可核验输入：
 
-- 单周期与流水线 Post-Implementation Timing、Utilization、Power 截图；
+- 流水线 SoC Post-Implementation Timing、Utilization、Power 三张截图；
 - 对应的原始文本报告、工具版本、器件、频率、source commit 和候选身份；
-- 时序/DRC 结论、资源表和功耗估算的正确解释；
-- C_TEST/CoreMark 板级 transcript、性能值、bitstream/COE/source hash；
-- 最终实验一 ASM/COE 和两产品可运行证据；
-- 现场发现问题及其修复记录，供队友按验收要求写入报告。
+- 时序结论、资源表和 routed vectorless 功耗估算的正确解释。
 
 本任务不替队友撰写结论、比较段落、章节正文或生成最终 PDF。报告内容需要额外解释时，
 只补充来源明确的事实说明，不扩张为并行报告源。
@@ -95,20 +104,14 @@
 
 本任务关闭时必须同时满足：
 
-1. 现场最高完成度明确登记为 pipeline SoC CoreMark，候选 bitstream、串口参数、操作步骤、
-   期望输出和失败判据均可在现场直接使用；
-2. 用户能够依据 live source 解释 CPU、pipeline、Cache、AXI、多周期完成、MMIO、UART 和
-   外设关键路径；内部准备材料不得包含无法回指源码的模板答案；
-3. 单周期与流水线的实现后 Timing、Utilization、Power 官方截图和原始报告均已采集，且
-   能绑定到 source/tool/part/frequency/candidate；
-4. 功耗只表述为 Vivado routed vectorless estimate，并记录 Low confidence，不冒充实测；
-5. 最终实验一 ASM/COE 有唯一 owner、确定版本、hash 和可见结果判据，同一材料可交给
-   single_cycle 与 pipeline 提交目录；
-6. 两套产品使用最终实验一程序的自动检查、bitstream provenance 和用户板级观察均已
-   记录，不用 C_TEST/CoreMark 结果替代该程序的可运行性；
-7. 所有交给队友的截图、文本报告、transcript、hash 和程序材料由一份 manifest 索引，
-   不依赖“最新一次运行”或未命名文件；
-8. 数据通路图、报告正文/PDF、最终 ZIP 和作业系统上传明确留给各自 owner，不虚假关闭。
+1. 流水线 SoC 的实现后 Timing、Utilization、Power 三张官方截图均已采集；
+2. 三张截图能绑定到冻结的 source/tool/part/frequency/candidate 和原始报告；
+3. Timing 显示正的 setup WNS 与 hold WHS、TNS/THS 为 0 且无 timing violation；
+4. Utilization 显示 Slice LUTs、Slice Registers、Block RAM Tiles 和 DSPs 汇总；
+5. Power 显示 Total On-Chip Power 与组成，并只表述为 routed vectorless estimate，记录
+   Low confidence，不冒充实测；
+6. 三张截图和对应 raw evidence 由 manifest 索引，不依赖“最新一次运行”或未命名文件；
+7. 报告正文/PDF、最终 ZIP、上传和教师验收明确留给外部 owner，不虚假关闭。
 
 ## 必须保持的不变量
 
@@ -133,6 +136,7 @@
 - 不决定队友的报告结构、措辞或视觉排版；
 - 不自动生成最终提交 ZIP，不上传作业系统；
 - 不替用户完成板级操作、现场口试、出勤或教师确认。
+- 不采集或补写实验一 ASM/COE、单周期截图或双产品提交材料。
 
 ## 责任边界
 
@@ -140,19 +144,15 @@
 
 - 维护本任务书、验收矩阵、内部口试准备材料、演示 runbook 和证据 manifest；
 - 从 live source 整理模块、握手、状态机和异常路径，给出可回指的提问与核对点；
-- 审计和运行自动化门禁、Vivado evidence checker、program/candidate 构建与 hash；
-- 为最终实验一 ASM/COE 建立确定的构建、选择和双产品验证路径；
-- 整理单周期与流水线 raw/curated Vivado 结果，说明截图应读取的 run 和页面；
+- 审计 Vivado evidence checker、候选 provenance 与报告 hash；
+- 整理流水线 raw/curated Vivado 结果，说明截图应读取的 run 和页面；
 - 检查交接材料的来源、版本、命名、一致性和完整性；
 - 对失败形成最小复现；需要改变产品合同时停止并重新定界。
 
 ### 用户负责
 
 - 在 Vivado GUI 中从指定实现后 run 获取官方要求的 Project Summary 截图；
-- 连接 EGO1、JTAG、UART，烧录指定 hash 的 bitstream 并记录实际观察；
-- 亲自理解并回答设计/代码问题，完成现场演示和出勤；
 - 提供教师临时口径、现场问题和队友需要的额外材料项；
-- 确认最终实验一程序的展示现象满足课程意图。
 
 ### 队友负责
 
@@ -165,11 +165,10 @@
 
 ## 执行规则
 
-1. 严格按 AR0、AR1、AR2、AR3、AR-U、AR4、AR5 顺序执行，前一检查点未关闭不得自动
-   进入下一项。
+1. 严格按 AR0、AR1、AR2、AR4、AR5 顺序执行，前一检查点未关闭不得自动进入下一项；
+   AR3 与 AR-U 已按用户范围决定退役。
 2. AR0、AR1、AR2 默认是 docs/audit 范围；文档通过不能写成 RTL、Vivado 或板级新证据。
-3. 每个实现或证据检查点独立提交；程序、构建入口、Vivado 候选、截图材料和最终关闭不
-   混成一个不可审计提交。
+3. 证据合同、截图材料和最终关闭独立提交，不混成一个不可审计提交。
 4. 需要扩展 write set 时先记录 owner、原因、验收影响和新增门禁，获得用户确认后继续。
 5. 任何现有候选或自动检查失败都先保存原始证据；不通过放宽判定、改报告措辞或换候选
    掩盖问题。
@@ -262,7 +261,8 @@ AR1 不复跑产品 closure 或 Vivado，不修改产品行为。
   形态要求；AR1 停止条件未触发；
 - 用户决定先记录完整问题库，此后再针对性复习；`oral-review.md` 已建立 P/S、C、A、M、
   U、E 共 26 项逐题 Pending 台账。该用户-owned 复习不再阻塞 AR1 工程关闭，仍属于
-  总体验收与 AR-U 要求，不能推导为用户理解 PASS；
+  AR1 的历史未完成项，不能推导为用户理解 PASS；用户后续已把当前材料范围收缩为三张
+  实验二截图，因此该复习不再是本任务的关闭条件；
 - AR1 到此关闭；没有自动进入 AR2，没有产生新的 RTL、Vivado 或板级证据。
 
 停止条件：
@@ -272,25 +272,24 @@ AR1 不复跑产品 closure 或 Vivado，不修改产品行为。
 - 口试准备暴露真实 RTL/协议缺陷，而不是理解或表达问题；
 - 教师要求检查当前任务未覆盖的 IP 拓扑或其他硬件形态。
 
-### AR2：官方材料合同与最终实验一程序冻结
+### AR2：流水线官方截图合同冻结
 
-状态：Pending。
+状态：Completed（2026-07-30；docs/audit，未进入 AR4）。
 
 默认 write set：
 
 - `docs/acceptance/evidence-contract.md`
-- `docs/acceptance/final-program-contract.md`
 - 本任务书执行记录
 
 工作：
 
-- 与队友确认报告实际需要的截图槽位、命名、分辨率和附带数据，不代写报告；
-- 冻结单周期/流水线 Post-Implementation Timing、Utilization、Power 的来源 run 和
-  source/tool/part/frequency/candidate 元数据；
-- 冻结 transcript、性能、候选 hash、问题修复记录和外部数据通路图的交接槽位；
-- 从现有实验一汇编候选中选择或定义唯一最终程序，明确可见结果、结束判据、内存边界、
-  同一 ASM/COE 双产品使用和 hash 合同；
-- 冻结 AR3 所需的最小程序/build/candidate write set，不在本检查点实现。
+- 按用户最新口径冻结流水线 Post-Implementation Utilization、Power、Timing 三个截图槽位；
+- 冻结文件名、PNG 原始分辨率要求、画面必需字段与拒收条件；
+- 冻结 pipeline CoreMark `impl_1` 的 source/tool/part/frequency/candidate、raw report 和
+  hash；
+- 记录当前 CLI 必须使用显式候选，纠正不可执行的 `just vivado pipeline bitstream`；
+- 明确实验一 ASM/COE、单周期截图和双产品证明退出当前任务；
+- 不在本检查点生成截图、重跑 Vivado、修改 staging 或进入 AR4。
 
 验证门禁：
 
@@ -302,68 +301,42 @@ git status --short
 
 停止条件：
 
-- 队友需要的报告模板或截图规格尚不明确；
-- 最终实验一程序选择需要改变 ISA、CPU/SoC 行为或官方提交目录语义；
-- 现有程序没有可重复的汇编到 COE 路径或可见验收判据；
-- 两产品不能合法共享同一 ASM/COE。
+- 三张截图的页面、必需字段或来源 run 仍不明确；
+- source/tool/part/frequency/candidate 不能与 raw report 一一对应；
+- 现有实现出现 timing violation、报告缺失或 evidence checker 失败；
+- 截图要求扩展为实验一、单周期、报告正文或最终提交材料。
+
+执行记录：
+
+- 用户明确当前验收只看实验二，唯一待补材料为流水线 SoC 的 Utilization、Power、Timing
+  三张 Post-Implementation 截图；实验一 ASM/COE 与单周期材料退出任务；
+- 新建 `docs/acceptance/evidence-contract.md`，冻结三个 PNG 文件名、原始分辨率与可读性
+  规则、Vivado 页面、必需字段、预期值和 AR4 拒收条件；
+- 来源锁定为 pipeline CoreMark `impl_1`：source
+  `14a05572ebb585f20a3c83341fb2abe6fb834b0d`、Vivado 2023.2、
+  `xc7a35tcsg324-1`、50 MHz，并记录 bitstream/COE/raw report hash；
+- `python3 scripts/check_vivado_result.py` 对
+  `/mnt/z/cpu-design-vivado/pipeline/artifacts/stage5_evidence.json` 检查通过；
+- live CLI 审计确认 bitstream 必须显式指定 candidate；可复现命令为
+  `just vivado-candidate-for pipeline coremark bitstream`，而
+  `just vivado pipeline bitstream` 会被 `scripts/vivado.sh` fail closed；
+- AR2 仅关闭合同，没有生成 GUI 截图、重跑 Vivado、修改 staging 或自动进入 AR4。
 
 ### AR3：最终实验一程序、双产品候选与自动证明
 
-状态：Pending；具体 write set 必须由 AR2 冻结后填写，不得提前实现。
+状态：Retired（2026-07-30）。
 
-预期 owner 仅包括：
-
-- `programs/` 下最终实验一程序及其最小构建入口；
-- `scripts/`、`Justfile` 和 repository-owned tests 中显式程序/candidate 路由；
-- 两产品 candidate selection 所需的 canonical 配置；
-- 本任务书执行记录。
-
-工作：
-
-- 从唯一 ASM 源可重复生成 COE、manifest 和 hash；
-- 对 single_cycle 与 pipeline 显式构建同一最终程序候选，不依赖手工替换 XCI/COE；
-- 建立程序可见结果的自动 oracle，并验证内存范围、reset PC 和结束路径；
-- 运行两产品相关 lint/Trace/System 和 exported-source preflight；
-- 为两产品生成 clean Vivado 2023.2 implementation/bitstream evidence，检查 50 MHz、
-  setup/hold、未约束路径、DRC 和 candidate provenance；
-- 不修改 CPU、Cache、AXI、MMIO 或外设来适配程序。
-
-最低门禁由 AR2 结合程序形态冻结，至少包含：
-
-```bash
-just unit stage5-contract
-just trace-all single-basic
-just trace-all pipeline-basic
-just lint single-soc-cache
-just lint pipeline-soc-cache
-git diff --check
-```
-
-Vivado 和板级命令必须在 AR2 冻结的 candidate 名称下显式执行，不能使用未命名“当前
-COE”。
+用户已确认实验一内容不再需要，验收只看实验二。本检查点不执行，原计划中的 ASM/COE、
+双产品候选、自动证明和 Vivado/板级工作均不再是当前任务的交付或关闭条件。若将来重新
+要求实验一提交材料，应另行建立任务和 owner，不从本检查点自动恢复。
 
 ### AR-U：用户物理验证与现场演练
 
-状态：Pending；只在 AR3 自动和 Vivado 证据关闭后进入。
+状态：Retired（2026-07-30）。
 
-默认 write set：
-
-- `docs/acceptance/board-evidence.md`
-- `docs/acceptance/rehearsal-record.md`
-- 本任务书执行记录
-
-工作：
-
-- 用户分别在 single_cycle 与 pipeline 上烧录 AR3 指定 hash 的最终实验一 bitstream，
-  记录可见结果；
-- 用户使用既有 pipeline CoreMark 候选完成一次现场顺序演练，确认 bitstream 可取得、串口
-  设置、复位、运行时间和 transcript 判据；
-- 按 AR1 问题台账完成针对性复习，再按随机顺序完成一次源码口试演练，记录仍需回读
-  源码的问题；
-- 核对现场设备、JTAG、UART 端口、开发板借还和出勤安排；
-- 只记录用户实际观察，不把 agent 的预期输出写成用户 PASS。
-
-AR-U 不修改 RTL、程序、Vivado 工程或候选；任何失败回到拥有该行为的前置检查点。
+用户确认当前唯一待补材料为三张实验二流水线截图，因此本检查点不执行，也不作为材料
+任务的关闭条件。既有 pipeline CoreMark 用户板测和 AR1 runbook 保留历史证据，不在此
+轮重新推导或复跑。
 
 ### AR4：官方截图、原始报告与材料 manifest
 
@@ -371,28 +344,24 @@ AR-U 不修改 RTL、程序、Vivado 工程或候选；任何失败回到拥有�
 
 默认 write set：
 
-- `artifacts/single_cycle/` 下精选实现后文本证据；
-- `artifacts/acceptance/` 下截图、transcript、程序与交接 manifest；
-- `artifacts/pipeline/`，仅补充 AR3 最终程序或交接索引；
+- `artifacts/acceptance/` 下三张流水线截图与交接 manifest；
 - `docs/acceptance/evidence-handoff.md`
 - 本任务书执行记录
 
 工作：
 
-- 用户从 AR3 指定的两产品 post-implementation run 获取官方 Project Summary 的 Timing、
-  Utilization、Power 截图；
+- 用户从 AR2 指定的 pipeline CoreMark `impl_1` 获取 Utilization、Power、Timing 三张
+  Post-Implementation 截图；
 - Agent 校验截图与原始 `.rpt`、evidence JSON、source/tool/part/frequency/candidate 一致；
-- 为单周期补齐与 pipeline 对称的 timing/utilization/power/provenance 精选摘要；
-- 收集最终程序 ASM/COE、hash、双产品 bitstream 证据、板级观察、pipeline CoreMark
-  transcript/性能和现场问题记录；
-- 生成一份机器可读或结构化文本 manifest，列出每个材料的 owner、用途、来源和 SHA-256；
+- 生成一份结构化文本 manifest，列出三个 PNG 与对应 raw evidence 的 owner、用途、来源和
+  SHA-256；
 - 向队友交付事实说明和材料路径，不撰写报告正文。
 
 验证门禁：
 
 ```bash
-python3 scripts/check_vivado_result.py <single-final-evidence.json>
-python3 scripts/check_vivado_result.py <pipeline-final-evidence.json>
+python3 scripts/check_vivado_result.py \
+  /mnt/z/cpu-design-vivado/pipeline/artifacts/stage5_evidence.json
 git diff --check
 git status --short
 ```
@@ -416,7 +385,7 @@ AR4 不得关闭。
 
 工作：
 
-- 复核 AR1～AR4 与 AR-U 的证据、用户确认和材料 manifest；
+- 复核 AR1、AR2、AR4 的证据、用户确认和材料 manifest；
 - 让队友按 manifest 确认材料可读、无缺项，并记录其额外请求或接受结果；
 - 更新仓库状态，明确“验收能力/材料已就绪”与“报告/提交/教师验收”之间的边界；
 - 确认 canonical product、submodule 和工作树没有生成物污染；
@@ -428,11 +397,9 @@ AR5 不生成报告 PDF、最终 ZIP，不上传作业系统，也不把现场�
 
 本任务只有在以下条件全部成立后才能关闭：
 
-- pipeline CoreMark 现场 runbook、候选和用户演练成立；
-- 用户完成源码理解复核，不存在已知无法解释的关键产品路径；
-- 最终实验一 ASM/COE 在两产品自动、Vivado 和用户板级边界成立；
-- 两产品官方截图、原始报告、性能/transcript 和 provenance 由 manifest 完整索引；
-- 队友确认材料可用于报告，数据通路图继续由外部 owner 提供；
+- 流水线 Utilization、Power、Timing 三张 Post-Implementation 截图满足 AR2 合同；
+- 三张截图、原始报告和 provenance 由 manifest 完整索引；
+- 队友确认三张图可用于实验二报告；
 - 报告正文/PDF、最终 ZIP、上传和教师验收仍按真实状态标记为外部 Pending 或已由对应
   owner 确认，不由本任务推导。
 
@@ -443,8 +410,7 @@ AR5 不生成报告 PDF、最终 ZIP，不上传作业系统，也不把现场�
 - 教师新口径要求 Vendor-IP 拓扑、仓库内数据通路图或其他未冻结交付；
 - 需要修改 ISA、CPU/pipeline、Cache、AXI、MMIO、UART 或外设合同；
 - 当前 source 与已关闭 bitstream/report provenance 不再一致；
-- 最终实验一程序不能在两产品共享，或没有确定的构建/结束/可见结果判据；
 - Vivado 出现时序违例、未约束路径、阻塞性 DRC/Critical Warning；
-- 板级观察、截图、raw report、摘要或 hash 相互矛盾；
+- 截图、raw report、摘要或 hash 相互矛盾；
 - 队友要求本任务直接拥有报告正文/PDF，或要求未授权的最终提交封装；
 - 需要修改 submodule、Windows staging 或提交被忽略的完整 Vivado run/bitstream。
