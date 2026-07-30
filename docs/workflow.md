@@ -25,8 +25,10 @@ continue receiving Lab 2 SoC work.
 The required EGO1 pipeline SoC engineering path is closed at
 `pipeline-soc-stage5`: repository automation, clean Vivado 2023.2
 implementation at 50 MHz, four candidate bitstreams, and user-observed C_TEST
-0–2/CoreMark board behavior are complete. Official IP-topology interpretation,
-the report, and final submission packaging remain a separate acceptance task.
+0–2/CoreMark board behavior are complete. On-site acceptance readiness and
+official evidence collection remain a separate task; the current acceptance
+checklist does not require replacing the validated RTL fabric with Vendor IP.
+The datapath diagram and report authoring are owned outside that task.
 
 ## Truth Boundaries
 

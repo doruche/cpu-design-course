@@ -22,14 +22,16 @@
   canonical Vivado 2023.2 工程已在 50 MHz 下完成 clean implementation，四个可追溯
   C_TEST/CoreMark bitstream 均通过机器审计和 EGO1 用户板测。CoreMark 本次板测为
   49.7197 CoreMark、0.9943 CoreMark/MHz，物理产品里程碑 tag 为
-  `pipeline-soc-stage5`。官方 IP 拓扑、实验报告和最终提交包对齐仍由后续独立任务接手。
+  `pipeline-soc-stage5`。现场验收准备与官方材料采集由独立任务接手；数据通路图和报告
+  撰写由外部 owner 负责，当前验收口径不要求迁移 Vendor IP。
 - 单周期 SoC Stage 0～3 已完成，里程碑 tag 为 `single-cycle-soc-stage3`。默认产品
   路径已经接入 Cache、AXI 主存/MMIO 互连和五类外设；Stage 3 的完整链路、错误事务、
   子字访问和外设边界均有仓库测试。Stage 4 的 C_TEST 0～2、可审计程序镜像和三套
   CPU-driven System suite 已实现；学号身份已写入默认候选构建，课程 miniRV + EGO1
   bitstream 的三套用户板测均已通过。Stage 5 也已完成：自有 SoC 物理工程、
   50 MHz clean Vivado implementation、三套可追溯 bitstream 和 EGO1 用户板测均已关闭，
-  里程碑 tag 为 `single-cycle-soc-stage5`。正式 artifacts 和数据通路图留到流水线 SoC merge 后。
+  里程碑 tag 为 `single-cycle-soc-stage5`。单周期正式 artifacts 由现场验收材料任务整理，
+  数据通路图由外部 owner 负责。
   历史 ROM/RAM 路径仍由独立 Basic Trace profile 保留。
 - 仓库公开构建与验证 CLI 已统一为根 `Justfile`。十个稳定配置显式区分两个产品、
   Basic/AXI direct/product SoC 拓扑、Cache、后端和产物目录；Cache-enabled
@@ -118,6 +120,7 @@ just --list
 
 - [项目工作流](docs/workflow.md)
 - [开发任务日志](docs/devlog/README.md)
+- [课程现场验收准备与官方材料采集任务书](docs/devlog/course-acceptance-readiness.md)
 - [流水线 SoC 产品闭环任务书](docs/devlog/pipeline-soc-product-closure.md)
 - [流水线 merge 后稳定化维护任务书](docs/devlog/pipeline-post-merge-maintenance.md)
 - [流水线 CPU/SoC 合并记录](docs/devlog/pipeline-cpu-and-soc.md)
