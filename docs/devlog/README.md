@@ -5,14 +5,14 @@
 
 ## Active Tasks
 
-- [课程现场验收准备与官方材料采集](course-acceptance-readiness.md) — Active，
-  2026-07-30；AR0～AR1 已完成，AR2 Pending，不得自动进入。源码口试问题库已冻结，
-  用户针对性复习继续为 Pending，但不阻塞 AR1 工程关闭。范围只包含现场验收能力、最终
-  实验一程序的双产品证明和官方截图/报告数据/provenance 材料采集；数据通路图由外部
-  owner 负责，报告正文/PDF 由队友负责，当前验收口径不要求迁移 Vendor IP。
+当前无 Active Tasks。
 
 ## Completed Tasks
 
+- [课程现场验收准备与官方材料采集](course-acceptance-readiness.md) — Completed，
+  2026-07-30；AR0～AR5、AR-R 均已关闭，用户确认当前现场验收完成。任务仅覆盖流水线
+  实验二的截图、provenance 材料与现场准备；报告正文/PDF、最终 ZIP 和上传仍由外部 owner
+  管理。
 - [流水线 SoC 产品闭环](pipeline-soc-product-closure.md) — Completed，2026-07-30；
   PC0～PC6 与 PC-U 均已完成，流水线 C_TEST/CoreMark 自动证明、canonical Vivado 2023.2、
   50 MHz clean implementation、四候选 bitstream 和用户 EGO1 板测已关闭，里程碑为

@@ -22,8 +22,8 @@
   canonical Vivado 2023.2 工程已在 50 MHz 下完成 clean implementation，四个可追溯
   C_TEST/CoreMark bitstream 均通过机器审计和 EGO1 用户板测。CoreMark 本次板测为
   49.7197 CoreMark、0.9943 CoreMark/MHz，物理产品里程碑 tag 为
-  `pipeline-soc-stage5`。现场验收准备与官方材料采集由独立任务接手；数据通路图和报告
-  撰写由外部 owner 负责，当前验收口径不要求迁移 Vendor IP。
+  `pipeline-soc-stage5`。现场验收准备与官方材料采集已由独立任务书关闭；数据通路图和
+  报告撰写由外部 owner 负责，当前验收口径不要求迁移 Vendor IP。
 - 单周期 SoC Stage 0～3 已完成，里程碑 tag 为 `single-cycle-soc-stage3`。默认产品
   路径已经接入 Cache、AXI 主存/MMIO 互连和五类外设；Stage 3 的完整链路、错误事务、
   子字访问和外设边界均有仓库测试。Stage 4 的 C_TEST 0～2、可审计程序镜像和三套
