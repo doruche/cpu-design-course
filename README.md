@@ -18,8 +18,11 @@
   Windows 侧完成。Lab 1 不要求下板，本里程碑未做也不声明板级验证。
 - Lab 2 流水线产品已经从完整单周期基线演化为 IF/ID/EX/MEM/WB 五级核，并接入
   已验证的 Cache、AXI、主存/MMIO interconnect 和外设 fabric。五个 pipeline 配置的
-  lint 与全部 45 项 Trace 已通过；流水线 C_TEST、Vivado 物理路径、50 MHz 时序、
-  bitstream 和 EGO1 板测仍未关闭。
+  lint 与全部 45 项 Trace、流水线 C_TEST 0～2 和 CoreMark RTL system suite 已通过；
+  canonical Vivado 2023.2 工程已在 50 MHz 下完成 clean implementation，四个可追溯
+  C_TEST/CoreMark bitstream 均通过机器审计和 EGO1 用户板测。CoreMark 本次板测为
+  49.7197 CoreMark、0.9943 CoreMark/MHz，物理产品里程碑 tag 为
+  `pipeline-soc-stage5`。官方 IP 拓扑、实验报告和最终提交包对齐仍由后续独立任务接手。
 - 单周期 SoC Stage 0～3 已完成，里程碑 tag 为 `single-cycle-soc-stage3`。默认产品
   路径已经接入 Cache、AXI 主存/MMIO 互连和五类外设；Stage 3 的完整链路、错误事务、
   子字访问和外设边界均有仓库测试。Stage 4 的 C_TEST 0～2、可审计程序镜像和三套

@@ -2,9 +2,11 @@
 
 ## 状态
 
-- 状态：Active（PC0～PC-U 已完成；PC6 Pending，不得自动进入）
+- 状态：Completed（PC0～PC6 与 PC-U 均已完成）
 - 建立日期：2026-07-30
+- 完成日期：2026-07-30
 - 基线提交：`4581d8dd6ffc792912429f8d176e266070369193`
+- 物理产品里程碑：`pipeline-soc-stage5`
 - 产品：`projects/pipeline/`
 - 主配置：`pipeline-soc-cache`
 - 目标板：EGO1（XC7A35TCSG324-1）
@@ -718,7 +720,7 @@ source，也没有用单周期、课程或其他候选 bitstream 替代。PC6 �
 
 ### PC6：产品关闭与后续验收交接
 
-状态：Pending。
+状态：Completed（2026-07-30；docs/provenance closure，未复跑产品门禁）。
 
 默认 write set：
 
@@ -740,6 +742,23 @@ source，也没有用单周期、课程或其他候选 bitstream 替代。PC6 �
 - 明确官方 IP 拓扑、报告、最终汇编/COE 和提交包仍由下一份任务书接手，不自动进入。
 
 PC6 不创建官方验收对齐任务书，除非用户另行明确授权。
+
+#### PC6 执行结果
+
+用户明确授权完成 PC6，并要求不再复跑门禁，因为 PC-U 之后没有代码改动。审计确认 PC5
+clean product source `14a05572ebb585f20a3c83341fb2abe6fb834b0d` 之后、PC-U 关闭提交
+`895cef3` 之前只有 PC5 精选 artifacts/索引和本任务书变化；没有 RTL、tests、scripts、
+Justfile、配置、程序、XPR/XCI/XDC/COE 或 submodule 修改。因此 PC6 没有运行
+`just gate closure`、unit/lint/Trace/System suite、Vivado synthesis/implementation 或重新
+生成 bitstream；这些产品结论复用 PC4/PC5 已记录的 clean-source 证据，不写成 PC6 新证据。
+
+PC6 更新了 README、工作流、agent 指引、devlog 索引、pipeline provenance 和 artifact
+索引，使流水线 SoC 自动化、物理实现与用户板测状态一致。文档格式、whitespace、submodule
+pin、canonical project 生成物污染和工作树状态以只读/文档检查复核。关闭提交创建 annotated
+tag `pipeline-soc-stage5`，表示流水线 SoC 物理产品完成；该 tag 不表示官方 AXI/GPIO/UART IP
+策略、实验报告、最终汇编/COE、平铺提交目录、ZIP 或现场验收已经完成。
+
+本任务至此关闭。没有创建或自动进入官方验收对齐任务书。
 
 ## 总体验收
 
@@ -764,7 +783,7 @@ PC6 不创建官方验收对齐任务书，除非用户另行明确授权。
 | PC4 clean 自动回归/综合 | Completed | `3f38166`（验证源）/本提交（记录） | 固定容器 closure；十配置 450/450 Trace；pipeline C_TEST 0～2/CoreMark；Vivado 2023.2 clean synth |
 | PC5 implementation/候选 | Completed | `14a05572`（验证源）/本提交（记录） | 固定容器 closure；四候选 Vivado 2023.2 implementation/bitstream；timing/DRC/provenance；正式 artifacts |
 | PC-U EGO1 用户板测 | Completed | 本提交 | 四候选 hash；C_TEST 0～2 UART/外设/排序用户确认；CoreMark 700 iterations、14.07890376 s、CRC、49.7197 |
-| PC6 产品关闭 | Pending | — | — |
+| PC6 产品关闭 | Completed | 本提交 | 复用 PC4/PC5 clean-source 与 PC-U 证据；用户明确免除门禁复跑；文档/污染/工作树审计；`pipeline-soc-stage5` |
 
 ## Write Set 扩展记录
 

@@ -22,6 +22,12 @@ Source is organized by final product rather than course chronology:
 The Lab 1 state is preserved with a tag; the single-cycle product directory can
 continue receiving Lab 2 SoC work.
 
+The required EGO1 pipeline SoC engineering path is closed at
+`pipeline-soc-stage5`: repository automation, clean Vivado 2023.2
+implementation at 50 MHz, four candidate bitstreams, and user-observed C_TEST
+0–2/CoreMark board behavior are complete. Official IP-topology interpretation,
+the report, and final submission packaging remain a separate acceptance task.
+
 ## Truth Boundaries
 
 | Concern | Canonical location | Derived locations |
@@ -99,7 +105,8 @@ product topology or verification configuration.
   synthesis/implementation. Board validation is not part of that Lab 1 tag.
 - `single-cycle-soc-stage3` and `single-cycle-soc-stage5` preserve the closed
   single-cycle SoC integration and physical-product milestones.
-- Tag later pipeline, SoC, and board milestones independently.
+- `pipeline-soc-stage5` preserves the closed pipeline SoC physical product;
+  it does not claim final course-report or submission-package acceptance.
 - Keep the repository private.
 - Update submodule commits explicitly after reviewing their changes; do not
   automatically follow upstream branches.

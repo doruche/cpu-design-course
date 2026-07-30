@@ -125,11 +125,13 @@ Machine-local Vivado settings live in the ignored `local.env` (copy from
 Source is organized by final product, not course chronology.
 `projects/single_cycle/` began as the Lab 1 CPU and is now the validated
 single-cycle SoC; `projects/pipeline/` was forked from it and now contains the
-five-stage core integrated with the SoC fabric. The pipeline RTL automation is
-closed, while its physical/Vivado and board-product gates remain open. Each
-product owns exactly one HDL truth source at `projects/<product>/src/rtl/`, plus
-its own `miniRV.xpr`, XDC, XCI, COE, and Tcl. Everything else — Trace builds,
-Windows Vivado staging, and the submission export — is generated from those.
+five-stage core integrated with the SoC fabric. Its RTL automation, canonical
+Vivado 2023.2 path, 50 MHz implementation, four candidate bitstreams, and EGO1
+user board checks are closed at `pipeline-soc-stage5`; official acceptance,
+report, and submission packaging remain separate work. Each product owns
+exactly one HDL truth source at `projects/<product>/src/rtl/`, plus its own
+`miniRV.xpr`, XDC, XCI, COE, and Tcl. Everything else — Trace builds, Windows
+Vivado staging, and the submission export — is generated from those.
 
 ### Configuration matrix drives every build
 
@@ -213,7 +215,8 @@ backtick, and side-effect controls (`npc_op`, `rf_we`, `ram_rop`, `ram_wop`,
 
 - Keep `main` integrated; use short task branches rather than long-lived A/B
   branches. Preserve major milestones with tags (`upstream-lab1-template`,
-  `lab1-complete`, `single-cycle-soc-stage3`, `single-cycle-soc-stage5`).
+  `lab1-complete`, `single-cycle-soc-stage3`, `single-cycle-soc-stage5`,
+  `pipeline-soc-stage5`).
 - Update submodule commits explicitly after reviewing their changes.
 - Do not commit downloaded course archives, waveform dumps, Vivado run
   directories, bitstreams, or caches.

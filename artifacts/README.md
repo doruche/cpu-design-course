@@ -17,4 +17,8 @@ raw run directories here.
 
 - `pipeline/`: PC5 clean routed evidence for the four pipeline C_TEST/CoreMark
   candidates, including hash provenance, timing, utilization, power estimate,
-  and warning review dispositions. EGO1 board observations remain Pending.
+  and warning review dispositions. The matching candidate hashes passed the
+  user-owned EGO1 PC-U checks recorded in
+  `docs/devlog/pipeline-soc-product-closure.md`; raw UART logs and bitstreams
+  remain outside Git. The closed physical-product milestone is
+  `pipeline-soc-stage5`.
