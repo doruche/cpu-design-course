@@ -1,0 +1,6 @@
+obj_dir/*
+*.a
+*.d
+*.dat
+*.o
+*.vcd
