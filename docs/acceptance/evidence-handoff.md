@@ -10,7 +10,7 @@
 `pipeline/coremark` routed `impl_1`。冻结 source commit 是
 `14a05572ebb585f20a3c83341fb2abe6fb834b0d`，器件为 `xc7a35tcsg324-1`，产品时钟为
 50 MHz。逐文件 hash 和外部 raw evidence 路径见
-`artifacts/acceptance/manifest.tsv`。
+`docs/acceptance/manifest.tsv`。
 
 ## 三张必交图
 

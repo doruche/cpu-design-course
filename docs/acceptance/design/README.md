@@ -76,9 +76,9 @@ inspection still requires a graphical integrated datapath, produce it as a
 milestone presentation artifact from the completed CSV tables and live RTL;
 it is not an instruction-group implementation gate. Do not commit an untouched
 copy of the downloaded course spreadsheet; the original is identified by
-`materials/MANIFEST.md`.
+`docs/MANIFEST.md`.
 
-At the start of Lab 2-A, create `design/pipeline/` before editing pipeline RTL.
+At the start of Lab 2-A, create `pipeline/` before editing pipeline RTL.
 The single-cycle CSVs remain the ISA-level behavior contract and should not be
 copied into a second set of instruction rows. Pipeline design artifacts should
 instead record the stage allocation and pipeline-register fields, then the

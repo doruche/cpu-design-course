@@ -33,7 +33,7 @@ Trace 框架和课程验收说明为准；各阶段的具体接口、实现方�
 - 保持 `miniRV_SoC.U_cpu.U_core` 层次和 Trace 可见接口，不在 SoC 集成过程中
   无必要地改写已经完成的 CPU 核心。
 - `materials/lab2/` 中的文件是课程材料和本地输入，不作为产品 RTL 的第二份真相源。
-- 不修改指导书和 Trace submodule，不在 `cdp-tests/mySoC/` 或 Windows staging 中
+- 不修改指导书和 Trace submodule，不在 `tests/cdp/mySoC/` 或 Windows staging 中
   开发。
 - 自动化构建与仿真由仓库侧完成；烧录和板上现象由用户观察并反馈。
 - 本任务只覆盖单周期 SoC。流水线 CPU、流水线 SoC、CoreMark、LLAMA2 和后续性能
@@ -130,7 +130,7 @@ Trace 框架和课程验收说明为准；各阶段的具体接口、实现方�
 - `lab1-complete` 继续保存 Lab 1 状态，单周期 SoC 在当前
   `projects/single_cycle/` 产品上演进；流水线产品不属于本阶段 write set。
 - 新增的 `materials/lab2/ICache.v`、`DCache.v` 是用户提供的先前课程实验源码快照；
-  原始文件保留在忽略目录中，哈希记录在 `materials/MANIFEST.md`。
+  原始文件保留在忽略目录中，哈希记录在 `docs/MANIFEST.md`。
 - 两份原始 Cache 文件使用 GB18030 中文注释和 CRLF 换行。ICache 可独立展开，
   DCache 中的测试探针存在组合环，均需要整理后才能成为产品 RTL。
 - 当前 CPU 仍通过 `Inst_ROM`、`Data_RAM` 工作；现有 Trace 入口仍是 Basic Trace。
@@ -206,7 +206,7 @@ public 信号，因此没有修改两份设计 CSV。AXI master 状态转换图�
   payload/tag 写入从异步复位进程分离，复位仅清除 valid 位。
 - 新增 AXI master 独立 testbench，并把 Basic、AXI Cache 旁路、AXI Cache 启用三种
   Trace profile 分开；profile stamp 会在宏配置变化时清理共享的
-  `cdp-tests/obj_dir`。`make soc-stage2-test` 汇总本阶段全部自动化门禁。
+  `tests/cdp/obj_dir`。`make soc-stage2-test` 汇总本阶段全部自动化门禁。
 
 本阶段验证记录：
 

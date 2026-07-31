@@ -347,8 +347,8 @@ S5-4 关闭证据：
 - 候选源提交 `f4cf37f0f876f79c83437df7e2684ef665286a09` 之后只有任务文档变化，
   最终 RTL/工程与已通过的 clean Vivado implementation 完全相同，因此未重复三次
   无输入变化的 Vivado 构建；
-- `cdp-tests` 固定于 `50a818278e9a60d304521c4b16980211b0162014`，
-  `materials/instruction-site` 固定于 `e2748d2b7cd765a19146dff1355cc842ac68fe64`，两者均未修改；
+- `tests/cdp` 固定于 `50a818278e9a60d304521c4b16980211b0162014`，
+  `docs/instruction-site` 固定于 `e2748d2b7cd765a19146dff1355cc842ac68fe64`，两者均未修改；
 - canonical 工程无生成物污染，S5-4 自身只更新状态文档；关闭提交同时纳入
   用户明确授权的根 `.gitignore` 缓存规则，物理产品里程碑为 `single-cycle-soc-stage5`。
 

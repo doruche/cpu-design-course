@@ -2,10 +2,9 @@
 /.agents/
 /.codex/
 
-# Course downloads and local guide-asset snapshots are recorded in
-# materials/MANIFEST.md.
-/materials/lab1/
-/materials/lab2/
+# The official guide is a local snapshot, not a tracked input. Its provenance
+# and the course downloads are recorded in docs/MANIFEST.md.
+/docs/instruction-site/
 
 # Machine-local configuration and caches
 /local.env

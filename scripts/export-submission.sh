@@ -23,7 +23,7 @@ command -v zip >/dev/null || { echo "zip is required" >&2; exit 2; }
 
 package_name="${STUDENT_ID}_${STUDENT_NAME}_comp2012"
 package_root="$root/dist/$package_name"
-trace_dir="$root/cdp-tests"
+trace_dir="$root/tests/cdp"
 rm -rf "$package_root"
 mkdir -p "$package_root/single_cycle" "$package_root/pipeline"
 cp "$REPORT_PDF" "$package_root/${STUDENT_ID}_${STUDENT_NAME}.pdf"

@@ -50,7 +50,7 @@ Post-Implementation 截图；实验一材料和单周期截图不再需要。现
 - pipeline CoreMark 用户记录为 700 iterations、`14.07890376 s`、`49.7197 CoreMark`、
   `0.9943 CoreMark/MHz`，并有 bitstream/source/COE hash；
 - pipeline 四候选实现后 setup/hold 均无违例、未约束路径为零，精选 timing、utilization、
-  power 与 provenance 已在 `artifacts/pipeline/`；
+  power 与 provenance 已在 `docs/acceptance/benchmark/`；
 - 当前指定的 pipeline CoreMark run 已有 `stage5_evidence.json`、原始
   timing/utilization/power 报告和可打开的 `impl_1`；三张 GUI 截图尚未采集。
 
@@ -85,7 +85,7 @@ Post-Implementation 截图；实验一材料和单周期截图不再需要。现
 用户确认数据通路图已经在其他位置完成。本任务：
 
 - 不读取、修改、导出或复核该图；
-- 不修改 `design/single_cycle/complete_datapath.drawio` 或设计 CSV；
+- 不修改 `docs/acceptance/design/single_cycle/complete_datapath.drawio` 或设计 CSV；
 - 不把仓库内图的状态写成现场图已经验收；
 - 现场材料清单只保留一个外部 owner 交付槽位，不复制第二份真相。
 
@@ -119,7 +119,7 @@ Post-Implementation 截图；实验一材料和单周期截图不再需要。现
   信号和 reset PC；
 - 保持 CPU、Cache、AXI、MMIO 地址、UART 寄存器和五外设行为；
 - 保持 EGO1 100 MHz 输入、50 MHz 产品时钟、115200 baud、8N1、无流控；
-- 不修改 `cdp-tests/` 或 `materials/instruction-site/` submodule；
+- 不修改 `tests/cdp/` 或 `docs/instruction-site/` submodule；
 - 不编辑 Windows staging；截图或报告发现问题时回到 canonical owner；
 - 不用截图、报告文本或口试材料替代可执行验证；
 - 不把旧 candidate 的 report、bitstream 或 transcript 绑定到新 source/program；
@@ -344,7 +344,7 @@ git status --short
 
 默认 write set：
 
-- `artifacts/acceptance/` 下三张流水线截图与交接 manifest；
+- `docs/acceptance/` 下三张流水线截图与交接 manifest；
 - `docs/acceptance/evidence-handoff.md`
 - `docs/acceptance/evidence-contract.md`，仅记录用户确认的 Vivado 零 DSP 行 GUI 省略及
   raw-report 补充判据；该最小扩展不改变数值、run 或交付数量；
@@ -383,9 +383,9 @@ AR4 不得关闭。
   各部分占比和 confidence `Low`；只作为 routed vectorless estimate；
 - Timing 图显示 WNS 3.912 ns、TNS 0.000 ns、WHS 0.031 ns、THS 0.000 ns，setup/hold
   failing endpoints 均为 0，并显示所有用户时序约束满足；
-- 三张必交截图归档到 `artifacts/acceptance/screenshots/`；辅助 Overview 同目录保留但在
+- 三张必交截图归档到 `docs/acceptance/screenshots/`；辅助 Overview 同目录保留但在
   manifest 中标记为 non-required；
-- `artifacts/acceptance/manifest.tsv` 绑定截图与五个外部 raw evidence 的 SHA-256，
+- `docs/acceptance/manifest.tsv` 绑定截图与五个外部 raw evidence 的 SHA-256，
   `docs/acceptance/evidence-handoff.md` 记录交给报告 owner 的事实、限制和路径；
 - evidence checker、raw report hash、PNG 格式/尺寸、manifest hash、文档格式和 diff
   门禁均通过；AR4 没有重跑 Vivado、修改 staging、撰写报告或自动进入 AR5。
@@ -444,7 +444,7 @@ git status --short
 - `AGENTS.md`
 - `docs/workflow.md`
 - `docs/devlog/README.md`
-- `artifacts/README.md`
+- `docs/acceptance/README.md`
 - `docs/acceptance/`
 - 本任务书
 

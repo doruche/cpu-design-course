@@ -16,8 +16,8 @@
 本文记录已合入 `main` 的流水线实现范围、可复现入口、性能历史，以及关闭时移交给后续
 产品任务的缺口。本文至此冻结，不再作为活动 backlog；当前状态与执行顺序以接手任务书
 为准。范围划界与三条工作线的
-定义见 [`materials/lab2-requirements-snapshot.md`](../../materials/lab2-requirements-snapshot.md)，
-本文不复制其正文。
+定义见 `materials/lab2-requirements-snapshot.md`，该快照已在文档重组提交 `c436fc0`
+中移除，只能从 Git 历史读取；本文不复制其正文。
 
 ## 已关闭的范围
 
@@ -25,7 +25,7 @@
 
 | 提交 | 内容 |
 | --- | --- |
-| `cc80842` | 补齐 `design/pipeline/{stage_registers,hazards,flow_control}.csv` 三份设计合同 |
+| `cc80842` | 补齐 `docs/acceptance/design/pipeline/{stage_registers,hazards,flow_control}.csv` 三份设计合同 |
 | `63a5bb1` | 按 CSV 实现 IF/ID/EX/MEM/WB 五级核：四组段寄存器、EX 前递网络、WB→ID 读端口旁路、load-use 检测、`flow_control.csv` 的冲刷/暂停优先级 |
 
 `63a5bb1` 中值得交接的三个决定：

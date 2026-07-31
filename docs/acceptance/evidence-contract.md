@@ -5,7 +5,7 @@
 当前验收只需要实验二流水线 SoC 的三张 Post-Implementation 截图：Utilization、Power
 和 Timing。实验一 ASM/COE、单周期截图、报告正文/PDF 和最终提交包不在本合同内。
 
-固定版本指导书 `materials/instruction-site/docs/home/submit.md` 要求实现完成后读取
+固定版本指导书 `docs/instruction-site/home/submit.md` 要求实现完成后读取
 Post-Implementation 的 Timing、Utilization 和 Power。用户进一步指定了三张图必须显示
 的字段。本文件只冻结来源、文件名、画面内容和核对值；AR2 不生成或代替 GUI 截图。
 
@@ -39,7 +39,7 @@ source commit、报告和 hash 必须作为新 run 重新审核，不能沿用�
 截图采用 PNG，保持操作系统原始截图分辨率，不缩放、不转码；不规定固定像素尺寸，但
 表格标题、字段名、数值和单位必须在 100% 显示比例下清晰可读。允许裁去无关窗口区域，
 不得裁掉用于识别报告类型的标题或本表要求的字段。AR4 归档路径为
-`artifacts/acceptance/screenshots/`。
+`docs/acceptance/screenshots/`。
 
 | 文件名 | Vivado 页面 | 画面必须包含 | 与 raw report 核对值 |
 | --- | --- | --- | --- |
@@ -69,7 +69,7 @@ GUI 中没有可展开的零 DSP 行。因此 DSP 不从截图缺席本身推导
 | `pipeline/artifacts/power.rpt` | `3341fa7bd48b9c4a4e9b3ae6ea0060a2b06b04b5535f637af9b71fb1314235f6` |
 
 以上相对路径均以 `Z:\\cpu-design-vivado\\` 为根。仓库内
-`artifacts/pipeline/{timing-summary.tsv,utilization-summary.txt,power-summary.txt}` 是同一组
+`docs/acceptance/benchmark/{timing-summary.tsv,utilization-summary.txt,power-summary.txt}` 是同一组
 数值的精选摘要，不替代 GUI 截图或原始 `.rpt`。
 
 ## AR4 接收判据

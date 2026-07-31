@@ -3,7 +3,7 @@ set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 config_file="$root/config/build-configs.tsv"
-trace_dir="$root/cdp-tests"
+trace_dir="$root/tests/cdp"
 single_rtl="$root/projects/single_cycle/src/rtl"
 pipeline_rtl="$root/projects/pipeline/src/rtl"
 cache_root="$root/.cache"
@@ -92,7 +92,7 @@ print_config() {
     printf '  backend: %s\n' "$config_backend"
     printf '  compiler-defines: %s\n' "$config_defines"
     printf '  artifact-directory: %s\n' "$config_artifact"
-    printf '  shared-trace-directory: cdp-tests/obj_dir (serialized)\n'
+    printf '  shared-trace-directory: tests/cdp/obj_dir (serialized)\n'
     printf '  rtl-sources:\n'
     mapfile_sorted "$product_rtl" | sed "s#^$root/#    #"
     printf '  memory-sources:\n'
@@ -644,7 +644,6 @@ run_vivado_candidate_for() {
 
 show_status() {
     git -C "$root" status --short --branch
-    git -C "$root" submodule status
     printf '\nStable configurations:\n'
     list_configs | sed 's/^/  /'
     printf '\nVerification suites:\n'

@@ -2,7 +2,7 @@
 
 This directory is the Lab 2-A design gate for the pipeline product. It is
 authoritative for stage allocation and pipeline control, while the ISA-level
-behavior contract remains in `design/single_cycle/`. Do not copy the
+behavior contract remains in `../single_cycle/`. Do not copy the
 single-cycle instruction rows here.
 
 Complete `stage_registers.csv` before editing pipeline RTL. Complete the

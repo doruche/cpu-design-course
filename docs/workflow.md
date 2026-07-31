@@ -37,10 +37,10 @@ The datapath diagram and report authoring remain externally owned.
 | Single-cycle HDL | `projects/single_cycle/src/rtl/` | Trace build, submission export, Windows staging |
 | Pipeline HDL | `projects/pipeline/src/rtl/` | Trace build, submission export, Windows staging |
 | Board configuration | Product `.xpr`, XCI, XDC, COE, Tcl | Windows staging |
-| Single-cycle design | `design/single_cycle/*.csv` | Milestone-only presentation diagram |
-| Pipeline design | `design/pipeline/*.csv` | Milestone-only presentation diagram |
-| Course behavior | `materials/instruction-site/` submodule | Local links and short decision notes |
-| Golden verification | `cdp-tests/` submodule | Generated executable and waveforms |
+| Single-cycle design | `docs/acceptance/design/single_cycle/*.csv` | Milestone-only presentation diagram |
+| Pipeline design | `docs/acceptance/design/pipeline/*.csv` | Milestone-only presentation diagram |
+| Course behavior | `docs/instruction-site/` local snapshot | Local links and short decision notes |
+| Golden verification | vendored `tests/cdp/` | Generated executable and waveforms |
 | Board program | `programs/<name>/` source | ELF, BIN, disassembly, COE |
 
 Copies are allowed only as generated outputs. A failure discovered in a derived
@@ -53,7 +53,7 @@ Vivado 后端和用户物理操作的唯一环境合同入口。它定义每项�
 缺失影响；本文不重复该配置清单。
 
 日常 lint、Trace、unit、integration、system 和 closure 在 Linux devcontainer 中运行，并依赖
-tracked 源与已初始化的 pinned submodule。`materials/lab1/`、`materials/lab2/`、Windows
+tracked 源与 vendored 的 `tests/cdp/`。ignored 的 `docs/instruction-site/` 快照、Windows
 路径、Vivado 安装和物理设备均不是这条路径的隐式依赖。宿主能力未配置时应只影响其对应的
 公开动作，不应被表述为 RTL 或产品失败。
 
@@ -63,17 +63,17 @@ tracked 源与已初始化的 pinned submodule。`materials/lab1/`、`materials/
    datapath/control changes use both single-cycle CSV tables and the cumulative
    `complete` row; pipeline stage, hazard, or flow-control changes use the three
    pipeline CSV tables under the rules in
-   [`design/README.md`](../design/README.md).
+   [`docs/acceptance/design/README.md`](acceptance/design/README.md).
 2. Edit canonical RTL.
 3. Select an explicit configuration with `just show-config <config>`, then run
    `just lint <config>`.
 4. Run a targeted Trace case with `just trace <config> <case>`.
-5. Inspect the generated VCD and matching `cdp-tests/asm/<case>.dump` on failure.
+5. Inspect the generated VCD and matching `tests/cdp/asm/<case>.dump` on failure.
 6. Run the relevant `just unit <suite>` or `just integration <suite>` before
    integrating high-risk state machines.
 7. Run `just trace-all <config>` at a feature-group milestone.
 
-Trace compiles canonical RTL directly. `cdp-tests/mySoC/` remains the untouched
+Trace compiles canonical RTL directly. `tests/cdp/mySoC/` remains the untouched
 upstream placeholder.
 
 ## Vivado Loop
@@ -120,8 +120,8 @@ These host settings do not select a product topology or verification configurati
 - `pipeline-soc-stage5` preserves the closed pipeline SoC physical product;
   it does not claim final course-report or submission-package acceptance.
 - Keep the repository private.
-- Update submodule commits explicitly after reviewing their changes; do not
-  automatically follow upstream branches.
+- Refresh the vendored `tests/cdp/` suite explicitly after reviewing the
+  upstream diff; do not automatically follow upstream branches.
 
 ## Validation And Evidence
 
@@ -134,7 +134,7 @@ These host settings do not select a product topology or verification configurati
 | Release/submission | Exported-tree Trace, bitstream, and user-observed board test |
 
 Generated runs and waveforms are disposable. Curated text reports used by the
-final report belong under `artifacts/`; each report set records the source
+final report belong under `docs/acceptance/`; each report set records the source
 commit, Vivado version, clock configuration, and program image.
 
 ## Lab 2 Gate Order
@@ -165,12 +165,12 @@ bounded sequential gates:
 
 The guide assumes reusable ICache and DCache modules from the earlier Computer
 Organization Lab 3; they are not included in the Lab 2 guide assets. The local
-source snapshots and their provenance are recorded under `materials/`, while
+source snapshots and their provenance are recorded in `docs/MANIFEST.md`, while
 the maintained product versions live under `projects/single_cycle/src/rtl/`.
 The existing Lab 1 EGO1 project is the starting template for both streams; no
 separate Lab 2 Vivado template is required by the guide.
 
 The root `Justfile` and `config/build-configs.tsv` now expose the Basic, AXI
-direct, and product-SoC profiles explicitly. The fixed `cdp-tests/` Makefile is
+direct, and product-SoC profiles explicitly. The fixed `tests/cdp/` Makefile is
 used only as a serialized Trace backend and is not a second public repository
 CLI.

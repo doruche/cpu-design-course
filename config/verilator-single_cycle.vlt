@@ -7,7 +7,7 @@
 //   2. Keep the waiver permanently if you are sure it is okay
 //   3. Keep the waiver temporarily to suppress the output
 
-lint_off -rule DECLFILENAME -file "*cdp-tests/vsrc/ram.v" -match "Filename 'ram' does not match MODULE name: 'IROM'*"
+lint_off -rule DECLFILENAME -file "*tests/cdp/vsrc/ram.v" -match "Filename 'ram' does not match MODULE name: 'IROM'*"
 
 lint_off -rule WIDTHTRUNC -file "*projects/single_cycle/src/rtl/Inst_ROM.v" -match "Input port connection 'addra' expects 16 bits on the pin connection, but pin connection's SEL generates 30 bits.*"
 
@@ -34,9 +34,9 @@ lint_off -rule UNUSEDSIGNAL -file "*projects/single_cycle/src/rtl/Inst_ROM.v" -m
 lint_off -rule SYNCASYNCNET -file "*projects/single_cycle/src/rtl/miniRV_SoC.v" -match "Signal flopped as both synchronous and async: 'fpga_rst'*"
 
 // The AXI RAM is a pinned Trace-framework model, not repository-owned RTL.
-lint_off -rule EOFNEWLINE -file "*cdp-tests/vsrc/bram_axi.v" -match "*"
-lint_off -rule WIDTHTRUNC -file "*cdp-tests/vsrc/bram_axi.v" -match "*"
-lint_off -rule WIDTHEXPAND -file "*cdp-tests/vsrc/bram_axi.v" -match "*"
-lint_off -rule UNUSEDSIGNAL -file "*cdp-tests/vsrc/bram_axi.v" -match "*"
-lint_off -rule PROCASSINIT -file "*cdp-tests/vsrc/bram_axi.v" -match "*"
-lint_off -rule CASEINCOMPLETE -file "*cdp-tests/vsrc/bram_axi.v" -match "*"
+lint_off -rule EOFNEWLINE -file "*tests/cdp/vsrc/bram_axi.v" -match "*"
+lint_off -rule WIDTHTRUNC -file "*tests/cdp/vsrc/bram_axi.v" -match "*"
+lint_off -rule WIDTHEXPAND -file "*tests/cdp/vsrc/bram_axi.v" -match "*"
+lint_off -rule UNUSEDSIGNAL -file "*tests/cdp/vsrc/bram_axi.v" -match "*"
+lint_off -rule PROCASSINIT -file "*tests/cdp/vsrc/bram_axi.v" -match "*"
+lint_off -rule CASEINCOMPLETE -file "*tests/cdp/vsrc/bram_axi.v" -match "*"

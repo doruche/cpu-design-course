@@ -72,7 +72,7 @@
 7. merge 后固定工具链的 CoreMark RTL system suite 尚未在当前 `main` 重现；当前宿主
    `doctor` 只检查命令存在，没有证明 RV32IM/ILP32 与运行库 ABI 可链接。
 8. pipeline synthesis、implementation、50 MHz 时序、bitstream 和 EGO1 板测全部为
-   **Not Run**；`artifacts/pipeline/` 也没有正式报告。
+   **Not Run**；`docs/acceptance/benchmark/` 也没有正式报告。
 
 ## 产品关闭目标
 
@@ -90,7 +90,7 @@
    manifest、源提交和 Vivado facts 一一对应；
 8. 用户在 EGO1 上使用自己的 pipeline bitstream 完成 C_TEST 0～2 和 CoreMark 验证；
 9. pipeline timing、utilization、power 和构建元数据以小型可审计文本归档到
-   `artifacts/pipeline/`，bitstream 与原始 run 目录仍保持忽略；
+   `docs/acceptance/benchmark/`，bitstream 与原始 run 目录仍保持忽略；
 10. 更新产品状态和 devlog，创建经用户确认的 pipeline 物理产品里程碑 tag，并明确把
     官方 IP/报告/提交对齐交给下一份任务书。
 
@@ -103,7 +103,7 @@
 - `debug_wb_*` 继续表示架构提交，`debug_mem_*` 继续表示实际生效的存储写；
 - 保持静态预测不跳转、冒险/前递、单在途 IF/MEM 请求、mul/div completion 和 flush
   priority；
-- `design/pipeline/*.csv` 是流水线语义合同，默认只读；若物理修复要求改变语义，停止
+- `docs/acceptance/design/pipeline/*.csv` 是流水线语义合同，默认只读；若物理修复要求改变语义，停止
   当前检查点，不得同时修改合同和实现制造一致。
 
 ### SoC 与产品所有权
@@ -117,8 +117,8 @@
   无流控；
 - Clock Wizard 与 AXI BRAM 继续作为本任务的 Vendor IP 边界；其他 IP 策略不在本任务
   改变；
-- 不修改 `cdp-tests/` 或 `materials/instruction-site/` 两个 submodule，不在
-  `cdp-tests/mySoC/` author RTL。
+- 不修改 `tests/cdp/` 或 `docs/instruction-site/` 两个 submodule，不在
+  `tests/cdp/mySoC/` author RTL。
 
 ### 证据边界
 
@@ -588,8 +588,8 @@ implementation、timing closure、bitstream 或板测；这些仍为 **Not Run**
 
 默认 write set：
 
-- `artifacts/pipeline/` 下小型文本报告和 metadata
-- `artifacts/README.md`，仅同步证据索引
+- `docs/acceptance/benchmark/` 下小型文本报告和 metadata
+- `docs/acceptance/README.md`，仅同步证据索引
 - 本任务书执行记录
 
 bitstream、完整日志、Vivado run 目录和 Windows staging 保持忽略，不提交 Git。
@@ -645,7 +645,7 @@ DRC 的 42 个普通 Warning 为 `CHECK-3` x2、`REQP-1839` x20、`REQP-1840` x2
 同步 release，两个 input clock constraint 均为同一 10 ns。CDC 仅有 17 项 `CDC-3`
 Info 与一项 `CDC-9` Info，对应带标记的 switch/UART 两级同步器和 reset 同步器。
 
-小型正式证据归档在 `artifacts/pipeline/`；bitstream、完整报告和 run 目录继续位于 ignored
+小型正式证据归档在 `docs/acceptance/benchmark/`；bitstream、完整报告和 run 目录继续位于 ignored
 Windows staging。PC5 没有烧录 EGO1，也没有获得任何板上 UART/外设/CoreMark 现象；
 这些继续为 **Not Run**，仅可在用户明确授权后进入 PC-U。
 
@@ -729,7 +729,7 @@ source，也没有用单周期、课程或其他候选 bitstream 替代。PC6 �
 - `docs/workflow.md`
 - `docs/devlog/README.md`
 - `projects/pipeline/BASELINE.md`
-- `artifacts/README.md`
+- `docs/acceptance/README.md`
 - 本任务书
 
 工作：
@@ -768,7 +768,7 @@ tag `pipeline-soc-stage5`，表示流水线 SoC 物理产品完成；该 tag 不
 - canonical pipeline Vivado 2023.2 工程可从 clean source 重建；
 - 四候选在 50 MHz 下 implementation、timing、DRC、provenance 和 bitstream 均关闭；
 - 用户自己的 pipeline bitstream 通过 C_TEST 0～2 与 CoreMark；
-- `artifacts/pipeline/` 含当前 source/tool 对应的 timing/utilization/power 文本证据；
+- `docs/acceptance/benchmark/` 含当前 source/tool 对应的 timing/utilization/power 文本证据；
 - 单周期产品、Trace 合同、两个 submodule 和自有 SoC 功能语义未被破坏；
 - 官方 IP/报告/最终提交对齐仍明确为 Pending，并有完整交接输入。
 

@@ -8,8 +8,8 @@ tuples are rejected before a backend runs.
 
 Stable names are `single-basic`, `single-axi-direct-bypass`,
 `single-axi-direct-cache`, `single-soc-bypass`, `single-soc-cache`, and
-`pipeline-basic`. Trace commands serialize access to the pinned framework's
-shared `cdp-tests/obj_dir`.
+`pipeline-basic`. Trace commands serialize access to the vendored framework's
+shared `tests/cdp/obj_dir`.
 
 ## Verilator Lint Baselines
 

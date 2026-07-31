@@ -11,7 +11,7 @@
 
 本文约束 `feat/pipeline` 合入 `main` 后的一轮小型稳定化工作。课程行为仍以固定版本的
 指导书和 Trace framework 为准；流水线级间字段、冒险和流控语义仍以
-`design/pipeline/` 三份 CSV 为准；ISA 级语义仍以 `design/single_cycle/` 为准。
+`docs/acceptance/design/pipeline/` 三份 CSV 为准；ISA 级语义仍以 `docs/acceptance/design/single_cycle/` 为准。
 
 本任务书冻结范围、顺序、写集和验证门禁。M1 已按 docs-only 边界关闭，M2 已以
 characterization tests 关闭；M3 经只读预检未发现有证据支持的整理目标，并经用户确认
@@ -61,8 +61,8 @@ merge 后的事实漂移，并在测试保护下进行有界的可读性和所�
 - 保持所有 `/* verilator public */` 信号的名称、位宽、层次和观测语义。
 - `debug_wb_*` 继续表示 WB/架构提交；`debug_mem_*` 继续表示实际生效的存储写。
 - reset PC 保持 `0x00000000`；Trace 复位保持高有效，EGO1 FPGA 边界复位保持低有效。
-- 不修改 `cdp-tests/` 或 `materials/instruction-site/` 两个 submodule，不在
-  `cdp-tests/mySoC/` 中 author RTL。
+- 不修改 `tests/cdp/` 或 `docs/instruction-site/` 两个 submodule，不在
+  `tests/cdp/mySoC/` 中 author RTL。
 
 ### Pipeline 行为
 
@@ -147,7 +147,7 @@ M0 只证明任务书本身结构完整，不构成 RTL、CoreMark、Vivado 或�
 - `docs/devlog/README.md`
 - `docs/devlog/pipeline-cpu-and-soc.md`
 - `projects/pipeline/BASELINE.md`
-- `design/pipeline/README.md`
+- `docs/acceptance/design/pipeline/README.md`
 - 本任务书，仅填写执行记录
 
 `config/build-configs.tsv`、RTL、tests、scripts 和 submodule 在 M1 中只读。
@@ -193,8 +193,8 @@ git diff --check
 只读核对：
 
 - `projects/pipeline/src/rtl/`
-- `design/pipeline/{stage_registers,hazards,flow_control}.csv`
-- `cdp-tests/csrc/` 与现有 45 项 Trace
+- `docs/acceptance/design/pipeline/{stage_registers,hazards,flow_control}.csv`
+- `tests/cdp/csrc/` 与现有 45 项 Trace
 
 ### 测试范围
 
@@ -265,7 +265,7 @@ bitstream 或板级结果；这些证据边界继续由独立流水线 SoC 产�
 - `config/verilator-pipeline.vlt`，仅删除已证明不再触发的 waiver
 - 本任务书，仅填写执行记录
 
-`design/pipeline/*.csv` 默认只读。若 live RTL 与 CSV 存在语义分歧，停止 M3；不得在
+`docs/acceptance/design/pipeline/*.csv` 默认只读。若 live RTL 与 CSV 存在语义分歧，停止 M3；不得在
 同一 checkpoint 同时修改实现与合同来制造一致。
 
 ### 允许的工作

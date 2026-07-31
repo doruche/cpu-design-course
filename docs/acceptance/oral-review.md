@@ -121,7 +121,7 @@ response 被消费/丢弃后，才从正确 PC 继续。
 控制？Trace PASS 能否单独证明 MMIO？
 
 源码核对：`projects/pipeline/src/rtl/cpu_core.v:479-499`；
-`cdp-tests/csrc/dut.h`；官方 Trace 说明明确外设不在 Trace 范围内。
+`tests/cdp/csrc/dut.h`；官方 Trace 说明明确外设不在 Trace 范围内。
 
 参考回答：寄存器 Trace 来自 `mem_wb_valid & mem_wb_rf_we`，表示一条指令真的走到提交点；
 store Trace 直接取实际脉冲 `daccess_wen/addr/data`。decode control 可能因 stall 保持多拍、
@@ -472,7 +472,7 @@ CoreMark 的 `get_time()` 采用 high-low-high：先读 high，再读 low，再�
 核对点：Trace 是 CPU commit/store 差分，AXI Trace 覆盖主存链路但不覆盖外设；system suite
 可自动覆盖 MMIO 和 transcript；只有用户记录能证明真实 EGO1 现象。
 
-来源核对：`projects/pipeline/src/rtl/cpu_core.v:479-499`；`cdp-tests/csrc/dut.h`；
+来源核对：`projects/pipeline/src/rtl/cpu_core.v:479-499`；`tests/cdp/csrc/dut.h`；
 `tests/coremark/coremark_system_tb.sv`；`docs/acceptance/acceptance-matrix.md`。
 
 参考回答：Trace 把 RTL 的寄存器 commit/store event 与 golden trace 比对，适合证明 ISA
@@ -504,8 +504,8 @@ Converter 或 AXI Uartlite 指定为独立必检项；仓库现有自有 interco
 
 核对点：0.189 W 是 Vivado routed vectorless estimate，confidence Low；不是板上实测功耗。
 
-来源核对：`docs/acceptance/evidence-handoff.md`；`artifacts/acceptance/manifest.tsv`；
-`artifacts/acceptance/screenshots/pipeline-post-impl-power.png`。
+来源核对：`docs/acceptance/evidence-handoff.md`；`docs/acceptance/manifest.tsv`；
+`docs/acceptance/screenshots/pipeline-post-impl-power.png`。
 
 参考回答：应表述为：“Vivado 2023.2 对 routed pipeline CoreMark implementation 给出的
 vectorless Total On-Chip Power estimate 为 0.189 W，其中 Dynamic 0.115 W、Device Static

@@ -42,7 +42,7 @@ BRAM/IP、时钟复位、implementation、bitstream、实现后时序和自己�
 - 最终课程产品仍要求在 SoC 上下板运行 I/O 测试，并覆盖 switch、LED、数码管、UART
   和 timer；课程 bitstream 的软件 PASS 不是自己的产品 PASS。
 
-课程行为以 `materials/instruction-site/` 的固定版本为准。`materials/lab2/` 下的归档、
+课程行为以 `docs/instruction-site/` 的固定版本为准。`materials/lab2/` 下的归档、
 bitstream 和转换脚本是带哈希的本地输入，不是第二份课程规范。
 
 ## 所有权

@@ -11,8 +11,8 @@
 - 实现状态：已完成
 
 本文是本次重构的范围、顺序和验收依据。课程行为仍以固定版本的指导书和 Trace
-框架为准；指令级设计仍以 `design/single_cycle/datapath.csv` 和
-`design/single_cycle/control_signals.csv` 为准。
+框架为准；指令级设计仍以 `docs/acceptance/design/single_cycle/datapath.csv` 和
+`docs/acceptance/design/single_cycle/control_signals.csv` 为准。
 
 ## 背景与判断
 
@@ -50,7 +50,7 @@ Lab 1 单周期 CPU 已完成全部 Basic Trace，并由 `lab1-complete` tag 保
 - 不改动 `ifetch_req`、`ifetch_addr`、`ifetch_valid` 以及所有
   `debug_wb_*`、`debug_mem_*` 的名称、位宽、`/* verilator public */` 标记和可见
   层次。
-- 不修改 `RUN_TRACE` 保护的观测语义，不修改 `cdp-tests/`。
+- 不修改 `RUN_TRACE` 保护的观测语义，不修改 `tests/cdp/`。
 - 复位 PC 保持 `0x00000000`。Trace 顶层复位保持高有效，EGO1 FPGA 边界复位保持
   低有效。
 - 课程提交 RTL 继续使用可综合 Verilog `.v` / `.vh`；SystemVerilog 仅用于仓库自有
@@ -73,7 +73,7 @@ Lab 1 单周期 CPU 已完成全部 Basic Trace，并由 `lab1-complete` tag 保
 
 - 本任务不改变指令级数据通路或控制语义，因此两张设计 CSV 是只读核对依据。
 - `complete_datapath.drawio` 是里程碑展示产物，不随内部信号改名更新。
-- 不修改指导书和 Trace 两个 submodule，不在 `cdp-tests/mySoC/` 或 Windows staging
+- 不修改指导书和 Trace 两个 submodule，不在 `tests/cdp/mySoC/` 或 Windows staging
   中开发。
 - 保留用户无关改动；不借机统一旧模板的换行符、缩进或文件编码。
 
@@ -181,8 +181,8 @@ git diff --check
 
 只读核对：
 
-- `design/single_cycle/control_signals.csv`
-- `design/single_cycle/datapath.csv`
+- `docs/acceptance/design/single_cycle/control_signals.csv`
+- `docs/acceptance/design/single_cycle/datapath.csv`
 - `projects/single_cycle/src/rtl/defines.vh`
 
 ### 工作

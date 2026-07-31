@@ -16,8 +16,8 @@
 | 类别 | Canonical owner | 是否版本控制 | 影响范围 |
 | --- | --- | --- | --- |
 | 核心开发/自动验证工具链 | `.devcontainer/` | 是 | Linux container 中的 `just`、lint、Trace、unit、integration、system 与 closure |
-| 课程行为与 golden inputs | `materials/instruction-site/`、`cdp-tests/` pinned submodule | 是 | 课程合同与 Trace 验证 |
-| 受限课程下载物与个人历史快照 | `materials/lab1/`、`materials/lab2/`，hash 在 `materials/MANIFEST.md` | 否，Git 忽略 | 阅读、溯源或明确需要该本地输入的动作；不是日常回归的隐式依赖 |
+| 课程行为与 golden inputs | `docs/instruction-site/`、`tests/cdp/` pinned submodule | 是 | 课程合同与 Trace 验证 |
+| 受限课程下载物与个人历史快照 | `materials/lab1/`、`materials/lab2/`，hash 在 `docs/MANIFEST.md` | 否，Git 忽略 | 阅读、溯源或明确需要该本地输入的动作；不是日常回归的隐式依赖 |
 | Vivado 后端 | Windows Vivado 2023.2 + WSL 调用层 + ignored `local.env` | 否 | `just vivado*` 的 staging、综合、实现和 bitstream |
 | 物理板、串口与最终提交输入 | 用户/外部 owner | 否 | 烧录、现场观察、报告、ZIP、上传；不由自动化推导 |
 
@@ -91,7 +91,7 @@ E0 仅证明任务范围已经冻结，不证明 devcontainer 可构建、材料
 - `README.md`
 - `docs/workflow.md`
 - `AGENTS.md`（只增加指向环境合同的阅读入口）
-- `materials/MANIFEST.md`
+- `docs/MANIFEST.md`
 - `local.env.example`
 - 本任务书执行记录
 
@@ -101,7 +101,7 @@ E0 仅证明任务范围已经冻结，不证明 devcontainer 可构建、材料
 - 将 README 快速开始拆为 container 日常开发与 WSL/Windows Vivado 两条路径；
 - 说明 `local.env` 的严格三键边界、环境变量覆盖规则、Windows 可见 disposable staging
   要求，以及它不保存身份或受限材料路径；
-- 将 `materials/MANIFEST.md` 明确为受限本地输入的 provenance/hash 清单，而不是自动化
+- 将 `docs/MANIFEST.md` 明确为受限本地输入的 provenance/hash 清单，而不是自动化
   下载清单或日常构建前提；
 - 不改动 `.devcontainer/`、`Justfile`、`scripts/` 或 `.gitignore`。
 
@@ -110,7 +110,7 @@ E0 仅证明任务范围已经冻结，不证明 devcontainer 可构建、材料
 ```bash
 just --fmt --check
 git diff --check
-rg -n 'local\.env|VIVADO_|materials/lab[12]|devcontainer' README.md docs AGENTS.md materials/MANIFEST.md
+rg -n 'local\.env|VIVADO_|materials/lab[12]|devcontainer' README.md docs AGENTS.md docs/MANIFEST.md
 ```
 
 ### 停止条件
@@ -129,7 +129,7 @@ rg -n 'local\.env|VIVADO_|materials/lab[12]|devcontainer' README.md docs AGENTS.
   日常动作隐式读取；Vivado 是 WSL 调用 Windows `vivado.bat` 的派生 staging 后端。
 - 门禁通过：`just --fmt --check`、`git diff --check`，以及任务书指定的 `rg -n
   'local\\.env|VIVADO_|materials/lab[12]|devcontainer' README.md docs AGENTS.md
-  materials/MANIFEST.md`。
+  docs/MANIFEST.md`。
 - `just doctor` 的 live 输出仍将核心工具、RV32 ABI、pinned repository inputs 与 Vivado 混在
   通用 optional/单一 batch 行中，且没有受限材料状态。因此 E2 有明确的最小诊断表达缺口；
   不以 E1 文档门禁宣称容器、Vivado 或板级动作重新通过。

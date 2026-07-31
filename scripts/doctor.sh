@@ -99,31 +99,13 @@ for path in \
     "$root/projects/pipeline/miniRV.xpr" \
     "$root/projects/pipeline/src/rtl/cpu_core.v" \
     "$root/config/verilator-pipeline.vlt" \
-    "$root/cdp-tests/Makefile" \
-    "$root/materials/instruction-site/docs/index.md"; do
+    "$root/tests/cdp/Makefile" \
+    "$root/docs/instruction-site/index.md"; do
     if [[ -e "$path" ]]; then
         printf '  [ok] %s\n' "${path#"$root/"}"
     else
         printf '  [missing] %s\n' "${path#"$root/"}"
         missing=1
-    fi
-done
-
-if git -C "$root" submodule status | grep -qE '^[-+]'; then
-    printf '  [error] submodules are uninitialized or differ from the pinned commits\n'
-    missing=1
-else
-    printf '  [ok] submodules match the parent repository\n'
-fi
-
-printf '\nRestricted local materials (optional):\n'
-for material_dir in materials/lab1 materials/lab2; do
-    if [[ -d "$root/$material_dir" ]]; then
-        printf '  [provided] %s (ignored; provenance/hash are in materials/MANIFEST.md)\n' \
-            "$material_dir"
-    else
-        printf '  [not provided] %s (ignored; not required for daily verification)\n' \
-            "$material_dir"
     fi
 done
 

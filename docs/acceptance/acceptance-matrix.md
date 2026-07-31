@@ -30,7 +30,7 @@ AR1 不复跑产品 closure 或 Vivado。下表中的 Auto、Vivado 和 User 结
 | Vivado / part | 2023.2 / `xc7a35tcsg324-1` |
 | clock / UART | 50 MHz / 115200 baud, 8N1, no flow control |
 
-`artifacts/pipeline/candidate-manifest.tsv` 和候选 `stage5_evidence.json` 给出同一组绑定。
+`docs/acceptance/benchmark/candidate-manifest.tsv` 和候选 `stage5_evidence.json` 给出同一组绑定。
 AR1 只读审计还确认：从候选 source commit 到 AR1 开始时的 `main`，pipeline RTL、XPR、
 XCI/XDC/COE、程序、脚本、测试、配置和 `Justfile` 均无差异。后续若这些 owner 发生变化，
 必须重新做 provenance 审计，不能继续使用本结论。

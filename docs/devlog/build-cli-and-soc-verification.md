@@ -34,7 +34,7 @@
 - `soc-stage3-full-test` 实际从 DCache 的 CPU 侧接口开始，不包含 CPU 和 ICache；
 - 当前 AXI Trace 在 `RUN_TRACE` 分支中让 CPU/Cache/AXI master 直连行为级 BRAM，
   绕过 `soc_interconnect` 和全部 MMIO 外设；
-- `cdp-tests/obj_dir` 被所有 Trace 配置共享，配置切换依赖仓库侧 stamp 清理；
+- `tests/cdp/obj_dir` 被所有 Trace 配置共享，配置切换依赖仓库侧 stamp 清理；
 - 根 `make check` 的实际产品、主存和 Cache 配置依赖默认变量，命令名本身不可审计；
 - `make help` 的文本提取方式不能正确展示跨行声明的 `soc-stage3-test`。
 
@@ -62,7 +62,7 @@
 - 不运行 Vivado implementation、生成 bitstream 或声明实际板级结果；
 - 不处理既有时钟门控和跨时钟域复位风险；它们仍在 implementation 前单独关闭；
 - 不修改 CPU ISA 行为、两份设计 CSV、Cache/MMIO 对外语义或 Trace public 信号；
-- 不修改 `cdp-tests/`、`materials/instruction-site/` 或 `cdp-tests/mySoC/`；
+- 不修改 `tests/cdp/`、`docs/instruction-site/` 或 `tests/cdp/mySoC/`；
 - 不以机械包装 `make <target>` 作为最终 Just 架构；
 - 不为了统一 CLI 把 Vivado、Icarus Verilog、Verilator 和 Trace 强行合并成同一种执行
   后端。
@@ -75,13 +75,13 @@
 | 非平凡循环、环境检查和工具适配 | `scripts/` | Just recipe 保持短小，脚本可独立诊断 |
 | 产品 RTL | `projects/<product>/src/rtl/` | 仿真不得复制产品模块形成第二份实现 |
 | 仿真 testbench 和程序 | `tests/` | 生成物进入忽略的 `.cache/` |
-| Trace golden behavior | `cdp-tests/` submodule | 只消费固定版本，不在本任务中修改 |
+| Trace golden behavior | `tests/cdp/` submodule | 只消费固定版本，不在本任务中修改 |
 | Vivado 工程/IP/约束 | canonical product 工程 | Windows staging 仍是派生目录 |
 | 历史执行证据 | 已有开发日志 | 保留实际运行过的 `make` 命令，不改写历史 |
 
 根 Makefile 只在迁移期作为现有行为基线。新入口达到功能对等并通过关闭门禁后，删除根
 Makefile，README、workflow 和活动任务全部切换为 `just`。固定 submodule 自带的
-`cdp-tests/Makefile` 可以继续由仓库脚本内部调用；这是后端实现细节，不是公开 CLI，
+`tests/cdp/Makefile` 可以继续由仓库脚本内部调用；这是后端实现细节，不是公开 CLI，
 也不构成第二个仓库级构建接口。
 
 ## 公开 CLI 合同
@@ -251,7 +251,7 @@ Makefile 外，不以递归调用旧根 Make target 作为终态。
 - 新旧入口在相同源树上解析出等价的 source set、defines 和工具参数；
 - 新 CLI 的退出状态、失败汇总和帮助文本可由人直接判断；
 - 保持 Trace 串行执行，不因 `just --jobs` 或 recipe dependency 意外并发共享的
-  `cdp-tests/obj_dir`。
+  `tests/cdp/obj_dir`。
 
 默认写集：I1 写集、`config/` 和现有测试编排脚本。除为适配明确产物目录外，不修改
 产品 RTL。
@@ -308,7 +308,7 @@ I5 状态：Completed（2026-07-26）。根 Makefile 已删除；README、workfl
   UART、数码管和 timer；Integration 的 `fabric-mmio` 与 `dcache-mmio` 通过；
 - `single-basic`、`single-axi-direct-bypass`、`single-axi-direct-cache`、
   `single-soc-bypass`、`single-soc-cache` 和 `pipeline-basic` 的完整 Trace 均为
-  45 passed、0 failed；Trace 通过文件锁串行使用共享 `cdp-tests/obj_dir`；
+  45 passed、0 failed；Trace 通过文件锁串行使用共享 `tests/cdp/obj_dir`；
 - Cache-enabled CPU-driven SoC smoke 通过：复位 PC 为 `0x00000000`，观察到 ICache 与
   DCache 四拍回填，主存 write-through 与 cached load 正确；366 次 MMIO read 和 3 次
   MMIO write 均为单拍，并验证 switch、LED、八个数码管扫描槽、UART RX/TX 完整帧和
@@ -351,7 +351,7 @@ I5 状态：Completed（2026-07-26）。根 Makefile 已删除；README、workfl
 - product-topology 仿真只能通过复制产品 RTL 或修改 Windows staging 实现；
 - 新旧入口对同一配置产生无法解释的 source/define/tool 参数差异；
 - 删除根 Makefile 前尚有能力未迁移或 pipeline 基线未证明；
-- 为追求并行速度需要并发写入共享的 `cdp-tests/obj_dir` 或其他非隔离产物。
+- 为追求并行速度需要并发写入共享的 `tests/cdp/obj_dir` 或其他非隔离产物。
 
 ## 完成后的交接
 

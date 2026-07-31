@@ -18,13 +18,15 @@ Before changing RTL or workflow code, read:
 1. `README.md`
 2. `docs/workflow.md`
 3. The active task book under `docs/devlog/`
-4. The relevant section under `materials/instruction-site/docs/`
-5. The relevant source and tests under `cdp-tests/`
+4. The relevant section under `docs/instruction-site/`
+5. The relevant source and tests under `tests/cdp/`
 6. `docs/environment.md` before changing environment, host-backend, local-input,
    or workflow behavior
 
-The guide and Trace framework are pinned submodules. Treat their live source as
-the course contract; do not copy their prose into local documentation.
+The Trace framework is vendored into the repository at `tests/cdp/`; the
+official guide is a local, Git-ignored snapshot at `docs/instruction-site/`.
+Treat their live source as the course contract; do not copy their prose into
+local documentation.
 
 ## Working Style
 
@@ -76,10 +78,9 @@ between iterations.
 The root `Justfile` is the only public entry point; it delegates to
 `scripts/build.sh`. There is no root `Makefile`, and the `closure` gate fails if
 one reappears or if `make` commands return to `README.md` / `docs/workflow.md`.
-`cdp-tests/Makefile` is used only as a serialized Trace backend.
+`tests/cdp/Makefile` is used only as a serialized Trace backend.
 
 ```bash
-git submodule update --init --recursive
 just doctor                       # tool, version, and pinned-input check
 just --list                       # all entry points
 just status                       # repo state + stable configurations
@@ -162,19 +163,20 @@ When adding a variant, add a row to the TSV — do not add an ad-hoc script path
 
 ### Trace framework contract
 
-`cdp-tests/` is a pinned submodule holding the golden 45-case Trace suite.
+`tests/cdp/` is the vendored upstream copy of the golden 45-case Trace suite.
 `scripts/build.sh` compiles canonical product RTL directly into the Verilator
-Trace harness (shared `cdp-tests/obj_dir`, serialized under a `flock` on the
+Trace harness (shared `tests/cdp/obj_dir`, serialized under a `flock` on the
 repo root, with `.cache/trace/current-config` forcing a clean rebuild when the
-configuration changes). `cdp-tests/mySoC/` stays an untouched upstream
+configuration changes). `tests/cdp/mySoC/` stays an untouched upstream
 placeholder. On failure, compare the generated VCD against
-`cdp-tests/asm/<case>.dump`.
+`tests/cdp/asm/<case>.dump`.
 
 ### Design artifacts are gates, not documentation
 
-`design/single_cycle/{datapath,control_signals}.csv` and
-`design/pipeline/{stage_registers,hazards,flow_control}.csv` must be completed
-*before* the corresponding RTL. `design/README.md` defines mandatory notation:
+`docs/acceptance/design/single_cycle/{datapath,control_signals}.csv` and
+`docs/acceptance/design/pipeline/{stage_registers,hazards,flow_control}.csv`
+must be completed *before* the corresponding RTL.
+`docs/acceptance/design/README.md` defines mandatory notation:
 empty means "not designed yet", `-` means the field places no semantic
 constraint, control symbols must match `defines.vh` macro names without the
 backtick, and side-effect controls (`npc_op`, `rf_we`, `ram_rop`, `ram_wop`,
@@ -189,12 +191,12 @@ backtick, and side-effect controls (`npc_op`, `rf_we`, `ram_rop`, `ram_wop`,
   `/* verilator public */` without first verifying the Trace driver contract.
 - Preserve reset PC `0x00000000`; Trace reset is active high while the EGO1
   board reset is active low at the FPGA boundary.
-- Never author code in `cdp-tests/mySoC/`.
+- Never author code in `tests/cdp/mySoC/`.
 - Never edit a Windows Vivado staging directory. Fix canonical project files in
   WSL and regenerate staging.
-- Do not modify either submodule unless the user explicitly requests an upstream
-  update or framework investigation.
-- Follow `materials/instruction-site/docs/home/codingstyle.md`.
+- Do not modify the vendored Trace suite or the guide snapshot unless the user
+  explicitly requests an upstream update or framework investigation.
+- Follow `docs/instruction-site/home/codingstyle.md`.
 
 ## Verification Gates
 
@@ -219,8 +221,9 @@ backtick, and side-effect controls (`npc_op`, `rf_we`, `ram_rop`, `ram_wop`,
   branches. Preserve major milestones with tags (`upstream-lab1-template`,
   `lab1-complete`, `single-cycle-soc-stage3`, `single-cycle-soc-stage5`,
   `pipeline-soc-stage5`).
-- Update submodule commits explicitly after reviewing their changes.
+- Refresh the vendored `tests/cdp/` suite explicitly after reviewing the
+  upstream diff, and record the new upstream commit in `docs/MANIFEST.md`.
 - Do not commit downloaded course archives, waveform dumps, Vivado run
   directories, bitstreams, or caches.
 - Curated timing, utilization, and power reports may be committed under
-  `artifacts/` with the source commit and tool version recorded.
+  `docs/acceptance/` with the source commit and tool version recorded.

@@ -5,7 +5,7 @@ Baseline date: 2026-07-13
 Environment:
 
 - Verilator 5.051 devel, revision `v5.050-59-gdde8de0a0`
-- `cdp-tests` commit `af81241848cdbbf4f1af3d1b6bb83ec3b6b7968f`
+- `tests/cdp` commit `af81241848cdbbf4f1af3d1b6bb83ec3b6b7968f`
 - `miniRV_basic_ego1.zip` SHA-256
   `8169b64de631c22d7668185cbd9fb22f288519d6267f4f314a29cf420c3d3570`
 
