@@ -12,3 +12,13 @@ small, reviewable evidence needed by the final report, such as:
 Use separate `single_cycle/` and `pipeline/` milestone directories when those
 reports exist. Do not commit bitstreams, ILA captures, complete Vivado logs, or
 raw run directories here.
+
+## Evidence index
+
+- `pipeline/`: PC5 clean routed evidence for the four pipeline C_TEST/CoreMark
+  candidates, including hash provenance, timing, utilization, power estimate,
+  and warning review dispositions. The matching candidate hashes passed the
+  user-owned EGO1 PC-U checks recorded in
+  `docs/devlog/pipeline-soc-product-closure.md`; raw UART logs and bitstreams
+  remain outside Git. The closed physical-product milestone is
+  `pipeline-soc-stage5`.

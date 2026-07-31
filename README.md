@@ -16,27 +16,43 @@
 - 指导书已固定到包含 Lab 2-A 和 Lab 2-B 的版本。
 - Vivado 2023.2 的 WSL-to-Windows batch 入口已经配置，Lab 1 综合和实现已在
   Windows 侧完成。Lab 1 不要求下板，本里程碑未做也不声明板级验证。
-- Lab 2 双产品基线已经刷新；`projects/pipeline/` 当前是 2026-07-23 的
-  `projects/single_cycle/` tracked 工程快照，尚未开始流水线 RTL 改造。
+- Lab 2 流水线产品已经从完整单周期基线演化为 IF/ID/EX/MEM/WB 五级核，并接入
+  已验证的 Cache、AXI、主存/MMIO interconnect 和外设 fabric。五个 pipeline 配置的
+  lint 与全部 45 项 Trace、流水线 C_TEST 0～2 和 CoreMark RTL system suite 已通过；
+  canonical Vivado 2023.2 工程已在 50 MHz 下完成 clean implementation，四个可追溯
+  C_TEST/CoreMark bitstream 均通过机器审计和 EGO1 用户板测。CoreMark 本次板测为
+  49.7197 CoreMark、0.9943 CoreMark/MHz，物理产品里程碑 tag 为
+  `pipeline-soc-stage5`。现场验收准备与官方材料采集已由独立任务书关闭；数据通路图和
+  报告撰写由外部 owner 负责，当前验收口径不要求迁移 Vendor IP。
 - 单周期 SoC Stage 0～3 已完成，里程碑 tag 为 `single-cycle-soc-stage3`。默认产品
   路径已经接入 Cache、AXI 主存/MMIO 互连和五类外设；Stage 3 的完整链路、错误事务、
   子字访问和外设边界均有仓库测试。Stage 4 的 C_TEST 0～2、可审计程序镜像和三套
   CPU-driven System suite 已实现；学号身份已写入默认候选构建，课程 miniRV + EGO1
   bitstream 的三套用户板测均已通过。Stage 5 也已完成：自有 SoC 物理工程、
   50 MHz clean Vivado implementation、三套可追溯 bitstream 和 EGO1 用户板测均已关闭，
-  里程碑 tag 为 `single-cycle-soc-stage5`。正式 artifacts 和数据通路图留到流水线 SoC merge 后。
+  里程碑 tag 为 `single-cycle-soc-stage5`。单周期正式 artifacts 由现场验收材料任务整理，
+  数据通路图由外部 owner 负责。
   历史 ROM/RAM 路径仍由独立 Basic Trace profile 保留。
-- 仓库公开构建与验证 CLI 已统一为根 `Justfile`。六个稳定配置显式区分产品、拓扑、
-  Cache、后端和产物目录；Cache-enabled CPU-driven SoC smoke 已覆盖主存和五类 MMIO。
+- 仓库公开构建与验证 CLI 已统一为根 `Justfile`。十个稳定配置显式区分两个产品、
+  Basic/AXI direct/product SoC 拓扑、Cache、后端和产物目录；Cache-enabled
+  CPU-driven SoC smoke 已覆盖主存和五类 MMIO。
 
 ## 快速开始
 
-首次取得仓库后初始化依赖：
+环境 owner、可选宿主能力和缺失影响见[开发环境与本地依赖](docs/environment.md)。日常开发在
+Linux devcontainer 中进行；Windows Vivado、受限材料和物理设备不是这条路径的隐式依赖。
+
+### Container 内的日常开发
+
+首次在 container 中打开仓库后初始化 pinned 输入并检查核心工具链：
 
 ```bash
 git submodule update --init --recursive
 just doctor
 ```
+
+`just doctor` 的 Required tools、RV32IM/ILP32 runtime ABI 和 Repository inputs 必须通过。
+它显示的材料或 Vivado `[not ...]` 状态是可选能力提示，不是 RTL 或产品失败。
 
 运行单个 AXI Trace 测试（Cache 旁路）：
 
@@ -69,11 +85,39 @@ just program c-test-0
 just system c-test-0
 ```
 
+在流水线 SoC 上构建并仿真运行 CoreMark：
+
+```bash
+just program coremark
+just system coremark
+```
+
 查看所有入口：
 
 ```bash
 just --list
 ```
+
+### WSL/Windows Vivado 后端
+
+Vivado 不在 container 中安装或模拟。仅在 WSL 已能调用 Windows Vivado 2023.2 时，复制
+`local.env.example` 为 ignored 的 `local.env`，填写严格的三个 `VIVADO_*` 键，并使用公开入口：
+
+```bash
+just vivado pipeline stage
+just vivado-candidate-for pipeline coremark bitstream
+```
+
+`VIVADO_STAGE_ROOT` 必须是 Windows 可见的 disposable staging 根目录，不能是 canonical
+project；完整前提、环境变量优先级和 fail-closed 行为见[环境合同](docs/environment.md)。这些命令不等同于容器内的 lint/Trace/system 验证。
+
+### 受限材料与物理操作
+
+`materials/lab1/` 和 `materials/lab2/` 是 ignored 的个人输入，其 provenance/hash 清单在
+[`materials/MANIFEST.md`](materials/MANIFEST.md)。不要自动下载或把它们放入镜像；日常回归
+不依赖它们。烧录、串口和板上观察由用户完成；`just program` 与 `just system` 不替代物理
+验证。最终导出所需的身份和文件路径通过 `just export-submission` 的显式环境变量提供，不写入
+`local.env`。
 
 ## 目录边界
 
@@ -104,7 +148,12 @@ just --list
 ## 文档入口
 
 - [项目工作流](docs/workflow.md)
+- [开发环境与本地依赖](docs/environment.md)
 - [开发任务日志](docs/devlog/README.md)
+- [课程现场验收准备与官方材料采集任务书](docs/devlog/course-acceptance-readiness.md)
+- [流水线 SoC 产品闭环任务书](docs/devlog/pipeline-soc-product-closure.md)
+- [流水线 merge 后稳定化维护任务书](docs/devlog/pipeline-post-merge-maintenance.md)
+- [流水线 CPU/SoC 合并记录](docs/devlog/pipeline-cpu-and-soc.md)
 - [单周期 SoC Stage 5 任务书](docs/devlog/single-cycle-soc-stage5.md)
 - [官方模板验证基线](docs/baseline.md)
 - [设计产物门禁](design/README.md)

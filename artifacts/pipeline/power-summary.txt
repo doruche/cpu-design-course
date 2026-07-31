@@ -1,0 +1,13 @@
+Pipeline SoC routed vectorless power estimate, common to all four PC5 candidates
+Source commit: 14a05572ebb585f20a3c83341fb2abe6fb834b0d
+Vivado: 2023.2
+Part: xc7a35tcsg324-1
+
+Total on-chip power: 0.189 W
+Dynamic power:       0.115 W
+Device static power: 0.074 W
+Junction temperature estimate: 25.9 C
+Overall confidence: Low
+Simulation activity file: none
+
+This is a vectorless implementation estimate, not measured EGO1 board power.

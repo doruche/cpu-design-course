@@ -1,5 +1,8 @@
 event,priority,if_id,id_ex,ex_mem,mem_wb,pc_action,notes
 reset,0,clear,clear,clear,clear,PC_INIT_VAL,Reset creates bubbles in every stage
-flush_on_mispredict,1,clear,clear,hold,hold,redirect,Younger wrong-path instructions must not commit
-data_or_memory_stall,2,hold,insert_bubble,hold,hold,hold,Preserve older work and stop younger fetch/decode
-normal_advance,3,advance,advance,advance,advance,pc_plus_4_or_prediction,Only when no higher-priority event is active
+dmem_stall,1,hold,hold,hold,insert_bubble,hold,MEM waits for daccess_rvalid or daccess_wresp; the response takes an unbounded number of cycles on the AXI and cache path
+mul_div_stall,2,hold,hold,insert_bubble,advance,hold,EX waits for ALU busy to fall; cannot coexist with a branch in EX
+flush_on_mispredict,3,clear,clear,advance,advance,redirect,Taken branch jal or jalr resolved in EX; the branch itself must advance while the two younger instructions are discarded
+load_use_stall,4,hold,insert_bubble,advance,advance,hold,ID waits one cycle so the load result can be forwarded from MEM/WB
+imem_stall,5,insert_bubble,advance,advance,advance,hold,IF waits for ifetch_valid; the response takes an unbounded number of cycles on the AXI and cache path
+normal_advance,6,advance,advance,advance,advance,pc_plus_4,Static predict-not-taken; only when no higher-priority event is active

@@ -4,6 +4,14 @@ The downloaded course materials are intentionally kept out of this Git
 repository. The course guide states that the materials are restricted to the
 2026 summer course and must not be redistributed.
 
+This file is a provenance and SHA-256 record for user-provided local inputs;
+it is not an automatic-download list, a devcontainer image input, or a daily
+build prerequisite. `materials/lab1/` and `materials/lab2/` remain ignored.
+Their absence does not block normal `just` verification; only an action that
+explicitly needs a listed original input may require the user to provide and
+check it. Environment ownership and the capability boundary are defined in
+[`docs/environment.md`](../docs/environment.md).
+
 ## Selected Configuration
 
 - Board: EGO1 (`xc7a35tcsg324-1`)

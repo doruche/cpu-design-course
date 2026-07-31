@@ -8,6 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -27,6 +28,9 @@ def load_script(name: str, filename: str):
 stage5_contract = load_script("stage5_contract", "stage5_contract.py")
 vivado_result = load_script("vivado_result", "check_vivado_result.py")
 vivado_evidence = load_script("vivado_evidence", "collect_vivado_evidence.py")
+vivado_candidate = load_script(
+    "vivado_candidate", "prepare_vivado_candidate.py"
+)
 
 
 class StaticHelperTests(unittest.TestCase):
@@ -45,6 +49,79 @@ class StaticHelperTests(unittest.TestCase):
             }
         }
         self.assertEqual(stage5_contract.component_value(document, "Write_Depth_A"), "38400")
+
+    def test_pipeline_static_contract_is_closed(self) -> None:
+        self.assertEqual(stage5_contract.check_static_contract(ROOT, "pipeline"), [])
+
+
+class VivadoCandidateTests(unittest.TestCase):
+    def write_program(self, root: Path, program: str, commit: str) -> None:
+        program_dir = root / ".cache/programs/c_test" / program
+        program_dir.mkdir(parents=True)
+        coe_path = program_dir / f"{program}.coe"
+        coe_path.write_text(
+            "memory_initialization_radix=16;\nmemory_initialization_vector=\n0;\n",
+            encoding="utf-8",
+        )
+        manifest = {
+            "schema": 1,
+            "program": program,
+            "source": {"commit": commit, "dirty": False},
+            "artifacts": {
+                "coe": {
+                    "path": str(coe_path.relative_to(root)),
+                    "sha256": vivado_candidate.sha256(coe_path),
+                }
+            },
+            "memory_contract": {"behavioral_memory_minimum_bytes": 153_600},
+        }
+        (program_dir / f"{program}.manifest").write_text(
+            json.dumps(manifest), encoding="utf-8"
+        )
+
+    def test_product_candidate_matrix_stages_manifest_and_coe(self) -> None:
+        supported = {
+            "single_cycle": ("c-test-0", "c-test-1", "c-test-2"),
+            "pipeline": ("c-test-0", "c-test-1", "c-test-2", "coremark"),
+        }
+        commit = "1" * 40
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for program in {item for values in supported.values() for item in values}:
+                self.write_program(root, program, commit)
+            with mock.patch.object(
+                vivado_candidate,
+                "git_output",
+                side_effect=lambda _root, *args: commit
+                if args == ("rev-parse", "HEAD")
+                else "",
+            ):
+                for product, programs in supported.items():
+                    for program in programs:
+                        with self.subTest(product=product, program=program):
+                            stage_dir = root / "stage" / product / program
+                            selection = vivado_candidate.prepare(
+                                root, stage_dir, product, program, False
+                            )
+                            self.assertEqual(selection["product"], product)
+                            self.assertEqual(selection["program"], program)
+                            self.assertTrue(
+                                (stage_dir / selection["manifest"]["path"]).is_file()
+                            )
+                            self.assertTrue(
+                                (stage_dir / selection["coe"]["path"]).is_file()
+                            )
+
+    def test_rejects_candidate_outside_product_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, "unsupported candidate"):
+                vivado_candidate.prepare(
+                    Path(directory),
+                    Path(directory) / "stage",
+                    "single_cycle",
+                    "coremark",
+                    False,
+                )
 
 
 class VivadoVerdictTests(unittest.TestCase):

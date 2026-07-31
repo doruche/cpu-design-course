@@ -9,6 +9,7 @@ Complete `stage_registers.csv` before editing pipeline RTL. Complete the
 relevant rows in `flow_control.csv` and `hazards.csv` before implementing each
 corresponding control mechanism. Keep every row synchronized with live RTL.
 
-The current files describe the planned five-stage baseline only; they do not
-claim that the copied pipeline product has implemented any pipeline behavior.
-
+The current files describe the live five-stage implementation merged at
+`842d558`: its four stage-register groups, forwarding and load-use rules, and
+the reset/stall/flush priority. They are maintained contracts, not historical
+plans; any later semantic change must update the relevant rows before RTL.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate and stage one named C_TEST COE for the canonical Vivado build."""
+"""Validate and stage one named program COE for a canonical Vivado build."""
 
 from __future__ import annotations
 
@@ -12,7 +12,10 @@ import sys
 from pathlib import Path
 
 
-PROGRAMS = {"c-test-0", "c-test-1", "c-test-2"}
+PRODUCT_PROGRAMS = {
+    "single_cycle": {"c-test-0", "c-test-1", "c-test-2"},
+    "pipeline": {"c-test-0", "c-test-1", "c-test-2", "coremark"},
+}
 
 
 def sha256(path: Path) -> str:
@@ -29,9 +32,15 @@ def git_output(root: Path, *args: str) -> str:
     ).strip()
 
 
-def prepare(root: Path, stage_dir: Path, program: str, require_clean: bool) -> dict:
-    if program not in PROGRAMS:
-        raise ValueError(f"unsupported candidate {program!r}")
+def prepare(
+    root: Path,
+    stage_dir: Path,
+    product: str,
+    program: str,
+    require_clean: bool,
+) -> dict:
+    if product not in PRODUCT_PROGRAMS or program not in PRODUCT_PROGRAMS[product]:
+        raise ValueError(f"unsupported candidate {product}/{program}")
 
     program_dir = root / ".cache/programs/c_test" / program
     manifest_path = program_dir / f"{program}.manifest"
@@ -69,6 +78,7 @@ def prepare(root: Path, stage_dir: Path, program: str, require_clean: bool) -> d
 
     selection = {
         "schema": 1,
+        "product": product,
         "program": program,
         "source": {"commit": source_commit, "dirty": source_dirty},
         "manifest": {
@@ -93,6 +103,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--stage-dir", type=Path, required=True)
+    parser.add_argument("--product", choices=tuple(PRODUCT_PROGRAMS), required=True)
     parser.add_argument("--program", required=True)
     parser.add_argument("--require-clean", action="store_true")
     args = parser.parse_args()
@@ -100,6 +111,7 @@ def main() -> int:
         selection = prepare(
             args.root.resolve(),
             args.stage_dir.resolve(),
+            args.product,
             args.program,
             args.require_clean,
         )

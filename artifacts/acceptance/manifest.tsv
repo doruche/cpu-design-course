@@ -1,0 +1,10 @@
+artifact_id	required	owner	role	path	sha256	source_run	disposition
+pipeline-utilization	true	user	Post-Implementation utilization screenshot	artifacts/acceptance/screenshots/pipeline-post-impl-utilization.png	fd8749f53d98d715ddccf4c836083550bf1aac639ef31e25ce5d030224f0c724	pipeline/coremark impl_1	PASS with zero-DSP raw-report supplement
+pipeline-power	true	user	Post-Implementation power screenshot	artifacts/acceptance/screenshots/pipeline-post-impl-power.png	8b651acf434d87f673d50b53d20fb07ddb29b78b2b7b62e1e9eec0779eaa2a14	pipeline/coremark impl_1	PASS routed vectorless estimate Low confidence
+pipeline-timing	true	user	Post-Implementation timing screenshot	artifacts/acceptance/screenshots/pipeline-post-impl-timing.png	a18b722278cbd210793b799943c05934ddcadc46e92cb8f77c6bb94cc731ca37	pipeline/coremark impl_1	PASS setup and hold met
+pipeline-overview	false	user	Project Summary source context	artifacts/acceptance/screenshots/pipeline-project-overview.png	de7e73c3f5921d1e6e7fa33a473d7a1bffda65685c4bdce5967639d9d0d3fa95	pipeline/coremark impl_1	SUPPORTING not a report slot
+stage5-evidence	true	agent	Vivado evidence contract	Z:/cpu-design-vivado/pipeline/artifacts/stage5_evidence.json	a8040c2ff9b16b96f6404a4abe4b6a11e0d4b84da282fe38b3db33d7c65afb0f	pipeline/coremark impl_1	PASS
+build-facts	true	agent	Vivado build identity	Z:/cpu-design-vivado/pipeline/artifacts/build_facts.tsv	377259e645dd2dd242244c9182436688ac7f6e37acb94f711fdddb668acfe570	pipeline/coremark impl_1	PASS
+timing-report	true	agent	Raw routed timing report	Z:/cpu-design-vivado/pipeline/artifacts/timing_summary.rpt	88d434f3e2c56a44aedfb8085aa5daa19994ee7790ae949fb3d098605db07c82	pipeline/coremark impl_1	PASS
+utilization-report	true	agent	Raw routed utilization report	Z:/cpu-design-vivado/pipeline/artifacts/utilization.rpt	bc5aae538719c11928015f54730fe6c5e095bf40c7fc4d4763ef3675191d4eb8	pipeline/coremark impl_1	PASS includes DSPs 0 of 90
+power-report	true	agent	Raw routed power report	Z:/cpu-design-vivado/pipeline/artifacts/power.rpt	3341fa7bd48b9c4a4e9b3ae6ea0060a2b06b04b5535f637af9b71fb1314235f6	pipeline/coremark impl_1	PASS vectorless Low confidence
